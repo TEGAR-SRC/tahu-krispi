@@ -5,19 +5,10 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom"
 import {
   BuildingIcon,
   ChevronsUpDownIcon,
-  DiscIcon,
-  GiftIcon,
-  HistoryIcon,
-  LayoutDashboardIcon,
-  LifeBuoyIcon,
   LogOutIcon,
-  NetworkIcon,
-  ServerIcon,
   TerminalIcon,
   UserCircleIcon,
-  WalletIcon,
 } from "lucide-react"
-import type { LucideIcon } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -48,39 +39,7 @@ import { Badge } from "@/components/ui/badge"
 import { Spinner } from "@/components/ui/spinner"
 import { useAuth } from "@/lib/auth"
 import { OrgProvider, useOrg, type Organization } from "./useOrg"
-
-interface NavItem {
-  title: string
-  url: string
-  icon?: LucideIcon
-}
-
-interface NavSection {
-  title?: string
-  items: NavItem[]
-}
-
-const sections: NavSection[] = [
-  {
-    title: "Cloud",
-    items: [
-      { title: "Overview", url: "/app", icon: LayoutDashboardIcon },
-      { title: "Instances", url: "/app/instances", icon: ServerIcon },
-      { title: "ISO", url: "/app/iso", icon: DiscIcon },
-      { title: "Backups", url: "/app/backups", icon: HistoryIcon },
-      { title: "Network", url: "/app/network", icon: NetworkIcon },
-    ],
-  },
-  {
-    title: "Account",
-    items: [
-      { title: "Tickets", url: "/app/tickets", icon: LifeBuoyIcon },
-      { title: "Wallet", url: "/app/wallet", icon: WalletIcon },
-      { title: "Affiliate", url: "/app/affiliate", icon: GiftIcon },
-      { title: "Profile", url: "/app/profile", icon: UserCircleIcon },
-    ],
-  },
-]
+import { customerNav } from "./nav"
 
 function initialsFor(email: string | undefined): string {
   if (!email) return "?"
@@ -178,7 +137,7 @@ function CustomerShell() {
           </SidebarMenu>
         </SidebarHeader>
         <SidebarContent>
-          {sections.map((section, sectionIndex) => (
+          {customerNav.map((section, sectionIndex) => (
             <SidebarGroup key={section.title ?? sectionIndex}>
               {section.title ? <SidebarGroupLabel>{section.title}</SidebarGroupLabel> : null}
               <SidebarGroupContent>

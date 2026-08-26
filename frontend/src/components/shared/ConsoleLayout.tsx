@@ -57,7 +57,7 @@ function initialsFor(email: string | undefined): string {
 export function ConsoleLayout({ brand, brandTagline, navSections }: ConsoleLayoutProps) {
   const location = useLocation()
   const navigate = useNavigate()
-  const { claims, logout } = useAuth()
+  const { profile, role, logout } = useAuth()
 
   // The base path (e.g. "/admin") is only active on an exact match; deeper
   // items are active on prefix match so parents and children don't collide.
@@ -71,11 +71,16 @@ export function ConsoleLayout({ brand, brandTagline, navSections }: ConsoleLayou
     navigate("/login", { replace: true })
   }
 
-  // JWT claims carry an index signature (values typed `unknown`); narrow the
-  // fields rendered below to strings so they are valid ReactNode.
-  const email = typeof claims?.email === "string" ? claims.email : undefined
-  const role = typeof claims?.role === "string" ? claims.role : null
-  const staffRole = typeof claims?.staff_role === "string" ? claims.staff_role : null
+  // Role labels come from the detected console role; the profile supplies the
+  // signed-in identity (JWT claims carry no email/role).
+  const email = profile?.email
+  const roleLabels: Record<string, string> = {
+    admin: "Platform admin",
+    noc: "NOC engineer",
+    finance: "Finance",
+    customer: "Customer",
+  }
+  const roleLabel = role ? (roleLabels[role] ?? role) : "user"
 
   return (
     <SidebarProvider>
@@ -139,20 +144,16 @@ export function ConsoleLayout({ brand, brandTagline, navSections }: ConsoleLayou
                       </AvatarFallback>
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-medium">{email ?? "Signed in"}</span>
-                      <span className="truncate text-xs text-muted-foreground">
-                        {role ?? "user"}
-                      </span>
+                      <span className="truncate font-medium">{email || "Signed in"}</span>
+                      <span className="truncate text-xs text-muted-foreground">{roleLabel}</span>
                     </div>
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent side="top" align="start" className="min-w-56">
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium">{email ?? "Signed in"}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {claims?.is_platform_admin ? "Platform admin" : staffRole ?? "Customer"}
-                      </p>
+                      <p className="text-sm font-medium">{email || "Signed in"}</p>
+                      <p className="text-xs text-muted-foreground">{roleLabel}</p>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
