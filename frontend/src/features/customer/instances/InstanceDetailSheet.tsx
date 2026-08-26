@@ -59,14 +59,7 @@ export function InstanceDetailSheet({
   const { orgId } = useOrg()
   const [current, setCurrent] = useState<CustomerInstance | null>(instance)
   const [actionBusy, setActionBusy] = useState<string | null>(null)
-  const [prevInstance, setPrevInstance] = useState(instance)
-
-  // Adjust state during render when the opened instance changes (React docs pattern;
-  // avoids a cascading-render effect).
-  if (prevInstance !== instance) {
-    setPrevInstance(instance)
-    setCurrent(instance)
-  }
+  const activeInstance = current?.id === instance?.id ? current : instance
 
   const refreshInstance = useCallback(async () => {
     if (!instance || !orgId) return
@@ -81,10 +74,10 @@ export function InstanceDetailSheet({
   }, [instance, orgId])
 
   const runAction = async (action: "start" | "stop" | "reboot") => {
-    if (!current || !orgId) return
+    if (!activeInstance || !orgId) return
     setActionBusy(action)
     try {
-      await apiPost(`/instances/${current.id}/${action}`, {}, { headers: orgHeaders(orgId) })
+      await apiPost(`/instances/${activeInstance.id}/${action}`, {}, { headers: orgHeaders(orgId) })
       toast.success(`Instance ${action} requested`)
       setTimeout(() => {
         void refreshInstance()
@@ -104,10 +97,10 @@ export function InstanceDetailSheet({
       <SheetContent className="w-full overflow-y-auto sm:max-w-xl">
         <SheetHeader>
           <div className="flex flex-wrap items-center gap-2">
-            <SheetTitle className="text-xl">{current?.name ?? instance.name}</SheetTitle>
-            <StatusBadge status={current?.status ?? instance.status} />
-            {current?.power_status ? (
-              <StatusBadge status={current.power_status} />
+            <SheetTitle className="text-xl">{activeInstance?.name ?? instance.name}</SheetTitle>
+            <StatusBadge status={activeInstance?.status ?? instance.status} />
+            {activeInstance?.power_status ? (
+              <StatusBadge status={activeInstance.power_status} />
             ) : null}
           </div>
           <SheetDescription>
@@ -137,8 +130,12 @@ export function InstanceDetailSheet({
           </TabsList>
 
           <TabsContent value="overview">
-            <OverviewTab instance={current ?? instance} />
-            <Button variant="destructive" className="mt-4 w-fit" onClick={() => onDeleteRequest(current ?? instance)}>
+            <OverviewTab instance={activeInstance ?? instance} />
+            <Button
+              variant="destructive"
+              className="mt-4 w-fit"
+              onClick={() => onDeleteRequest(activeInstance ?? instance)}
+            >
               Delete instance…
             </Button>
           </TabsContent>
@@ -211,20 +208,25 @@ function MetricsTab({ instanceId }: { instanceId: string }) {
   const { orgId } = useOrg()
   const [timeframe, setTimeframe] = useState<Timeframe>("hour")
   const [data, setData] = useState<unknown>(null)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
 
   const loadMetrics = useCallback(() => {
     let cancelled = false
-    setLoading(true)
-    setError(null)
     apiGet<unknown>(`/instances/${instanceId}/metrics`, {
       headers: orgHeaders(orgId),
       query: { timeframe },
     })
-      .then(({ data: payload }) => !cancelled && setData(payload))
-      .catch((cause) => !cancelled && setError(cause))
-      .finally(() => !cancelled && setLoading(false))
+      .then(({ data: payload }) => {
+        if (cancelled) return
+        setData(payload)
+      })
+      .catch((cause) => {
+        if (!cancelled) setError(cause)
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
     return () => {
       cancelled = true
     }
@@ -233,6 +235,8 @@ function MetricsTab({ instanceId }: { instanceId: string }) {
   useEffect(() => {
     let cancel: (() => void) | undefined
     const timer = setTimeout(() => {
+      setLoading(true)
+      setError(null)
       cancel = loadMetrics()
     }, 0)
     return () => {
@@ -285,7 +289,6 @@ function NotesTagsTab({ instanceId, onSaved }: { instanceId: string; onSaved: ()
 
   const loadNotesTags = useCallback(() => {
     let cancelled = false
-    setLoading(true)
     Promise.all([
       apiGet<{ notes?: string }>(`/instances/${instanceId}/notes`, { headers: orgHeaders(orgId) }),
       apiGet<{ tags?: string[] }>(`/instances/${instanceId}/tags`, { headers: orgHeaders(orgId) }),
@@ -307,6 +310,7 @@ function NotesTagsTab({ instanceId, onSaved }: { instanceId: string; onSaved: ()
   useEffect(() => {
     let cancel: (() => void) | undefined
     const timer = setTimeout(() => {
+      setLoading(true)
       cancel = loadNotesTags()
     }, 0)
     return () => {

@@ -28,13 +28,9 @@ import {
 } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { StatusBadge } from "../shared"
-import {
-  ConfirmDialog,
-  ProviderShell,
-  type FirewallGroup,
-  type FirewallRule,
-} from "./shared"
+import { ConfirmDialog, ProviderShell } from "./shared"
 import { useInfraGet } from "./infra"
+import type { FirewallGroup, FirewallRule } from "./types"
 
 export default function ProviderFirewallPage() {
   const params = useParams()

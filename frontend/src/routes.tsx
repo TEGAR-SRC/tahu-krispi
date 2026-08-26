@@ -962,7 +962,7 @@ export default function AppRoutes() {
         <Route
           path="/app"
           element={
-            <RequireRole>
+            <RequireRole allow={"customer"}>
               <CustomerLayout />
             </RequireRole>
           }

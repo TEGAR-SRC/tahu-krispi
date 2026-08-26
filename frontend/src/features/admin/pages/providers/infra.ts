@@ -1,7 +1,7 @@
 // Infra loader hook + small formatters shared by the provider detail sub-pages
 // (Nodes, Storages, SDN, Ceph, …). Kept in a plain .ts so the react-refresh
 // rule only sees components in ./shared.tsx.
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { apiGet } from "@/lib/api"
 
 export interface FetchState<T> {
@@ -16,7 +16,7 @@ export interface FetchState<T> {
  */
 export function useInfraGet<T>(
   path: string | null,
-  query?: Record<string, string | number | null | undefined>,
+  query?: Record<string, string | number | boolean | null | undefined>,
 ): FetchState<T> & { reload: () => void } {
   const [state, setState] = useState<FetchState<T>>({
     data: null,
@@ -24,7 +24,7 @@ export function useInfraGet<T>(
     error: null,
   })
   const [tick, setTick] = useState(0)
-  const queryKey = JSON.stringify(query ?? null)
+  const queryKey = useMemo(() => JSON.stringify(query ?? null), [query])
   useEffect(() => {
     if (!path) {
       const t = setTimeout(() => setState({ data: null, loading: false, error: null }), 0)
@@ -32,7 +32,13 @@ export function useInfraGet<T>(
     }
     let cancelled = false
     apiGet<T>(path, {
-      query: queryKey === "null" ? undefined : (JSON.parse(queryKey) as Record<string, unknown>),
+      query:
+        queryKey === "null"
+          ? undefined
+          : (JSON.parse(queryKey) as Record<
+              string,
+              string | number | boolean | null | undefined
+            >),
     })
       .then((envelope) => {
         if (!cancelled) setState({ data: envelope.data, loading: false, error: null })

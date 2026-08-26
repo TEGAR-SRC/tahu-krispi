@@ -11,12 +11,9 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { StatusBadge } from "../shared"
-import {
-  ProviderShell,
-  type ClusterPayload,
-  type ContainerRow,
-} from "./shared"
+import { ProviderShell } from "./shared"
 import { formatBytes, useInfraGet } from "./infra"
+import type { ClusterPayload, ContainerRow } from "./types"
 
 export default function ProviderContainersPage() {
   const params = useParams()

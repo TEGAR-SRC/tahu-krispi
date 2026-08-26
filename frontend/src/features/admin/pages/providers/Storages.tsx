@@ -42,16 +42,15 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { formatDateTime } from "../format"
-import {
-  ConfirmDialog,
-  ProviderShell,
-  type ClusterPayload,
-  type ClusterStorage,
-  type FileRestoreEntry,
-  type PveNodeStatus,
-  type StorageContentItem,
-} from "./shared"
+import { ConfirmDialog, ProviderShell } from "./shared"
 import { formatBytes, useInfraGet } from "./infra"
+import type {
+  ClusterPayload,
+  ClusterStorage,
+  FileRestoreEntry,
+  PveNodeStatus,
+  StorageContentItem,
+} from "./types"
 
 const STORAGE_TYPES = [
   "dir",

@@ -27,13 +27,9 @@ import {
 } from "@/components/ui/select"
 import { StatusBadge } from "../shared"
 import { formatDateTime } from "../format"
-import {
-  ConfirmDialog,
-  ProviderShell,
-  type BackupJobRow,
-  type ClusterStorage,
-} from "./shared"
+import { ConfirmDialog, ProviderShell } from "./shared"
 import { useInfraGet } from "./infra"
+import type { BackupJobRow, ClusterStorage } from "./types"
 
 const MODES = ["snapshot", "suspend", "stop"]
 

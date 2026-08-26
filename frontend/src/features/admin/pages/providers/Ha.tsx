@@ -27,12 +27,9 @@ import {
 } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { StatusBadge } from "../shared"
-import {
-  ConfirmDialog,
-  ProviderShell,
-  type HAResource,
-} from "./shared"
+import { ConfirmDialog, ProviderShell } from "./shared"
 import { useInfraGet } from "./infra"
+import type { HAResource } from "./types"
 
 const RESOURCE_TYPES = ["vm", "ct"]
 

@@ -11,12 +11,9 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { StatusBadge } from "../shared"
-import {
-  ProviderShell,
-  type SdnVnet,
-  type SdnZone,
-} from "./shared"
+import { ProviderShell } from "./shared"
 import { useInfraGet } from "./infra"
+import type { SdnVnet, SdnZone } from "./types"
 
 export default function ProviderSdnPage() {
   const params = useParams()

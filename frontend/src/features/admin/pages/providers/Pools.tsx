@@ -18,13 +18,9 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  ConfirmDialog,
-  ProviderShell,
-  type PoolRow,
-  type PveClusterResource,
-} from "./shared"
+import { ConfirmDialog, ProviderShell } from "./shared"
 import { formatBytes, formatUptime, useInfraGet } from "./infra"
+import type { PoolRow, PveClusterResource } from "./types"
 
 export default function ProviderPoolsPage() {
   const params = useParams()

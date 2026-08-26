@@ -1,9 +1,10 @@
-// Thin HTTP client for the Kilat Cloud backend (Fiber) reached through the
-// Vite dev proxy: client calls `/api/v1/...` and the proxy strips `/api`
-// before forwarding to the backend's `/v1/...`.
+// Thin HTTP client for the Kilat Cloud backend (Fiber). In Vite dev the
+// client calls `/api/v1/...` and the proxy strips `/api` before forwarding to
+// the backend's `/v1/...`; outside Vite dev the app talks to `/v1/...`
+// directly on the same origin.
 import type { PagedMeta } from "./types"
 
-export const API_BASE = "/api/v1"
+export const API_BASE = import.meta.env.DEV ? "/api/v1" : "/v1"
 
 const TOKEN_KEY = "kilat_token"
 

@@ -15,9 +15,9 @@ import {
   useState,
   type ReactNode,
 } from "react"
-import { apiGet, apiPost, getToken, setToken } from "./api"
+import { apiGet, apiPost, getToken, setToken, API_BASE } from "./api"
 
-const API_ORIGIN = "" // same origin; Vite proxies /api -> backend in dev
+export const API_ORIGIN = "" // same origin; Vite proxies /api -> backend in dev
 
 export type AppRole = "admin" | "noc" | "finance" | "customer"
 
@@ -101,7 +101,7 @@ export function homePathFor(role: AppRole | null): string {
 }
 
 async function probe(path: string, token: string): Promise<number> {
-  const response = await fetch(`${API_ORIGIN}/api/v1${path}`, {
+  const response = await fetch(`${API_ORIGIN}${API_BASE}${path}`, {
     headers: { Authorization: `Bearer ${token}` },
   })
   return response.status

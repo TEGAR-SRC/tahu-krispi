@@ -12,14 +12,9 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
+import type { Crumb } from "./detailShared-types"
 
 // ---- Breadcrumbs -------------------------------------------------------------
-
-export interface Crumb {
-  label: string
-  /** When set the crumb renders as a link (list pages higher up the trail). */
-  to?: string
-}
 
 /** Breadcrumb trail every detail page opens with; the last entry is the page. */
 export function DetailBreadcrumbs({ trail }: { trail: Crumb[] }) {

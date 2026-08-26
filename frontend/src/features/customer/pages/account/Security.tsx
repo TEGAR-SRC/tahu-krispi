@@ -86,12 +86,15 @@ interface PasskeyRow {
   last_used_at?: string | null
 }
 
-// Loaders update state, so a direct `void load()` inside an effect would trip
-// react-hooks/set-state-in-effect. Invoking it through a mount-effect hook is
-// the standard data-fetching idiom and keeps the rule satisfied.
+// Loaders update state, so defer them until after the effect callback returns.
 function useMountLoad(load: () => Promise<void>) {
   useEffect(() => {
-    void load()
+    const timer = setTimeout(() => {
+      void load()
+    }, 0)
+    return () => {
+      clearTimeout(timer)
+    }
   }, [load])
 }
 
@@ -802,24 +805,27 @@ function SecurityEventsCard() {
 
   useEffect(() => {
     let cancelled = false
-    ;(async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        const response = await apiGet<SecurityEventRow[]>("/me/security/events", {
-          query: { page, limit: 10 },
-        })
-        if (cancelled) return
-        setEvents(response.data ?? [])
-        setMeta((response.meta as PagedMeta | undefined) ?? null)
-      } catch (cause) {
-        if (!cancelled) setError(cause)
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    })()
+    const timer = setTimeout(() => {
+      void (async () => {
+        setLoading(true)
+        setError(null)
+        try {
+          const response = await apiGet<SecurityEventRow[]>("/me/security/events", {
+            query: { page, limit: 10 },
+          })
+          if (cancelled) return
+          setEvents(response.data ?? [])
+          setMeta((response.meta as PagedMeta | undefined) ?? null)
+        } catch (cause) {
+          if (!cancelled) setError(cause)
+        } finally {
+          if (!cancelled) setLoading(false)
+        }
+      })()
+    }, 0)
     return () => {
       cancelled = true
+      clearTimeout(timer)
     }
   }, [page])
 

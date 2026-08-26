@@ -100,7 +100,12 @@ export default function SignupPage() {
 
     setSubmitting(true)
     try {
-      const payload: RegisterPayload = {
+      const payload: RegisterPayload & {
+        username?: string
+        phone?: string
+        locale?: string
+        timezone?: string
+      } = {
         email,
         password,
         full_name: fullName,
@@ -108,10 +113,10 @@ export default function SignupPage() {
         privacy_accepted: true,
       }
       // Only send optional fields when they are filled
-      if (username.trim()) (payload as Record<string, unknown>).username = username.trim()
-      if (phone.trim()) (payload as Record<string, unknown>).phone = phone.trim()
-      if (locale) (payload as Record<string, unknown>).locale = locale
-      if (timezone) (payload as Record<string, unknown>).timezone = timezone
+      if (username.trim()) payload.username = username.trim()
+      if (phone.trim()) payload.phone = phone.trim()
+      if (locale) payload.locale = locale
+      if (timezone) payload.timezone = timezone
 
       const nextRole = await register(payload)
       navigate(homePathFor(nextRole), { replace: true })

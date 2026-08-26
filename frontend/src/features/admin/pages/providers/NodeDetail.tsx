@@ -38,11 +38,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { JsonBlock } from "../shared"
 import { formatDateTime } from "../format"
-import {
-  ConfirmDialog,
-  type ClusterStorage,
-} from "./shared"
+import { ConfirmDialog } from "./shared"
 import { formatBytes, formatPercent, formatUptime, useInfraGet } from "./infra"
+import type { ClusterStorage } from "./types"
 
 interface NodeDetailPayload {
   Name?: string

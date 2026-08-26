@@ -30,8 +30,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { StatusBadge } from "../shared"
 import { formatDateTime } from "../format"
-import { type ProviderRow } from "./shared"
 import { useInfraGet } from "./infra"
+import type { ProviderRow } from "./types"
 
 interface SectionLink {
   to: string

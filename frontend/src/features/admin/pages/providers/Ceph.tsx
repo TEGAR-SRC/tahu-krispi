@@ -14,11 +14,9 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { StatCard } from "@/components/shared/StatCard"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
 import { StatusBadge } from "../shared"
-import {
-  ProviderShell,
-  type CephStatusPayload,
-} from "./shared"
+import { ProviderShell } from "./shared"
 import { formatBytes, useInfraGet } from "./infra"
+import type { CephStatusPayload } from "./types"
 
 interface PgStateRow {
   state_name?: string

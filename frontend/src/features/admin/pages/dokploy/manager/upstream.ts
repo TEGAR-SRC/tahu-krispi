@@ -4,7 +4,7 @@
 import { API_BASE, getToken } from "@/lib/api"
 import type { DokployMethod, DynOption, Row } from "./engine"
 
-interface UpstreamResult {
+export interface UpstreamResult {
   status: number
   ok: boolean
   durationMs: number
@@ -96,7 +96,7 @@ export async function dokployCall(
   return result
 }
 
-function extractRows(body: unknown): Row[] {
+export function extractRows(body: unknown): Row[] {
   if (Array.isArray(body)) {
     return body.filter(isRecord)
   }

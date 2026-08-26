@@ -7,12 +7,9 @@ import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { StatusBadge } from "../shared"
-import {
-  ProviderShell,
-  type ClusterPayload,
-  type PveNodeStatus,
-} from "./shared"
+import { ProviderShell } from "./shared"
 import { formatBytes, formatPercent, formatUptime, useInfraGet } from "./infra"
+import type { ClusterPayload, PveNodeStatus } from "./types"
 
 const nodeName = (node: PveNodeStatus) => String(node.node ?? node.name ?? "—")
 
