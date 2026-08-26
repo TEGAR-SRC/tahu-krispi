@@ -53,7 +53,7 @@ interface CallOptions {
 }
 
 /** Raw relay call — mirrors the DokployHub explorer's fetch approach. */
-async function dokployCall(
+export async function dokployCall(
   method: DokployMethod,
   opPath: string,
   opts: CallOptions = {},
