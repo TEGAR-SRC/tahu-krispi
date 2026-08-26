@@ -643,7 +643,7 @@ ON CONFLICT (organization_id, currency) DO NOTHING`, orgID, currency); err != ni
 	var balanceText string
 	if err := s.db.QueryRow(ctx,
 		`SELECT balance::text FROM wallets WHERE id=$1`, walletID).Scan(&balanceText); err == nil {
-	fmt.Sscanf(balanceText, "%f", &balance)
+		fmt.Sscanf(balanceText, "%f", &balance)
 	} // on read-back failure keep zero rather than failing an applied ledger entry
 	s.admAuditMeta(c, "admin.wallet.adjust", "organization", &orgID, map[string]any{
 		"wallet_id": walletID, "direction": direction, "amount": in.Amount,

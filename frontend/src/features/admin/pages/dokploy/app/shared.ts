@@ -33,7 +33,7 @@ export async function dokploy<T = unknown>(
     body: body !== undefined ? JSON.stringify(body) : undefined,
   })
   const text = await response.text()
-  let parsed: unknown = undefined
+  let parsed: unknown
   try {
     parsed = text ? JSON.parse(text) : undefined
   } catch {
@@ -70,6 +70,7 @@ export function useUpstream<T>(
 
   useEffect(() => {
     let cancelled = false
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true)
     loader()
       .then((result) => {

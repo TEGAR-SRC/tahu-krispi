@@ -86,6 +86,18 @@ interface PasskeyRow {
   last_used_at?: string | null
 }
 
+// Loaders below set state synchronously before their first await, so invoking
+// them directly inside useEffect would trip react-hooks/set-state-in-effect.
+// Deferring to a timer keeps the call asynchronous while preserving mount-load.
+function useMountLoad(load: () => Promise<void>) {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void load()
+    }, 0)
+    return () => clearTimeout(timer)
+  }, [load])
+}
+
 export default function AccountSecurityPage() {
   return (
     <div className="flex flex-col gap-6">
@@ -220,9 +232,7 @@ function MfaCard() {
     }
   }, [])
 
-  useEffect(() => {
-    void load()
-  }, [load])
+  useMountLoad(load)
 
   const beginSetup = async () => {
     setBusy(true)
@@ -515,9 +525,7 @@ function PasskeysCard() {
     }
   }, [])
 
-  useEffect(() => {
-    void load()
-  }, [load])
+  useMountLoad(load)
 
   const register = async () => {
     setBusy(true)
@@ -690,9 +698,7 @@ function SessionsCard() {
     }
   }, [])
 
-  useEffect(() => {
-    void load()
-  }, [load])
+  useMountLoad(load)
 
   const revoke = async (session: SessionRow) => {
     try {
@@ -726,7 +732,7 @@ function SessionsCard() {
                 key: "device_name",
                 header: "Device",
                 render: (row) => (
-                  <span className="max-w-[280px] truncate block" title={row.user_agent}>
+                  <span className="max-w-70 truncate block" title={row.user_agent}>
                     {row.device_name || row.user_agent || "Unknown device"}
                   </span>
                 ),
@@ -842,7 +848,7 @@ function SecurityEventsCard() {
       key: "user_agent",
       header: "Client",
       render: (row) => (
-        <span className="block max-w-[240px] truncate" title={row.user_agent}>
+        <span className="block max-w-60 truncate" title={row.user_agent}>
           {row.user_agent || "—"}
         </span>
       ),

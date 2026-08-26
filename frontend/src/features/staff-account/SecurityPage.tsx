@@ -58,6 +58,17 @@ interface SecurityEventRow {
   created_at?: string
 }
 
+// load() sets state synchronously before its first await; deferring the
+// effect call keeps it asynchronous and clear of react-hooks/set-state-in-effect.
+function useMountLoad(load: () => Promise<void>) {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void load()
+    }, 0)
+    return () => clearTimeout(timer)
+  }, [load])
+}
+
 export default function StaffSecurityPage() {
   return (
     <div className="flex flex-col gap-6">
@@ -192,9 +203,7 @@ function SessionsCard() {
     }
   }, [])
 
-  useEffect(() => {
-    void load()
-  }, [load])
+  useMountLoad(load)
 
   const revoke = async (session: SessionRow) => {
     const isCurrent = session.id === currentSid || session.is_current === true

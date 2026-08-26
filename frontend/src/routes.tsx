@@ -447,6 +447,9 @@ const DokploySettingsSshKeys = lazy(() =>
 const DokploySettingsGitProviders = lazy(() =>
   import("@/features/admin/pages/dokploy/app/settings/GitProviders"),
 )
+const DokploySettingsRegistry = lazy(() =>
+  import("@/features/admin/pages/dokploy/manager/RegistryConsole"),
+)
 const DokploySettingsNotifications = lazy(() =>
   import("@/features/admin/pages/dokploy/app/settings/Notifications"),
 )
@@ -648,7 +651,19 @@ export default function AppRoutes() {
             element={<DokployEnvironmentBoard />}
           />
           <Route path="dokploy/app/overview" element={<DokployOverview />} />
+          <Route
+            path="dokploy/app/deployments"
+            element={<Navigate to="/admin/dokploy/app/overview?tab=deployments" replace />}
+          />
           <Route path="dokploy/app/docker" element={<DokployDockerPage />} />
+          <Route
+            path="dokploy/app/networks"
+            element={<Navigate to="/admin/dokploy/app/docker?tab=networks" replace />}
+          />
+          <Route
+            path="dokploy/app/swarm"
+            element={<Navigate to="/admin/dokploy/app/docker?tab=swarm" replace />}
+          />
           <Route
             path="dokploy/app/monitoring"
             element={<DokployMonitoring />}
@@ -708,6 +723,10 @@ export default function AppRoutes() {
           <Route
             path="dokploy/app/settings/git-providers"
             element={<DokploySettingsGitProviders />}
+          />
+          <Route
+            path="dokploy/app/settings/registry"
+            element={<DokploySettingsRegistry />}
           />
           <Route
             path="dokploy/app/settings/notifications"

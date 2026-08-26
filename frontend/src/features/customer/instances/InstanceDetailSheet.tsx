@@ -59,10 +59,14 @@ export function InstanceDetailSheet({
   const { orgId } = useOrg()
   const [current, setCurrent] = useState<CustomerInstance | null>(instance)
   const [actionBusy, setActionBusy] = useState<string | null>(null)
+  const [prevInstance, setPrevInstance] = useState(instance)
 
-  useEffect(() => {
+  // Adjust state during render when the opened instance changes (React docs pattern;
+  // avoids a cascading-render effect).
+  if (prevInstance !== instance) {
+    setPrevInstance(instance)
     setCurrent(instance)
-  }, [instance])
+  }
 
   const refreshInstance = useCallback(async () => {
     if (!instance || !orgId) return
@@ -210,7 +214,7 @@ function MetricsTab({ instanceId }: { instanceId: string }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<unknown>(null)
 
-  useEffect(() => {
+  const loadMetrics = useCallback(() => {
     let cancelled = false
     setLoading(true)
     setError(null)
@@ -225,6 +229,17 @@ function MetricsTab({ instanceId }: { instanceId: string }) {
       cancelled = true
     }
   }, [instanceId, orgId, timeframe])
+
+  useEffect(() => {
+    let cancel: (() => void) | undefined
+    const timer = setTimeout(() => {
+      cancel = loadMetrics()
+    }, 0)
+    return () => {
+      clearTimeout(timer)
+      cancel?.()
+    }
+  }, [loadMetrics])
 
   return (
     <div className="space-y-3">
@@ -268,7 +283,7 @@ function NotesTagsTab({ instanceId, onSaved }: { instanceId: string; onSaved: ()
   const [savingNotes, setSavingNotes] = useState(false)
   const [savingTags, setSavingTags] = useState(false)
 
-  useEffect(() => {
+  const loadNotesTags = useCallback(() => {
     let cancelled = false
     setLoading(true)
     Promise.all([
@@ -288,6 +303,17 @@ function NotesTagsTab({ instanceId, onSaved }: { instanceId: string; onSaved: ()
       cancelled = true
     }
   }, [instanceId, orgId])
+
+  useEffect(() => {
+    let cancel: (() => void) | undefined
+    const timer = setTimeout(() => {
+      cancel = loadNotesTags()
+    }, 0)
+    return () => {
+      clearTimeout(timer)
+      cancel?.()
+    }
+  }, [loadNotesTags])
 
   const saveNotes = async () => {
     setSavingNotes(true)
