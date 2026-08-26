@@ -1,0 +1,51 @@
+===============================================================
+ KILAT CLOUD — LOGIN ACCOUNTS (LOCAL DEV SEED)
+ Domain   : https://kilat-cloud.com
+ Endpoint : POST /v1/auth/login
+ Seed     : backend/cmd/migrate/migrations/000019_seed_role_accounts.sql
+ Password (semua akun) : KilatCloud#2026
+===============================================================
+
++------------------------+---------------------+----------------+------------------------------------+
+| Email                  | Password            | Role           | Keterangan                         |
++------------------------+---------------------+----------------+------------------------------------+
+| admin@kilat-cloud.com  | KilatCloud#2026     | platform_admin | Akses penuh, kelola harga/paket,   |
+|                        |                     |                | affiliate, limits, provider, staff |
+| finance@kilat-cloud.com| KilatCloud#2026     | finance        | Domain uang: orders, invoices,     |
+|                        |                     |                | payments, wallets, pricing,        |
+|                        |                     |                | coupons, affiliate payout          |
+| noc@kilat-cloud.com    | KilatCloud#2026     | noc            | Infra ops: instances, jobs,        |
+|                        |                     |                | providers, network, security,      |
+|                        |                     |                | tickets                            |
+| user@kilat-cloud.com   | KilatCloud#2026     | customer       | Portal customer (list beli,        |
+|                        |                     |                | upgrade spek, snapshot/backup,     |
+|                        |                     |                | object/blok storage, IP, ISO,      |
+|                        |                     |                | ticket, wallet, affiliate)         |
++------------------------+---------------------+----------------+------------------------------------+
+
+CATATAN
+- Akun ini SEED UNTUK LOCAL DEV / TESTING SAJA. Ganti password via
+  POST /v1/auth/change-password sebelum staging/production.
+- Hash: Argon2id (m=65536,t=3,p=4), password_version=1.
+- Email sudah terverifikasi (email_status=verified), status=active.
+- Staff role enforcement: internal/iam.StaffCan (platform_admin > finance/noc).
+
+ENDPOINT AUTH TERKAIT
+  POST /v1/auth/register
+  POST /v1/auth/login
+  POST /v1/auth/refresh
+  POST /v1/auth/logout
+  POST /v1/auth/forgot-password
+  POST /v1/auth/reset-password
+  POST /v1/auth/change-password
+  GET  /v1/auth/session
+  POST /v1/auth/verify-email       (minta/verify OTP)
+  POST /v1/auth/mfa/enable|verify|disable
+  GET  /v1/auth/sessions           (daftar sesi)  DELETE /v1/auth/sessions/:id (revoke)
+
+CONTOH LOGIN (curl)
+  curl -X POST https://kilat-cloud.com/v1/auth/login \
+    -H 'Content-Type: application/json' \
+    -d '{"email":"admin@kilat-cloud.com","password":"KilatCloud#2026"}'
+  -> 200 {"data":{"user_id":"...","session_id":"...","access_token":"...",
+       "refresh_token":"...","must_change_password":false},"request_id":"..."}

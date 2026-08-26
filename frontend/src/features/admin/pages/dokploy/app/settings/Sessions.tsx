@@ -118,7 +118,7 @@ export default function DokploySettingsSessionsPage() {
       className: "hidden lg:table-cell",
       render: (row) =>
         row.userAgent ? (
-          <span className="text-muted-foreground max-w-[220px] truncate text-sm">
+          <span className="text-muted-foreground max-w-55 truncate text-sm">
             {parseUserAgent(row.userAgent)}
           </span>
         ) : (
@@ -197,7 +197,7 @@ export default function DokploySettingsSessionsPage() {
               value={statusFilter}
               onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}
             >
-              <SelectTrigger className="w-[150px]">
+              <SelectTrigger className="w-37.5">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>

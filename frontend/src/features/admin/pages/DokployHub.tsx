@@ -473,7 +473,7 @@ function ExplorerCard() {
                 {response.text.length.toLocaleString()} bytes · {response.durationMs} ms
               </span>
             </div>
-            <pre className="max-h-[420px] overflow-auto rounded-md bg-muted p-3 font-mono text-xs leading-relaxed">
+            <pre className="max-h-105 overflow-auto rounded-md bg-muted p-3 font-mono text-xs leading-relaxed">
               {pretty ?? "(empty response body)"}
             </pre>
           </div>

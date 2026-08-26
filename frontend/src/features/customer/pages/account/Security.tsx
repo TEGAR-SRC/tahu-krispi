@@ -86,15 +86,12 @@ interface PasskeyRow {
   last_used_at?: string | null
 }
 
-// Loaders below set state synchronously before their first await, so invoking
-// them directly inside useEffect would trip react-hooks/set-state-in-effect.
-// Deferring to a timer keeps the call asynchronous while preserving mount-load.
+// Loaders update state, so a direct `void load()` inside an effect would trip
+// react-hooks/set-state-in-effect. Invoking it through a mount-effect hook is
+// the standard data-fetching idiom and keeps the rule satisfied.
 function useMountLoad(load: () => Promise<void>) {
   useEffect(() => {
-    const timer = setTimeout(() => {
-      void load()
-    }, 0)
-    return () => clearTimeout(timer)
+    void load()
   }, [load])
 }
 
@@ -210,7 +207,6 @@ function PasswordCard() {
 
 function MfaCard() {
   const [status, setStatus] = useState<MfaStatus | null>(null)
-  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
 
   const [setup, setSetup] = useState<{ secret: string; otpauth_url: string } | null>(null)
@@ -219,16 +215,15 @@ function MfaCard() {
   const [revealedCodes, setRevealedCodes] = useState<string[] | null>(null)
   const [codesCopied, setCodesCopied] = useState(false)
 
+  const loading = status === null && error === null
+
   const load = useCallback(async () => {
-    setLoading(true)
-    setError(null)
     try {
       const { data } = await apiGet<MfaStatus>("/me/mfa")
+      setError(null)
       setStatus(data)
     } catch (cause) {
       setError(cause)
-    } finally {
-      setLoading(false)
     }
   }, [])
 
@@ -506,22 +501,20 @@ async function runWebAuthnCeremony(
 
 function PasskeysCard() {
   const [passkeys, setPasskeys] = useState<PasskeyRow[] | null>(null)
-  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
   const [label, setLabel] = useState("")
   const [registerOpen, setRegisterOpen] = useState(false)
   const [busy, setBusy] = useState(false)
 
+  const loading = passkeys === null && error === null
+
   const load = useCallback(async () => {
-    setLoading(true)
-    setError(null)
     try {
       const { data } = await apiGet<{ passkeys: PasskeyRow[] | null }>("/me/mfa/passkeys")
+      setError(null)
       setPasskeys(data?.passkeys ?? [])
     } catch (cause) {
       setError(cause)
-    } finally {
-      setLoading(false)
     }
   }, [])
 
@@ -681,20 +674,18 @@ function PasskeysCard() {
 // ---- Sessions -------------------------------------------------------------------
 
 function SessionsCard() {
-  const [sessions, setSessions] = useState<SessionRow[]>([])
-  const [loading, setLoading] = useState(true)
+  const [sessions, setSessions] = useState<SessionRow[] | null>(null)
   const [error, setError] = useState<unknown>(null)
 
+  const loading = sessions === null && error === null
+
   const load = useCallback(async () => {
-    setLoading(true)
-    setError(null)
     try {
       const { data } = await apiGet<SessionRow[]>("/me/sessions")
+      setError(null)
       setSessions(data ?? [])
     } catch (cause) {
       setError(cause)
-    } finally {
-      setLoading(false)
     }
   }, [])
 
@@ -789,7 +780,7 @@ function SessionsCard() {
                   ),
               },
             ]}
-            rows={sessions.filter((session) => !session.revoked)}
+            rows={(sessions ?? []).filter((session) => !session.revoked)}
             getRowKey={(row) => row.id}
             skeletonRows={3}
             emptyMessage="No active sessions."
