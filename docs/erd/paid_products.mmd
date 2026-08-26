@@ -1,0 +1,28 @@
+erDiagram
+    products {
+        text code PK
+        text name
+        text service_kind
+        boolean enabled
+        numeric default_monthly_amount
+    }
+    subscriptions {
+        uuid id PK
+        uuid product_id FK
+        uuid organization_id FK
+        text status
+        numeric recurring_amount
+        timestamptz period_start
+        timestamptz period_end
+    }
+    object_storage_services {
+        uuid id PK
+        uuid subscription_id FK
+    }
+    reserved_ips {
+        uuid id PK
+        uuid subscription_id FK
+    }
+    products ||--o{ subscriptions : "charges"
+    subscriptions ||--o{ object_storage_services : "subscription_id"
+    subscriptions ||--o{ reserved_ips : "subscription_id"

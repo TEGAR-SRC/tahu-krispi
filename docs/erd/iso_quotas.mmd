@@ -1,0 +1,27 @@
+erDiagram
+    users {
+        uuid id PK
+    }
+    organizations {
+        uuid id PK
+        uuid created_by FK
+    }
+    stored_objects {
+        uuid id PK
+        text storage_backend_id
+        text object_key
+    }
+    custom_isos {
+        uuid id PK
+        uuid organization_id FK
+        uuid source_object_id FK
+        uuid created_by FK
+        bigint size_bytes
+        text storage_key
+        text register_status
+        text external_iso_id
+        timestamptz deleted_at
+    }
+    organizations ||--o{ custom_isos : "organization_id"
+    users ||--o{ custom_isos : "created_by"
+    stored_objects ||--o| custom_isos : "source_object_id"

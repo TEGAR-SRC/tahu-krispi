@@ -1,0 +1,38 @@
+erDiagram
+    users {
+        uuid id PK
+        text referral_code UK
+        uuid referred_by FK
+        int max_hourly_instances
+        numeric max_instance_monthly_cost
+    }
+    affiliate_settings {
+        boolean id PK
+        numeric commission_percent
+        numeric referee_bonus_percent
+        numeric min_invoice_total
+        boolean enabled
+    }
+    affiliate_earnings {
+        uuid id PK
+        uuid referrer_user_id FK
+        uuid referee_user_id FK
+        uuid invoice_id FK
+        numeric base_amount
+        numeric commission_amount
+        text status
+        timestamptz paid_at
+    }
+    affiliate_clicks {
+        text referral_code PK
+        text visitor_hash PK
+        timestamptz clicked_at
+    }
+    invoices {
+        uuid id PK
+    }
+    users ||--o{ affiliate_earnings : "referrer"
+    users ||--o{ affiliate_earnings : "referee"
+    invoices ||--o| affiliate_earnings : "invoice (unique)"
+    users ||--o{ affiliate_clicks : "code"
+    users }o--o| users : "referred_by"

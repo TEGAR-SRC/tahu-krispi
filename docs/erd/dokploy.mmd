@@ -1,0 +1,113 @@
+erDiagram
+    providers {
+        text code PK
+        text name
+        text kind
+        text api_base_url
+        boolean enabled
+        text health_status
+    }
+    dokploy_projects {
+        uuid id PK
+        uuid org_id FK
+        text remote_id UK
+        text name
+        text description
+        jsonb data
+    }
+    dokploy_environments {
+        uuid id PK
+        text remote_id UK
+        text project_remote_id
+        text name
+        jsonb data
+    }
+    dokploy_applications {
+        uuid id PK
+        uuid org_id FK
+        text remote_id UK
+        text project_remote_id
+        text environment_remote_id
+        text name
+        text status
+        jsonb data
+    }
+    dokploy_composes {
+        uuid id PK
+        uuid org_id FK
+        text remote_id UK
+        text project_remote_id
+        text name
+        text status
+        jsonb data
+    }
+    dokploy_databases {
+        uuid id PK
+        uuid org_id FK
+        text remote_id UK
+        text project_remote_id
+        text db_type
+        text name
+        text status
+        jsonb data
+    }
+    dokploy_domains {
+        uuid id PK
+        text remote_id UK
+        text application_remote_id
+        text compose_remote_id
+        text domain
+        jsonb data
+    }
+    dokploy_deployments {
+        uuid id PK
+        text remote_id UK
+        text resource_kind
+        text resource_remote_id
+        text status
+        jsonb data
+    }
+    dokploy_backups {
+        uuid id PK
+        text remote_id UK
+        text db_type
+        text database_remote_id
+        text schedule
+        jsonb data
+    }
+    dokploy_servers {
+        uuid id PK
+        text remote_id UK
+        text name
+        text ip
+        text status
+        jsonb data
+    }
+    dokploy_registries {
+        uuid id PK
+        text remote_id UK
+        text registry_name
+        text username
+        jsonb data
+    }
+    dokploy_ssh_keys {
+        uuid id PK
+        text remote_id UK
+        text name
+        text public_key
+        jsonb data
+    }
+    dokploy_certificates {
+        uuid id PK
+        text remote_id UK
+        text name
+        jsonb data
+    }
+    providers ||--o{ dokploy_servers : "kind=dokploy"
+    dokploy_projects ||--o{ dokploy_environments : "project_remote_id"
+    dokploy_projects ||--o{ dokploy_applications : "project_remote_id"
+    dokploy_projects ||--o{ dokploy_composes : "project_remote_id"
+    dokploy_projects ||--o{ dokploy_databases : "project_remote_id"
+    dokploy_applications ||--o{ dokploy_domains : "application_remote_id"
+    dokploy_composes ||--o{ dokploy_domains : "compose_remote_id"
+    dokploy_databases ||--o{ dokploy_backups : "database_remote_id"

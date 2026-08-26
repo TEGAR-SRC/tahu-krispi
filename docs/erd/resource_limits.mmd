@@ -1,0 +1,11 @@
+erDiagram
+    users {
+        uuid id PK
+        int max_hourly_instances
+        numeric max_instance_monthly_cost
+    }
+    organizations {
+        uuid id PK
+        uuid created_by FK
+    }
+    users ||--o{ organizations : "created_by"
