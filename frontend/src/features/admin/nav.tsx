@@ -75,6 +75,20 @@ export const adminNav: ConsoleNavSection[] = [
     ],
   },
   {
+    title: "Dokploy",
+    items: [
+      { title: "Dokploy hub", url: "/admin/dokploy", icon: DatabaseIcon },
+      { title: "App home", url: "/admin/dokploy/app/home", icon: LayoutDashboardIcon },
+      { title: "Projects", url: "/admin/dokploy/app/projects", icon: BoxesIcon },
+      { title: "Overview", url: "/admin/dokploy/app/overview", icon: GlobeIcon },
+      { title: "Docker", url: "/admin/dokploy/app/docker", icon: HardDriveIcon },
+      { title: "Monitoring", url: "/admin/dokploy/app/monitoring", icon: FileClockIcon },
+      { title: "Schedules", url: "/admin/dokploy/app/schedules", icon: WorkflowIcon },
+      { title: "Traefik files", url: "/admin/dokploy/app/traefik", icon: ServerIcon },
+      { title: "Settings (Dokploy)", url: "/admin/dokploy/app/settings/profile", icon: ShieldCheckIcon },
+    ],
+  },
+  {
     title: "Affiliate program",
     items: [
       { title: "Configuration", url: "/admin/billing/affiliate-config", icon: GiftIcon },

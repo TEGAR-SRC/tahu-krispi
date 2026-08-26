@@ -382,6 +382,117 @@ const WalletTransactionsPage = lazy(() =>
   import("@/features/customer/pages/WalletTransactions"),
 )
 
+// ---- Lazy pages: wave 4 — Dokploy parity --------------------------------------
+const DokployHome = lazy(() => import("@/features/admin/pages/dokploy/app/Home"))
+const DokployProjects = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/Projects"),
+)
+const DokployEnvironmentBoard = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/EnvironmentBoard"),
+)
+const DokployOverview = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/Overview"),
+)
+const DokployDockerPage = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/Docker"),
+)
+const DokployMonitoring = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/Monitoring"),
+)
+const DokployRequests = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/Requests"),
+)
+const DokploySchedules = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/Schedules"),
+)
+const DokployTraefik = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/Traefik"),
+)
+const DokployApplicationService = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/services/ApplicationService"),
+)
+const DokployComposeService = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/services/ComposeService"),
+)
+const DokployPostgresService = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/services/PostgresService"),
+)
+const DokployMysqlService = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/services/MysqlService"),
+)
+const DokployMariadbService = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/services/MariadbService"),
+)
+const DokployMongoService = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/services/MongoService"),
+)
+const DokployRedisService = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/services/RedisService"),
+)
+const DokployLibsqlService = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/services/LibsqlService"),
+)
+const DokploySettingsProfile = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/settings/Profile"),
+)
+const DokploySettingsUsers = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/settings/Users"),
+)
+const DokploySettingsSessions = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/settings/Sessions"),
+)
+const DokploySettingsSshKeys = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/settings/SshKeys"),
+)
+const DokploySettingsGitProviders = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/settings/GitProviders"),
+)
+const DokploySettingsNotifications = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/settings/Notifications"),
+)
+const DokploySettingsDestinations = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/settings/Destinations"),
+)
+const DokploySettingsCertificates = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/settings/Certificates"),
+)
+const DokploySettingsTags = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/settings/Tags"),
+)
+const DokploySettingsServerLocal = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/settings/ServerLocal"),
+)
+const DokploySettingsServers = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/settings/Servers"),
+)
+const DokploySettingsDeploymentsCfg = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/settings/DeploymentsCfg"),
+)
+const DokploySettingsSecrets = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/settings/Secrets"),
+)
+const DokploySettingsDns = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/settings/Dns"),
+)
+const DokploySettingsAuditLogs = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/settings/AuditLogs"),
+)
+const DokploySettingsAi = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/settings/Ai"),
+)
+const DokployCloudOnly = lazy(() =>
+  import("@/features/admin/pages/dokploy/app/CloudOnly"),
+)
+const ForgotPasswordPage = lazy(() =>
+  import("@/features/auth/ForgotPasswordPage"),
+)
+const ResetPasswordPage = lazy(() =>
+  import("@/features/auth/ResetPasswordPage"),
+)
+const VerifyEmailPage = lazy(() =>
+  import("@/features/auth/VerifyEmailPage"),
+)
+
 // ---- Guards -------------------------------------------------------------------
 
 interface RequireRoleProps {
@@ -456,6 +567,9 @@ export default function AppRoutes() {
         <Route path="/" element={<RootRedirect />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
 
         <Route
           path="/admin"
@@ -525,6 +639,134 @@ export default function AppRoutes() {
           />
           <Route path="dokploy" element={<DokployHub />} />
           <Route path="dokploy/:entity" element={<DokployEntity />} />
+
+          <Route path="dokploy/app" element={<DokployHome />} />
+          <Route path="dokploy/app/home" element={<DokployHome />} />
+          <Route path="dokploy/app/projects" element={<DokployProjects />} />
+          <Route
+            path="dokploy/app/p/:projectId/e/:environmentId"
+            element={<DokployEnvironmentBoard />}
+          />
+          <Route path="dokploy/app/overview" element={<DokployOverview />} />
+          <Route path="dokploy/app/docker" element={<DokployDockerPage />} />
+          <Route
+            path="dokploy/app/monitoring"
+            element={<DokployMonitoring />}
+          />
+          <Route path="dokploy/app/requests" element={<DokployRequests />} />
+          <Route path="dokploy/app/schedules" element={<DokploySchedules />} />
+          <Route path="dokploy/app/traefik" element={<DokployTraefik />} />
+          <Route
+            path="dokploy/app/p/:projectId/e/:environmentId/services/application/:applicationId"
+            element={<DokployApplicationService />}
+          />
+          <Route
+            path="dokploy/app/p/:projectId/e/:environmentId/services/compose/:composeId"
+            element={<DokployComposeService />}
+          />
+          <Route
+            path="dokploy/app/p/:projectId/e/:environmentId/services/postgres/:serviceId"
+            element={<DokployPostgresService />}
+          />
+          <Route
+            path="dokploy/app/p/:projectId/e/:environmentId/services/mysql/:serviceId"
+            element={<DokployMysqlService />}
+          />
+          <Route
+            path="dokploy/app/p/:projectId/e/:environmentId/services/mariadb/:serviceId"
+            element={<DokployMariadbService />}
+          />
+          <Route
+            path="dokploy/app/p/:projectId/e/:environmentId/services/mongo/:serviceId"
+            element={<DokployMongoService />}
+          />
+          <Route
+            path="dokploy/app/p/:projectId/e/:environmentId/services/redis/:serviceId"
+            element={<DokployRedisService />}
+          />
+          <Route
+            path="dokploy/app/p/:projectId/e/:environmentId/services/libsql/:serviceId"
+            element={<DokployLibsqlService />}
+          />
+
+          <Route
+            path="dokploy/app/settings/profile"
+            element={<DokploySettingsProfile />}
+          />
+          <Route
+            path="dokploy/app/settings/users"
+            element={<DokploySettingsUsers />}
+          />
+          <Route
+            path="dokploy/app/settings/sessions"
+            element={<DokploySettingsSessions />}
+          />
+          <Route
+            path="dokploy/app/settings/ssh-keys"
+            element={<DokploySettingsSshKeys />}
+          />
+          <Route
+            path="dokploy/app/settings/git-providers"
+            element={<DokploySettingsGitProviders />}
+          />
+          <Route
+            path="dokploy/app/settings/notifications"
+            element={<DokploySettingsNotifications />}
+          />
+          <Route
+            path="dokploy/app/settings/destinations"
+            element={<DokploySettingsDestinations />}
+          />
+          <Route
+            path="dokploy/app/settings/certificates"
+            element={<DokploySettingsCertificates />}
+          />
+          <Route
+            path="dokploy/app/settings/tags"
+            element={<DokploySettingsTags />}
+          />
+          <Route
+            path="dokploy/app/settings/server"
+            element={<DokploySettingsServerLocal />}
+          />
+          <Route
+            path="dokploy/app/settings/servers"
+            element={<DokploySettingsServers />}
+          />
+          <Route
+            path="dokploy/app/settings/deployments"
+            element={<DokploySettingsDeploymentsCfg />}
+          />
+          <Route
+            path="dokploy/app/settings/secrets"
+            element={<DokploySettingsSecrets />}
+          />
+          <Route
+            path="dokploy/app/settings/dns"
+            element={<DokploySettingsDns />}
+          />
+          <Route
+            path="dokploy/app/settings/audit-logs"
+            element={<DokploySettingsAuditLogs />}
+          />
+          <Route path="dokploy/app/settings/ai" element={<DokploySettingsAi />} />
+          <Route
+            path="dokploy/app/cloud/billing"
+            element={<DokployCloudOnly />}
+          />
+          <Route
+            path="dokploy/app/cloud/invoices"
+            element={<DokployCloudOnly />}
+          />
+          <Route
+            path="dokploy/app/cloud/license"
+            element={<DokployCloudOnly />}
+          />
+          <Route path="dokploy/app/cloud/sso" element={<DokployCloudOnly />} />
+          <Route
+            path="dokploy/app/cloud/whitelabeling"
+            element={<DokployCloudOnly />}
+          />
 
           <Route path="billing/summary" element={<BillingFinanceSummary />} />
           <Route path="billing/reports" element={<BillingReports />} />
