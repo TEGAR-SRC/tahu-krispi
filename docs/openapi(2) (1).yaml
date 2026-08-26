@@ -1,0 +1,4167 @@
+openapi: 3.0.3
+info:
+  title: Onidel Cloud API - OpenAPI 3.0
+  description: |-
+    Welcome to the **Onidel Cloud API** documentation. This API allows developers to seamlessly integrate with the Onidel Cloud platform, enabling them to manage cloud resources efficiently and securely. With our API, you can automate processes, retrieve detailed account information, and manage virtual machines (VPS), networking, storage, and more.
+  termsOfService: https://docs.onidel.com/policies/terms-of-service
+  contact:
+    email: support@onidel.com
+  version: 1.2.0
+servers:
+  - url: https://api.cloud.onidel.com
+tags:
+  - name: SSH Key
+    description: Manage SSH keys for secure server access.
+  - name: VPC
+    description: Manage Virtual Private Cloud (VPC) networks for isolated networking.
+  - name: Firewall
+    description: Manage firewall groups for VM security.
+  - name: OS Template
+    description: We have a wide range of operating systems available to deploy server instances.
+  - name: Instance Type
+    description: We provide different instance types for different workload.
+  - name: Startup Script
+    description: Manage startup scripts that run on first boot of a server instance. Maximum 10 scripts per team.
+  - name: IP List
+    description: Manage IP lists for use in firewall rules. IP lists group multiple IP addresses/CIDRs together.
+  - name: Firewall Rule
+    description: Manage firewall rules within a firewall group.
+  - name: Object Storage
+    description: Manage S3-compatible object storage services, buckets, and access keys.
+  - name: Custom ISO
+    description: Manage custom ISO images that can be used to boot server instances (BYOI).
+  - name: Measured Boot Image
+    description: Manage SEV-SNP measured direct boot images (UKIs) and attach/detach them to instances.
+paths:
+  /teams:
+    get:
+      tags:
+        - Teams
+      summary: List Teams
+      description: Retrieve all teams the user is a member of
+      operationId: getTeams
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Teams'
+      security:
+        - api_key: []
+  /ssh_keys:
+    get:
+      tags:
+        - SSH Key
+      summary: List SSH Keys
+      description: Retrieve all SSH keys for a team
+      operationId: getSSHKeys
+      parameters:
+        - name: team_id
+          in: query
+          description: Team ID to filter SSH keys. Default team will be used if not provided.
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SSHKeys'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not found
+      security:
+        - api_key: []
+    post:
+      tags:
+        - SSH Key
+      summary: Create a new SSH Key
+      description: Add a new SSH key to the team
+      operationId: createSSHKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewSSHKey'
+      responses:
+        '201':
+          description: SSH key created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SSHKeyResponse'
+        '400':
+          description: Bad request - missing or invalid parameters
+        '401':
+          description: Unauthorized
+      security:
+        - api_key: []
+  /ssh_keys/{ssh_key_id}:
+    get:
+      tags:
+        - SSH Key
+      summary: Get SSH Key by ID
+      description: Retrieve a specific SSH key by its UUID
+      operationId: getSSHKey
+      parameters:
+        - name: ssh_key_id
+          in: path
+          description: SSH Key UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: team_id
+          in: query
+          description: Team ID to filter SSH keys. Default team will be used if not provided.
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SSHKeyResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: SSH key not found
+      security:
+        - api_key: []
+    patch:
+      tags:
+        - SSH Key
+      summary: Update SSH Key
+      description: Update an existing SSH key
+      operationId: updateSSHKey
+      parameters:
+        - name: ssh_key_id
+          in: path
+          description: SSH Key UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSSHKey'
+      responses:
+        '204':
+          description: SSH key updated successfully
+        '400':
+          description: Bad request - missing or invalid parameters
+        '401':
+          description: Unauthorized
+        '404':
+          description: SSH key not found
+      security:
+        - api_key: []
+    delete:
+      tags:
+        - SSH Key
+      summary: Delete SSH Key
+      description: Delete an SSH key
+      operationId: deleteSSHKey
+      parameters:
+        - name: ssh_key_id
+          in: path
+          description: SSH Key UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: team_id
+          in: query
+          description: Team ID
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: SSH key deleted successfully
+        '401':
+          description: Unauthorized
+        '404':
+          description: SSH key not found
+      security:
+        - api_key: []
+  /network/vpcs:
+    get:
+      tags:
+        - VPC
+      summary: List VPCs
+      description: Retrieve all VPCs for a team
+      operationId: getVPCs
+      parameters:
+        - name: team_id
+          in: query
+          description: Team ID to filter VPCs. Default team will be used if not provided.
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: location
+          in: query
+          description: Filter VPCs by location
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VPCs'
+        '401':
+          description: Unauthorized
+      security:
+        - api_key: []
+    post:
+      tags:
+        - VPC
+      summary: Create a new VPC
+      description: Create a new Virtual Private Cloud network
+      operationId: createVPC
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewVPC'
+      responses:
+        '201':
+          description: VPC created successfully
+        '400':
+          description: Bad request - missing or invalid parameters
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - minimum VM required or max VPC limit reached
+        '404':
+          description: Location not found
+        '503':
+          description: Service unavailable - resource not available
+      security:
+        - api_key: []
+  /network/vpcs/{vpc_id}:
+    get:
+      tags:
+        - VPC
+      summary: Get VPC by ID
+      description: Retrieve a specific VPC by its UUID
+      operationId: getVPC
+      parameters:
+        - name: vpc_id
+          in: path
+          description: VPC UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: team_id
+          in: query
+          description: Team ID. Default team will be used if not provided.
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VPCDetail'
+        '401':
+          description: Unauthorized
+        '404':
+          description: VPC not found
+      security:
+        - api_key: []
+    patch:
+      tags:
+        - VPC
+      summary: Update VPC
+      description: Update an existing VPC's name, description, or shared teams
+      operationId: updateVPC
+      parameters:
+        - name: vpc_id
+          in: path
+          description: VPC UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateVPC'
+      responses:
+        '200':
+          description: VPC updated successfully
+        '400':
+          description: Bad request - invalid name, description, or shared teams
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - shared VPC is attached to VMs
+        '404':
+          description: VPC not found
+      security:
+        - api_key: []
+    delete:
+      tags:
+        - VPC
+      summary: Delete VPC
+      description: Delete a VPC (must not have any attached VMs)
+      operationId: deleteVPC
+      parameters:
+        - name: vpc_id
+          in: path
+          description: VPC UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: team_id
+          in: query
+          description: Team ID. Default team will be used if not provided.
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: VPC deleted successfully
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - VPC has attached VMs
+        '404':
+          description: VPC not found
+      security:
+        - api_key: []
+  /network/firewalls:
+    get:
+      tags:
+        - Firewall
+      summary: List Firewall Groups
+      description: Retrieve all firewall groups for a team
+      operationId: getFirewalls
+      parameters:
+        - name: team_id
+          in: query
+          description: Team ID to filter firewall groups. Default team will be used if not provided.
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FirewallGroups'
+        '401':
+          description: Unauthorized
+      security:
+        - api_key: []
+    post:
+      tags:
+        - Firewall
+      summary: Create Firewall Group
+      description: Create a new firewall group
+      operationId: createFirewall
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewFirewallGroup'
+      responses:
+        '201':
+          description: Firewall group created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FirewallGroupDetail'
+        '400':
+          description: Bad request - missing parameters or limit reached
+        '401':
+          description: Unauthorized
+      security:
+        - api_key: []
+  /network/firewalls/{firewall_id}:
+    get:
+      tags:
+        - Firewall
+      summary: Get Firewall Group by ID
+      description: Retrieve a specific firewall group by its UUID
+      operationId: getFirewall
+      parameters:
+        - name: firewall_id
+          in: path
+          description: Firewall Group UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FirewallGroupDetail'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Firewall group not found
+      security:
+        - api_key: []
+    put:
+      tags:
+        - Firewall
+      summary: Update Firewall Group
+      description: Update a firewall group's description
+      operationId: updateFirewall
+      parameters:
+        - name: firewall_id
+          in: path
+          description: Firewall Group UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFirewallGroup'
+      responses:
+        '204':
+          description: Firewall group updated successfully
+        '401':
+          description: Unauthorized
+        '404':
+          description: Firewall group not found
+      security:
+        - api_key: []
+    delete:
+      tags:
+        - Firewall
+      summary: Delete Firewall Group
+      description: Delete a firewall group. Cannot delete if VMs are still attached.
+      operationId: deleteFirewall
+      parameters:
+        - name: firewall_id
+          in: path
+          description: Firewall Group UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: team_id
+          in: query
+          description: Team ID
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Firewall group deleted successfully
+        '400':
+          description: Cannot delete - VMs still attached
+        '401':
+          description: Unauthorized
+        '404':
+          description: Firewall group not found
+      security:
+        - api_key: []
+
+  /network/firewalls/{firewall_id}/rules:
+    get:
+      tags:
+        - Firewall Rule
+      summary: List Firewall Rules
+      description: Retrieve all rules in a firewall group
+      operationId: getFirewallRules
+      parameters:
+        - name: firewall_id
+          in: path
+          description: Firewall Group UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: team_id
+          in: query
+          description: Team ID
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FirewallRules'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Firewall group not found
+      security:
+        - api_key: []
+    post:
+      tags:
+        - Firewall Rule
+      summary: Create Firewall Rule
+      description: |-
+        Add a new rule to a firewall group.
+
+        Special subnet values: `Cloudflare`, `Onidel`, `HetrixTools`, `CloudFront`, `UptimeRobot`.
+        To reference an IP list, use `list:{ip_list_id}` as the subnet value.
+      operationId: createFirewallRule
+      parameters:
+        - name: firewall_id
+          in: path
+          description: Firewall Group UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewFirewallRule'
+      responses:
+        '201':
+          description: Firewall rule created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FirewallRuleResponse'
+        '400':
+          description: Bad request - invalid parameters or duplicate rule
+        '401':
+          description: Unauthorized
+        '404':
+          description: Firewall group not found
+      security:
+        - api_key: []
+
+  /network/firewalls/{firewall_id}/rules/{rule_id}:
+    get:
+      tags:
+        - Firewall Rule
+      summary: Get Firewall Rule by ID
+      description: Retrieve a specific firewall rule
+      operationId: getFirewallRule
+      parameters:
+        - name: firewall_id
+          in: path
+          description: Firewall Group UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: rule_id
+          in: path
+          description: Firewall Rule UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: team_id
+          in: query
+          description: Team ID
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FirewallRuleResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Rule not found
+      security:
+        - api_key: []
+    patch:
+      tags:
+        - Firewall Rule
+      summary: Update Firewall Rule
+      description: Update a firewall rule's description (max 255 characters)
+      operationId: updateFirewallRule
+      parameters:
+        - name: firewall_id
+          in: path
+          description: Firewall Group UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: rule_id
+          in: path
+          description: Firewall Rule UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                team_id:
+                  type: string
+                  format: uuid
+                desc:
+                  type: string
+                  maxLength: 255
+                  example: "Allow HTTPS traffic"
+              required:
+                - desc
+      responses:
+        '200':
+          description: Rule updated successfully
+        '400':
+          description: Bad request - description too long
+        '401':
+          description: Unauthorized
+        '404':
+          description: Rule not found
+      security:
+        - api_key: []
+    delete:
+      tags:
+        - Firewall Rule
+      summary: Delete Firewall Rule
+      description: Delete a firewall rule from a group
+      operationId: deleteFirewallRule
+      parameters:
+        - name: firewall_id
+          in: path
+          description: Firewall Group UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: rule_id
+          in: path
+          description: Firewall Rule UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: team_id
+          in: query
+          description: Team ID
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Rule deleted successfully
+        '401':
+          description: Unauthorized
+        '404':
+          description: Rule not found
+      security:
+        - api_key: []
+
+  /network/ip_lists:
+    get:
+      tags:
+        - IP List
+      summary: List IP Lists
+      description: >-
+        Retrieve all IP lists for a team. The response also includes the
+        team's limits: ip_list_limit (maximum lists) and
+        ip_list_entry_limit (maximum entries per list).
+      operationId: getIPLists
+      parameters:
+        - name: team_id
+          in: query
+          description: Team ID. Default team will be used if not provided.
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IPLists'
+        '401':
+          description: Unauthorized
+      security:
+        - api_key: []
+    post:
+      tags:
+        - IP List
+      summary: Create IP List
+      description: Create a new IP list. Limit per team is configurable.
+      operationId: createIPList
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewIPList'
+      responses:
+        '201':
+          description: IP list created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IPListCreateResponse'
+        '400':
+          description: Bad request - missing parameters, duplicate name, or limit reached
+        '401':
+          description: Unauthorized
+      security:
+        - api_key: []
+
+  /network/ip_lists/{ip_list_id}:
+    get:
+      tags:
+        - IP List
+      summary: Get IP List by ID
+      description: Retrieve a specific IP list with all its entries
+      operationId: getIPList
+      parameters:
+        - name: ip_list_id
+          in: path
+          description: IP List UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: team_id
+          in: query
+          description: Team ID
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IPListDetailResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: IP list not found
+      security:
+        - api_key: []
+    patch:
+      tags:
+        - IP List
+      summary: Update IP List
+      description: Update an IP list's name or description
+      operationId: updateIPList
+      parameters:
+        - name: ip_list_id
+          in: path
+          description: IP List UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateIPList'
+      responses:
+        '200':
+          description: IP list updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IPListCreateResponse'
+        '400':
+          description: Bad request - invalid parameters or duplicate name
+        '401':
+          description: Unauthorized
+        '404':
+          description: IP list not found
+      security:
+        - api_key: []
+    delete:
+      tags:
+        - IP List
+      summary: Delete IP List
+      description: Delete an IP list. All firewall rules referencing this list will also be removed.
+      operationId: deleteIPList
+      parameters:
+        - name: ip_list_id
+          in: path
+          description: IP List UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: team_id
+          in: query
+          description: Team ID
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: IP list deleted successfully
+        '401':
+          description: Unauthorized
+        '404':
+          description: IP list not found
+      security:
+        - api_key: []
+
+  /network/ip_lists/{ip_list_id}/entries:
+    post:
+      tags:
+        - IP List
+      summary: Add Entry to IP List
+      description: |-
+        Add an IP address or CIDR to an IP list. Type is auto-detected if not provided.
+        Supports IPv4 and IPv6 addresses and CIDR ranges. The `/0` prefix is not allowed.
+      operationId: createIPListEntry
+      parameters:
+        - name: ip_list_id
+          in: path
+          description: IP List UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewIPListEntry'
+      responses:
+        '201':
+          description: Entry added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IPListEntryResponse'
+        '400':
+          description: Bad request - invalid IP, duplicate entry, or entry limit reached
+        '401':
+          description: Unauthorized
+        '404':
+          description: IP list not found
+      security:
+        - api_key: []
+
+  /network/ip_lists/{ip_list_id}/entries/{entry_id}:
+    delete:
+      tags:
+        - IP List
+      summary: Delete Entry from IP List
+      description: Remove an entry from an IP list
+      operationId: deleteIPListEntry
+      parameters:
+        - name: ip_list_id
+          in: path
+          description: IP List UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: entry_id
+          in: path
+          description: Entry UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: team_id
+          in: query
+          description: Team ID
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Entry deleted successfully
+        '401':
+          description: Unauthorized
+        '404':
+          description: Entry or IP list not found
+      security:
+        - api_key: []
+
+  /os_templates:
+    get:
+      tags:
+        - OS Template
+      summary: List OS Templates
+      description: List prebuilt OS images available for installation.
+      operationId: getOSTemplate
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OSTemplate'
+      security:
+        - api_key: []
+
+  /instance_types:
+    get:
+      tags:
+        - Instance Type
+      summary: List Instance Types
+      description: List instance types available for provision
+      operationId: getInstanceType
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstanceType'
+      security:
+        - api_key: []
+  /instance_price:
+    get:
+      tags:
+        - Instance Price
+      summary: Get VM Price
+      description: Get VM price based on the specified VM configuration parameters.
+      operationId: getInstancePrice
+      parameters:
+        - name: vcpu
+          in: query
+          description: Number of virtual CPUs (vCPU)
+          required: true
+          explode: true
+          schema:
+            type: string
+            format: int
+        - name: ram
+          in: query
+          description: Amount of RAM (in MB)
+          required: true
+          explode: true
+          schema:
+            type: string
+            format: int
+        - name: disk
+          in: query
+          description: Disk size (in GB)
+          required: true
+          explode: true
+          schema:
+            type: string
+            format: int
+        - name: location
+          in: query
+          description: Deployment location
+          required: true
+          explode: true
+          schema:
+            type: string
+            format: string
+        - name: currency
+          in: query
+          description: Currency used to retrieve the price
+          required: false
+          explode: true
+          schema:
+            type: string
+            enum:
+              - aud
+              - usd
+              - eur
+            default: usd
+        - name: instance_type
+          in: query
+          description: Instance type identifier (UUID)
+          required: true
+          explode: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VMPrice'
+        '400':
+          description: Bad request
+        '404':
+          description: Not found
+
+  /measured-boot-images:
+    get:
+      tags:
+        - Measured Boot Image
+      summary: List measured boot images
+      description: List the team's measured direct boot images (UKIs).
+      operationId: getMeasuredBootImages
+      security:
+        - api_key: []
+      parameters:
+        - name: team_id
+          in: query
+          description: Team ID. Default team will be used if not provided.
+          required: false
+          explode: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  files:
+                    $ref: '#/components/schemas/MeasuredBootImages'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+    post:
+      tags:
+        - Measured Boot Image
+      summary: Upload a measured boot image
+      description: |-
+        Upload a UKI (unified kernel image bundling kernel, initrd and cmdline)
+        for SEV-SNP measured direct boot. Subject to the maximum file size limit.
+      operationId: uploadMeasuredBootImage
+      security:
+        - api_key: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: The UKI file.
+                team_id:
+                  type: string
+                  format: uuid
+                  description: Team ID. Default team will be used if not provided.
+                  example: 96616865-475e-4191-aba5-f89f0a4b71fe
+                description:
+                  type: string
+                  description: Optional description.
+                  example: debian-12 measured boot
+      responses:
+        '201':
+          description: Image uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeasuredBootImage'
+        '400':
+          description: Bad request (no file or file too big)
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+  /measured-boot-images/{image_id}:
+    delete:
+      tags:
+        - Measured Boot Image
+      summary: Delete a measured boot image
+      description: Delete a measured boot image. It must not be attached to any instance.
+      operationId: deleteMeasuredBootImage
+      security:
+        - api_key: []
+      parameters:
+        - name: image_id
+          in: path
+          description: Measured boot image UUID
+          required: true
+          explode: true
+          schema:
+            type: string
+            format: uuid
+        - name: team_id
+          in: query
+          description: Team ID. Default team will be used if not provided.
+          required: false
+          explode: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Successful operation
+        '403':
+          description: Forbidden
+        '404':
+          description: Not found
+        '409':
+          description: Conflict (image still attached to an instance)
+  /isos:
+    get:
+      tags:
+        - Custom ISO
+      summary: List ISOs
+      description: List the team's custom ISOs along with available system ISOs.
+      operationId: getISOs
+      security:
+        - api_key: []
+      parameters:
+        - name: team_id
+          in: query
+          description: Team ID. Default team will be used if not provided.
+          required: false
+          explode: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isos:
+                    $ref: '#/components/schemas/CustomISOs'
+        '401':
+          description: Unauthorized
+    post:
+      tags:
+        - Custom ISO
+      summary: Create an ISO from a URL
+      description: |-
+        Register a custom ISO by URL. The file is downloaded asynchronously;
+        poll the ISO's status (download percent) until it reaches 100. Subject
+        to the per-team ISO count and maximum file size limits.
+      operationId: createISO
+      security:
+        - api_key: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - url
+              properties:
+                team_id:
+                  description: Team ID. Default team will be used if not provided.
+                  type: string
+                  format: uuid
+                  example: 96616865-475e-4191-aba5-f89f0a4b71fe
+                url:
+                  description: Direct URL to the .iso file to download.
+                  type: string
+                  example: https://example.com/images/debian-12.iso
+      responses:
+        '201':
+          description: ISO accepted; download started
+        '400':
+          description: Bad request (invalid URL or file too big)
+        '401':
+          description: Unauthorized (or per-team ISO limit reached)
+  /isos/{iso_id}:
+    get:
+      tags:
+        - Custom ISO
+      summary: Get an ISO by UUID
+      description: Get a single ISO, including its download status.
+      operationId: getISO
+      security:
+        - api_key: []
+      parameters:
+        - name: iso_id
+          in: path
+          description: ISO UUID
+          required: true
+          explode: true
+          schema:
+            type: string
+            format: uuid
+        - name: team_id
+          in: query
+          description: Team ID. Default team will be used if not provided.
+          required: false
+          explode: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  iso:
+                    $ref: '#/components/schemas/CustomISO'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not found
+    delete:
+      tags:
+        - Custom ISO
+      summary: Delete an ISO
+      description: Delete a custom ISO. The ISO must not be attached to any non-terminated instance.
+      operationId: deleteISO
+      security:
+        - api_key: []
+      parameters:
+        - name: iso_id
+          in: path
+          description: ISO UUID
+          required: true
+          explode: true
+          schema:
+            type: string
+            format: uuid
+        - name: team_id
+          in: query
+          description: Team ID. Default team will be used if not provided.
+          required: false
+          explode: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Successful operation
+        '400':
+          description: Bad request (ISO still attached to an instance)
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not found
+  /snapshots:
+    get:
+      tags:
+        - Snapshots
+      summary: List snapshots
+      description: List snapshots available to the user
+      operationId: getSnapshots
+      security:
+        - api_key: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Snapshots'
+        '401':
+          description: Unauthorized
+        '400':
+          description: Bad request
+  /snapshots/{snapshot_id}:
+    post:
+      tags:
+        - Snapshots
+      summary: Generate snapshot download URL
+      description: Generate snapshot download URL
+      operationId: genSnapshotURL
+      security:
+        - api_key: []
+      parameters:
+        - name: snapshot_id
+          in: path
+          description: Snapshot UUID that need to be considered for filter
+          required: true
+          explode: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SnapshotDownloadURL'
+        '401':
+          description: Unauthorized
+        '400':
+          description: Bad request
+    delete:
+      tags:
+        - Snapshots
+      summary: Delete a snapshot
+      description: Delete a snapshot
+      operationId: deleteSnapshot
+      security:
+        - api_key: []
+      parameters:
+        - name: snapshot_id
+          in: path
+          description: Snapshot UUID that need to be considered for filter
+          required: true
+          explode: true
+          schema:
+            type: string
+            format: uuid
+        - name: team_id
+          in: query
+          description: Team ID that need to be considered for filter. Default team will be used if not provided.
+          required: false
+          explode: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Successful operation
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not found
+  /backups:
+    get:
+      tags:
+        - Backups
+      summary: List backups
+      description: List backups available to the user
+      operationId: getBackups
+      security:
+        - api_key: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Backups'
+        '401':
+          description: Unauthorized
+        '400':
+          description: Bad request
+  /backups/{backup_id}:
+    post:
+      tags:
+        - Backups
+      summary: Generate backup download URL
+      description: Generate backup download URL
+      operationId: genBackupURL
+      security:
+        - api_key: []
+      parameters:
+        - name: backup_id
+          in: path
+          description: Backup UUID that need to be considered for filter
+          required: true
+          explode: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupDownloadURL'
+        '401':
+          description: Unauthorized
+        '400':
+          description: Bad request
+  /vm:
+    get:
+      tags:
+        - Virtual Machine
+      summary: List VMs
+      description: List all VMs available to the user
+      operationId: getVMs
+      parameters:
+        - name: team_id
+          in: query
+          description: Team ID that need to be considered for filter. Default team will be used if not provided.
+          required: false
+          explode: true
+          schema:
+            type: string
+      security:
+        - api_key: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VMs'
+        '401':
+          description: Unauthorized
+        '400':
+          description: Bad request
+    post:
+      tags:
+        - Virtual Machine
+      summary: Provision a new VM
+      description: Provision a new VM
+      operationId: provisionVM
+      security:
+        - api_key: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewVM'
+      responses:
+        '201':
+          description: Successful operation
+        '400':
+          description: Bad request
+        '402':
+          description: Payment required
+        '403':
+          description: Forbidden
+        '404':
+          description: Not found
+  /vm/{vm_id}:
+    get:
+      tags:
+        - Virtual Machine
+      summary: Get a VM by UUID
+      description: Gets a VM by its UUID
+      operationId: getVM
+      security:
+        - api_key: []
+      parameters:
+        - name: vm_id
+          in: path
+          description: Service UUID that need to be considered for filter
+          required: true
+          explode: true
+          schema:
+            type: string
+            format: uuid
+        - name: team_id
+          in: query
+          description: Team ID that need to be considered for filter. Default team will be used if not provided.
+          required: false
+          explode: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VM'
+        '401':
+          description: Unauthorized
+        '400':
+          description: Bad request
+    patch:
+      tags:
+        - Virtual Machine
+      summary: Update VM configuration
+      description: Update VM configuration
+      operationId: patchVM
+      security:
+        - api_key: []
+      parameters:
+        - name: vm_id
+          in: path
+          description: Service UUID that need to be considered for filter
+          required: true
+          explode: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                team_id:
+                  description: Team ID that need to be considered for filter. Default team will be used if not provided.
+                  type: string
+                  format: uuid
+                  example: 96616865-475e-4191-aba5-f89f0a4b71fe
+                os_id:
+                  description: OS Template to reinstall
+                  type: integer
+                  format: int64
+                  example: 2
+                enable_ipv6:
+                  description: Enable or disable IPv6
+                  type: boolean
+                  format: boolean
+                  example: false
+                name:
+                  description: Change service name
+                  type: string
+                  format: string
+                  example: new-service-name
+                firewall_group_id:
+                  description: Firewall group UUID to attach to the VM
+                  type: string
+                  format: uuid
+                  example: "e4d3c2b1-5678-9abc-def0-fedcba098765"
+                disable_firewall:
+                  description: Set to true to detach the firewall group from the VM
+                  type: boolean
+                  example: false
+      responses:
+        '202':
+          description: Successful operation
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not found
+    delete:
+      tags:
+        - Virtual Machine
+      summary: Destroy the VM
+      security:
+        - api_key: []
+      description: Destroy the VM
+      parameters:
+        - name: vm_id
+          in: path
+          description: VM UUID that need to be considered for filter
+          required: true
+          explode: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Successful operation
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not found
+  /vm/{vm_id}/backups:
+    get:
+      tags:
+        - Virtual Machine
+      summary: Get all backups of the VM
+      description: Get all backups of the VM
+      security:
+        - api_key: []
+      parameters:
+        - name: vm_id
+          in: path
+          description: VM UUID that need to be considered for filter
+          required: true
+          explode: true
+          schema:
+            type: string
+            format: uuid
+        - name: team_id
+          in: query
+          description: Team ID that need to be considered for filter. Default team will be used if not provided.
+          required: false
+          explode: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Backups'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not found
+  /vm/{vm_id}/vnc:
+    post:
+      tags:
+        - Virtual Machine
+      summary: Open a noVNC console session
+      description: |-
+        Creates a noVNC console session for the specified VM.
+        Returns a URL to access the VM console via noVNC in a browser.
+        The session token expires after 30 seconds if not used.
+      operationId: createVNCSession
+      security:
+        - api_key: []
+      parameters:
+        - name: vm_id
+          in: path
+          description: VM UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                team_id:
+                  description: Team ID. Default team will be used if not provided.
+                  type: string
+                  format: uuid
+                  example: 96616865-475e-4191-aba5-f89f0a4b71fe
+      responses:
+        '201':
+          description: VNC session created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  vnc_url:
+                    type: string
+                    description: URL to access the noVNC console in a browser
+                    example: https://console.onidel.com/vnc.html?sessionid=48e5f117-9f38-40b6-8fd9-c3ccc8f916c6&vmid=afebf42d-aced-4dd4-877b-c2aa4f887ac3
+                  expire_at:
+                    type: integer
+                    description: Unix timestamp when the session token expires (30 seconds after creation)
+                    example: 1775193067
+        '401':
+          description: Unauthorized
+        '404':
+          description: VM not found
+  /vm/{vm_id}/stop:
+    post:
+      tags:
+        - Virtual Machine
+      summary: Stop a VM
+      description: Gracefully shut down the VM.
+      operationId: stopVM
+      security:
+        - api_key: []
+      parameters:
+        - name: vm_id
+          in: path
+          description: VM UUID
+          required: true
+          explode: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                team_id:
+                  description: Team ID. Default team will be used if not provided.
+                  type: string
+                  format: uuid
+                  example: 96616865-475e-4191-aba5-f89f0a4b71fe
+                force_stop:
+                  description: Skip the graceful ACPI shutdown and hard-stop the VM immediately.
+                  type: boolean
+                  example: false
+      responses:
+        '202':
+          description: Action accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  audit_log_id:
+                    type: string
+                    format: uuid
+                    example: 0f9c2d1a-3b4e-4c5d-8a6f-7b8c9d0e1f2a
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not found
+  /vm/{vm_id}/reboot:
+    post:
+      tags:
+        - Virtual Machine
+      summary: Reboot a VM
+      description: Reboot the VM.
+      operationId: rebootVM
+      security:
+        - api_key: []
+      parameters:
+        - name: vm_id
+          in: path
+          description: VM UUID
+          required: true
+          explode: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                team_id:
+                  description: Team ID. Default team will be used if not provided.
+                  type: string
+                  format: uuid
+                  example: 96616865-475e-4191-aba5-f89f0a4b71fe
+                force_stop:
+                  description: Skip the graceful ACPI shutdown and hard-stop the VM immediately.
+                  type: boolean
+                  example: false
+      responses:
+        '202':
+          description: Action accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  audit_log_id:
+                    type: string
+                    format: uuid
+                    example: 0f9c2d1a-3b4e-4c5d-8a6f-7b8c9d0e1f2a
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not found
+  /vm/{vm_id}/restore-snapshot:
+    post:
+      tags:
+        - Virtual Machine
+      summary: Restore a VM from a snapshot
+      description: Restore a VM from a snapshot.
+      operationId: restoreVMFromSnapshot
+      security:
+        - api_key: []
+      parameters:
+        - name: vm_id
+          in: path
+          description: VM UUID
+          required: true
+          explode: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - snapshot_id
+              properties:
+                team_id:
+                  description: Team ID. Default team will be used if not provided.
+                  type: string
+                  format: uuid
+                  example: 96616865-475e-4191-aba5-f89f0a4b71fe
+                snapshot_id:
+                  description: Snapshot ID to restore from.
+                  type: string
+                  format: uuid
+                  example: 53959c6e-73d5-4476-9b19-d78fb8efac2c
+      responses:
+        '202':
+          description: Restore started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  audit_log_id:
+                    type: string
+                    format: uuid
+                    example: 0f9c2d1a-3b4e-4c5d-8a6f-7b8c9d0e1f2a
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not found
+  /vm/{vm_id}/restore-backup:
+    post:
+      tags:
+        - Virtual Machine
+      summary: Restore a VM from a backup
+      description: Restore a VM from a backup.
+      operationId: restoreVMFromBackup
+      security:
+        - api_key: []
+      parameters:
+        - name: vm_id
+          in: path
+          description: VM UUID
+          required: true
+          explode: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - backup_id
+              properties:
+                team_id:
+                  description: Team ID. Default team will be used if not provided.
+                  type: string
+                  format: uuid
+                  example: 96616865-475e-4191-aba5-f89f0a4b71fe
+                backup_id:
+                  description: Backup ID to restore from.
+                  type: string
+                  format: uuid
+                  example: 8d2b6f14-91ad-4c33-8f0e-2a3b4c5d6e7f
+      responses:
+        '202':
+          description: Restore started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  audit_log_id:
+                    type: string
+                    format: uuid
+                    example: 0f9c2d1a-3b4e-4c5d-8a6f-7b8c9d0e1f2a
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not found
+  /vm/{vm_id}/snapshot:
+    post:
+      tags:
+        - Virtual Machine
+      summary: Take a snapshot
+      description: Take a snapshot of the VM.
+      operationId: snapshotVM
+      security:
+        - api_key: []
+      parameters:
+        - name: vm_id
+          in: path
+          description: VM UUID
+          required: true
+          explode: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                team_id:
+                  description: Team ID. Default team will be used if not provided.
+                  type: string
+                  format: uuid
+                  example: 96616865-475e-4191-aba5-f89f0a4b71fe
+                name:
+                  description: Snapshot name.
+                  type: string
+                  example: vm-snapshot-name
+                desc:
+                  description: Snapshot description.
+                  type: string
+                  example: snapshot @ 20/09/2025
+      responses:
+        '201':
+          description: Snapshot started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  snapshot_id:
+                    type: string
+                    format: uuid
+                    example: c1d45377-b2a9-4407-ab8d-6909c34dfaac
+        '400':
+          description: Bad request
+        '403':
+          description: Forbidden (snapshot limit reached or volume attached)
+        '404':
+          description: Not found
+  /vm/{vm_id}/enable-bgp:
+    post:
+      tags:
+        - Virtual Machine
+      summary: Enable BGP
+      description: Enable BGP for the VM (requires an active BGP session in the location).
+      operationId: enableVMBGP
+      security:
+        - api_key: []
+      parameters:
+        - name: vm_id
+          in: path
+          description: VM UUID
+          required: true
+          explode: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                team_id:
+                  description: Team ID. Default team will be used if not provided.
+                  type: string
+                  format: uuid
+                  example: 96616865-475e-4191-aba5-f89f0a4b71fe
+      responses:
+        '200':
+          description: Successful operation
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not found (no active BGP session)
+  /vm/{vm_id}/disable-bgp:
+    post:
+      tags:
+        - Virtual Machine
+      summary: Disable BGP
+      description: Disable BGP for the VM.
+      operationId: disableVMBGP
+      security:
+        - api_key: []
+      parameters:
+        - name: vm_id
+          in: path
+          description: VM UUID
+          required: true
+          explode: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                team_id:
+                  description: Team ID. Default team will be used if not provided.
+                  type: string
+                  format: uuid
+                  example: 96616865-475e-4191-aba5-f89f0a4b71fe
+      responses:
+        '200':
+          description: Successful operation
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not found
+  /vm/{vm_id}/attach-measured-boot:
+    post:
+      tags:
+        - Virtual Machine
+      summary: Attach a measured boot image
+      description: Attach a measured boot image (UKI) to the VM and power-cycle to apply it. SEV-SNP must already be enabled.
+      operationId: attachMeasuredBoot
+      security:
+        - api_key: []
+      parameters:
+        - name: vm_id
+          in: path
+          description: VM UUID
+          required: true
+          explode: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - uki_image_id
+              properties:
+                team_id:
+                  description: Team ID. Default team will be used if not provided.
+                  type: string
+                  format: uuid
+                  example: 96616865-475e-4191-aba5-f89f0a4b71fe
+                uki_image_id:
+                  description: Measured boot image (UKI) ID to attach.
+                  type: string
+                  format: uuid
+                  example: 7c1f2a90-4b3d-4e21-9a8c-1d2e3f4a5b6c
+      responses:
+        '202':
+          description: Attach started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  audit_log_id:
+                    type: string
+                    format: uuid
+                    example: 0f9c2d1a-3b4e-4c5d-8a6f-7b8c9d0e1f2a
+        '400':
+          description: Bad request (missing image or SEV-SNP not enabled)
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not found
+  /vm/{vm_id}/detach-measured-boot:
+    post:
+      tags:
+        - Virtual Machine
+      summary: Detach the measured boot image
+      description: Clear the VM's measured boot image and power-cycle to apply.
+      operationId: detachMeasuredBoot
+      security:
+        - api_key: []
+      parameters:
+        - name: vm_id
+          in: path
+          description: VM UUID
+          required: true
+          explode: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                team_id:
+                  description: Team ID. Default team will be used if not provided.
+                  type: string
+                  format: uuid
+                  example: 96616865-475e-4191-aba5-f89f0a4b71fe
+      responses:
+        '202':
+          description: Action accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  audit_log_id:
+                    type: string
+                    format: uuid
+                    example: 0f9c2d1a-3b4e-4c5d-8a6f-7b8c9d0e1f2a
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not found
+  /vm/{vm_id}/rdns:
+    get:
+      tags:
+        - Virtual Machine
+      summary: List reverse DNS (PTR) records
+      description: List the reverse DNS records configured for the VM's IP addresses.
+      operationId: getReverseDNS
+      security:
+        - api_key: []
+      parameters:
+        - name: vm_id
+          in: path
+          description: VM UUID
+          required: true
+          explode: true
+          schema:
+            type: string
+            format: uuid
+        - name: team_id
+          in: query
+          description: Team ID. Default team will be used if not provided.
+          required: false
+          explode: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rdns:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        ip:
+                          type: string
+                          example: 203.0.113.5
+                        domain:
+                          type: string
+                          example: host.example.com
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+    post:
+      tags:
+        - Virtual Machine
+      summary: Set a reverse DNS (PTR) record
+      description: |-
+        Set the reverse DNS record for one of the VM's IP addresses. The domain
+        must already resolve (A/AAAA) to the IP being configured.
+      operationId: setReverseDNS
+      security:
+        - api_key: []
+      parameters:
+        - name: vm_id
+          in: path
+          description: VM UUID
+          required: true
+          explode: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - ip_addr
+                - domain
+              properties:
+                team_id:
+                  description: Team ID. Default team will be used if not provided.
+                  type: string
+                  format: uuid
+                  example: 96616865-475e-4191-aba5-f89f0a4b71fe
+                ip_addr:
+                  description: The VM IP address (IPv4 or IPv6) to set the PTR record for.
+                  type: string
+                  example: 203.0.113.5
+                domain:
+                  description: The domain the PTR record should point to.
+                  type: string
+                  example: host.example.com
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Bad request (invalid IP or domain failed to resolve)
+        '401':
+          description: Unauthorized (IP not owned by this VM)
+        '403':
+          description: Forbidden (resolved IP does not match)
+        '422':
+          description: Unprocessable entity (rDNS provider rejected the record)
+  /vm/{vm_id}/rdns/{ip_addr}:
+    delete:
+      tags:
+        - Virtual Machine
+      summary: Delete a reverse DNS (PTR) record
+      description: Delete the reverse DNS record for one of the VM's IP addresses.
+      operationId: deleteReverseDNS
+      security:
+        - api_key: []
+      parameters:
+        - name: vm_id
+          in: path
+          description: VM UUID
+          required: true
+          explode: true
+          schema:
+            type: string
+            format: uuid
+        - name: ip_addr
+          in: path
+          description: The VM IP address (IPv4 or IPv6) whose PTR record to delete.
+          required: true
+          explode: true
+          schema:
+            type: string
+        - name: team_id
+          in: query
+          description: Team ID. Default team will be used if not provided.
+          required: false
+          explode: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Successful operation
+        '400':
+          description: Bad request (invalid IP)
+        '401':
+          description: Unauthorized (IP not owned by this VM)
+        '422':
+          description: Unprocessable entity (rDNS provider rejected the deletion)
+  /object-storage:
+    get:
+      tags:
+        - Object Storage
+      summary: List Object Storage Services
+      description: Retrieve all object storage services for the team
+      operationId: getObjectStorageServices
+      parameters:
+        - name: team_id
+          in: query
+          description: Team ID. Default team will be used if not provided.
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  services:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ObjectStorageService'
+        '401':
+          description: Unauthorized
+      security:
+        - api_key: []
+  /object-storage/{service_id}:
+    get:
+      tags:
+        - Object Storage
+      summary: Get Object Storage Service
+      description: Retrieve details of a specific object storage service
+      operationId: getObjectStorageService
+      parameters:
+        - name: service_id
+          in: path
+          description: Object storage service UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: team_id
+          in: query
+          description: Team ID. Default team will be used if not provided.
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectStorageServiceDetail'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Service not found
+      security:
+        - api_key: []
+  /object-storage/{service_id}/buckets:
+    post:
+      tags:
+        - Object Storage
+      summary: Create a Bucket
+      description: Create a new bucket in the object storage service
+      operationId: createBucket
+      parameters:
+        - name: service_id
+          in: path
+          description: Object storage service UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - bucket_name
+              properties:
+                team_id:
+                  type: string
+                  format: uuid
+                  description: Team ID. Default team will be used if not provided.
+                  example: 96616865-475e-4191-aba5-f89f0a4b71fe
+                bucket_name:
+                  type: string
+                  description: Name of the bucket to create
+                  example: my-bucket
+                versioning:
+                  type: boolean
+                  description: Enable versioning on the bucket
+                  default: false
+                object_lock:
+                  type: boolean
+                  description: Enable object lock on the bucket
+                  default: false
+      responses:
+        '201':
+          description: Bucket created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  keys:
+                    type: array
+                    description: Access keys for the newly created bucket
+                    items:
+                      type: object
+                      properties:
+                        access_key:
+                          type: string
+                        secret_key:
+                          type: string
+        '400':
+          description: Bad request (invalid name, bucket already exists, too many buckets)
+        '401':
+          description: Unauthorized
+        '404':
+          description: Service not found
+      security:
+        - api_key: []
+  /object-storage/{service_id}/buckets/{bucket_name}/access_keys:
+    get:
+      tags:
+        - Object Storage
+      summary: Get Bucket Access Keys
+      description: Retrieve access keys for a specific bucket
+      operationId: getBucketAccessKeys
+      parameters:
+        - name: service_id
+          in: path
+          description: Object storage service UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: bucket_name
+          in: path
+          description: Bucket name
+          required: true
+          schema:
+            type: string
+        - name: team_id
+          in: query
+          description: Team ID. Default team will be used if not provided.
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  keys:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        access_key:
+                          type: string
+                        secret_key:
+                          type: string
+        '401':
+          description: Unauthorized
+        '403':
+          description: Service not active
+        '404':
+          description: Service or bucket not found
+      security:
+        - api_key: []
+  /network/reserved_ips:
+    get:
+      summary: List reserved IPs
+      description: Get all reserved IPs for the authenticated user's team or specified team
+      tags:
+        - Reserved IPs
+      security:
+        - api_key: []
+      parameters:
+        - name: team_id
+          in: query
+          description: Team ID to fetch reserved IPs for. If not provided, uses the user's primary team
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: location
+          in: query
+          description: Filter reserved IPs by location name (case-insensitive)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of reserved IPs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reserved_ips:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ReservedIP'
+        '401':
+          description: Unauthorized - user doesn't have read permission for the team
+    post:
+      summary: Create a new reserved IP
+      description: Allocate a new reserved IP address in the specified location
+      tags:
+        - Reserved IPs
+      security:
+        - api_key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                team_id:
+                  type: string
+                  description: Team ID to create the reserved IP for. If not provided, uses the user's primary team
+                ip_type:
+                  type: string
+                  enum:
+                    - ipv4
+                    - ipv6
+                  description: IPv4 (/32) or IPv6 (/64) address
+                location:
+                  type: string
+                  description: Location name where the IP should be allocated
+                name:
+                  type: string
+                  maxLength: 64
+                  description: Custom name for the reserved IP (defaults to IP address if not provided)
+              required:
+                - location
+      responses:
+        '200':
+          description: Reserved IP successfully created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rip_id:
+                    type: string
+                    format: uuid
+                    description: ID of the newly created reserved IP
+                  ip_addr:
+                    type: string
+                    description: Newly created reserved IP address
+                required:
+                  - rip_id
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  err:
+                    type: string
+                    enum:
+                      - UNSUPPORTED_LOCATION
+                      - IP_NAME_TOO_LONG
+                      - NOT_SUPPORTED
+                    description: Error code indicating the specific validation failure
+        '401':
+          description: Unauthorized - user doesn't have write permission for the team
+        '402':
+          description: Payment required - insufficient balance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  err:
+                    type: string
+                    enum: [INSUFFICIENT_BALANCE]
+        '403':
+          description: Forbidden - quota exceeded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  err:
+                    type: string
+                    enum: [RESERVED_IP_QUOTA_EXCEEDED]
+        '404':
+          description: Resource not available
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  err:
+                    type: string
+                    enum: [RESOURCE_NOT_AVAILABLE]
+                    description: No available IP addresses in the specified location
+  /network/reserved_ips/convert:
+    post:
+      summary: Convert VM's primary IP to reserved IP
+      description: Convert an existing VM's primary public IP address into a reserved IP (floating IP)
+      tags:
+        - Reserved IPs
+      security:
+        - api_key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                team_id:
+                  type: string
+                  description: Team ID that owns the VM. If not provided, uses the user's primary team
+                ip_address:
+                  type: string
+                  format: ipv4
+                  description: The VM's primary public IP address to convert
+                name:
+                  type: string
+                  maxLength: 64
+                  description: Custom name for the reserved IP (defaults to IP address if not provided)
+              required:
+                - ip_address
+      responses:
+        '200':
+          description: IP successfully converted to reserved IP
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reserved_ip:
+                    $ref: '#/components/schemas/ReservedIP'
+                required:
+                  - reserved_ip
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  err:
+                    type: string
+                    enum:
+                      - IP_NAME_TOO_LONG
+                      - UNSUPPORTED_LOCATION
+                    description: Error code indicating validation failure
+        '401':
+          description: Unauthorized - user doesn't have write permission for the team
+        '402':
+          description: Payment required - insufficient balance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  err:
+                    type: string
+                    enum: [INSUFFICIENT_BALANCE]
+        '403':
+          description: Forbidden - quota exceeded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  err:
+                    type: string
+                    enum: [RESERVED_IP_QUOTA_EXCEEDED]
+                    description: Daily or total reserved IP quota exceeded
+        '404':
+          description: Not found - IP address not found, VM not active, or IP already reserved
+  /network/reserved_ips/{reserved_ip_id}:
+    get:
+      summary: Get a specific reserved IP
+      description: Retrieve details of a specific reserved IP by ID
+      tags:
+        - Reserved IPs
+      security:
+        - api_key: []
+      parameters:
+        - name: reserved_ip_id
+          in: path
+          description: Reserved IP ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: d3c0dc7b-6ca4-4b35-8f3c-a00adc3993d5
+        - name: team_id
+          in: query
+          description: Team ID to verify ownership. If not provided, uses the user's primary team
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Reserved IP details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservedIP'
+        '401':
+          description: Unauthorized - user doesn't have read permission for the team
+        '404':
+          description: Reserved IP not found or doesn't belong to the team
+    delete:
+      summary: Delete a reserved IP
+      description: Terminate a reserved IP and release it back to the pool. Will automatically detach from VM if attached.
+      tags:
+        - Reserved IPs
+      security:
+        - api_key: []
+      parameters:
+        - name: reserved_ip_id
+          in: path
+          description: Reserved IP ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: d3c0dc7b-6ca4-4b35-8f3c-a00adc3993d5
+        - name: team_id
+          in: query
+          description: Team ID to verify ownership. If not provided, uses the user's primary team
+          required: false
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Reserved IP successfully deleted
+        '401':
+          description: Unauthorized - user doesn't have write permission for the team
+        '403':
+          description: Forbidden - cannot detach primary IP
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  err:
+                    type: string
+                    enum: [UNABLE_TO_DETACH_PRIMARY_IP]
+        '404':
+          description: Reserved IP not found or already terminated
+
+    patch:
+      summary: Update reserved IP (rename or attach/detach VM)
+      description: Update reserved IP properties - rename it or attach/detach it to/from a VM
+      tags:
+        - Reserved IPs
+      security:
+        - api_key: []
+      parameters:
+        - name: reserved_ip_id
+          in: path
+          description: Reserved IP ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: d3c0dc7b-6ca4-4b35-8f3c-a00adc3993d5
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                team_id:
+                  type: string
+                  description: Team ID to verify ownership. If not provided, uses the user's primary team
+                name:
+                  type: string
+                  maxLength: 64
+                  description: New name for the reserved IP (set to empty string to use IP address as name)
+                anchor_ip:
+                  type: string
+                  nullable: true
+                  description: Anchor IP to route to. Use null to detach the current VM.
+      responses:
+        '200':
+          description: Successfully updated
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    properties:
+                      name:
+                        type: string
+                        description: Updated name (returned when renaming)
+                  - type: object
+                    properties:
+                      attachment:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            format: uuid
+                            description: UUID of the attached VM
+                          name:
+                            type: string
+                            description: Name of the attached VM
+                    description: Attachment details (returned when attaching)
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  err:
+                    type: string
+                    enum:
+                      - IP_NAME_TOO_LONG
+                      - INVALID_LOCATION
+                    description: Error code indicating validation failure
+        '401':
+          description: Unauthorized - user doesn't have write permission for the team
+        '403':
+          description: Forbidden - operation not allowed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  err:
+                    type: string
+                    enum:
+                      - UNABLE_TO_DETACH_PRIMARY_IP
+                      - RESERVED_IP_ALREADY_ATTACHED
+                      - NO_ANCHOR_IP
+                    description: Error code indicating why operation is forbidden
+        '404':
+          description: Reserved IP not found or not active
+
+  /startup_scripts:
+    get:
+      tags:
+        - Startup Script
+      summary: List Startup Scripts
+      description: Retrieve all startup scripts for a team
+      operationId: getStartupScripts
+      parameters:
+        - name: team_id
+          in: query
+          description: Team ID to filter scripts. Default team will be used if not provided.
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StartupScripts'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not found
+      security:
+        - api_key: []
+    post:
+      tags:
+        - Startup Script
+      summary: Create a new Startup Script
+      description: Add a new startup script to the team. Maximum 10 scripts per team.
+      operationId: createStartupScript
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewStartupScript'
+      responses:
+        '201':
+          description: Startup script created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StartupScriptDetailResponse'
+        '400':
+          description: Bad request - missing parameters or script limit reached (max 10 per team)
+        '401':
+          description: Unauthorized
+      security:
+        - api_key: []
+
+  /startup_scripts/{script_id}:
+    get:
+      tags:
+        - Startup Script
+      summary: Get Startup Script by ID
+      description: Retrieve a specific startup script by its UUID, including content
+      operationId: getStartupScript
+      parameters:
+        - name: script_id
+          in: path
+          description: Startup Script UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: team_id
+          in: query
+          description: Team ID. Default team will be used if not provided.
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StartupScriptDetailResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Startup script not found
+      security:
+        - api_key: []
+    patch:
+      tags:
+        - Startup Script
+      summary: Update Startup Script
+      description: Update an existing startup script
+      operationId: updateStartupScript
+      parameters:
+        - name: script_id
+          in: path
+          description: Startup Script UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateStartupScript'
+      responses:
+        '204':
+          description: Startup script updated successfully
+        '400':
+          description: Bad request - missing or invalid parameters
+        '401':
+          description: Unauthorized
+        '404':
+          description: Startup script not found
+      security:
+        - api_key: []
+    delete:
+      tags:
+        - Startup Script
+      summary: Delete Startup Script
+      description: Delete a startup script
+      operationId: deleteStartupScript
+      parameters:
+        - name: script_id
+          in: path
+          description: Startup Script UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: team_id
+          in: query
+          description: Team ID
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Startup script deleted successfully
+        '401':
+          description: Unauthorized
+        '404':
+          description: Startup script not found
+      security:
+        - api_key: []
+
+components:
+  schemas:
+    ObjectStorageService:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        location:
+          type: string
+        region:
+          type: string
+        endpoint:
+          type: string
+        capacity:
+          type: integer
+          description: Storage capacity in KB
+        used_capacity:
+          type: integer
+          description: Used capacity in KB
+        status:
+          type: string
+          enum:
+            - active
+            - suspended
+        created_at:
+          type: string
+          format: date-time
+        renewal_date:
+          type: string
+          format: date-time
+    ObjectStorageServiceDetail:
+      allOf:
+        - $ref: '#/components/schemas/ObjectStorageService'
+        - type: object
+          properties:
+            recurring_amount:
+              type: number
+            #            price_per_gb:
+            #              type: number
+            #            auto_scale_enabled:
+            #              type: boolean
+            #            auto_scale_limit:
+            #              type: integer
+            download_usage:
+              type: integer
+              description: Download usage in bytes
+            upload_usage:
+              type: integer
+              description: Upload usage in bytes
+    Team:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: c1d45377-b2a9-4407-ab8d-6909c34dfaac
+        name:
+          type: string
+          format: string
+          example: IT Development
+        role:
+          type: string
+          enum:
+            - Team Owner
+            - Team Admin
+            - Team Member
+            - Team Biller
+    VMPrice:
+      type: object
+      properties:
+        instance_type:
+          type: string
+          format: uuid
+          example: a2e55f7d-c741-4317-acce-124dc34ffaad
+        vcpu:
+          type: integer
+          format: int
+          example: 2
+        ram:
+          type: integer
+          format: int
+          example: 4096
+        disk:
+          type: integer
+          format: int
+          example: 20
+        bw:
+          type: integer
+          format: int
+        net_rate:
+          type: integer
+          format: int
+        price_per_month:
+          type: number
+          format: float
+        price_per_quarter:
+          type: number
+          format: float
+        price_per_semiannual:
+          type: number
+          format: float
+        price_per_annual:
+          type: number
+          format: float
+        currency:
+          type: string
+          format: string
+    Teams:
+      type: array
+      items:
+        $ref: '#/components/schemas/Team'
+    SSHKey:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: a3f2e5d8-1234-4abc-9876-543210fedcba
+        created:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        name:
+          type: string
+          example: "Production Server Key"
+        ssh_key:
+          type: string
+          example: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC... user@hostname"
+      required:
+        - id
+        - created
+        - name
+        - ssh_key
+    SSHKeys:
+      type: object
+      properties:
+        ssh_keys:
+          type: array
+          items:
+            $ref: '#/components/schemas/SSHKey'
+    SSHKeyResponse:
+      type: object
+      properties:
+        ssh_key:
+          $ref: '#/components/schemas/SSHKey'
+    NewSSHKey:
+      type: object
+      properties:
+        team_id:
+          type: string
+          format: uuid
+          example: c1d45377-b2a9-4407-ab8d-6909c34dfaac
+        name:
+          type: string
+          example: "Production Server Key"
+        ssh_key:
+          type: string
+          example: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC... user@hostname"
+      required:
+        - team_id
+        - name
+        - ssh_key
+    UpdateSSHKey:
+      type: object
+      properties:
+        team_id:
+          type: string
+          format: uuid
+          example: c1d45377-b2a9-4407-ab8d-6909c34dfaac
+        name:
+          type: string
+          example: "Updated Server Key"
+        ssh_key:
+          type: string
+          example: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC... user@hostname"
+      required:
+        - team_id
+        - name
+        - ssh_key
+    VPCTeam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: c1d45377-b2a9-4407-ab8d-6909c34dfaac
+        name:
+          type: string
+          example: "IT Development"
+    VPC:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: f5a3e2d8-9876-4abc-1234-543210fedcba
+        name:
+          type: string
+          example: "Production VPC"
+        description:
+          type: string
+          example: "VPC for production environment"
+        date_created:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        status:
+          type: string
+          enum:
+            - active
+            - building
+            - deleting
+          example: "active"
+        location:
+          type: string
+          example: "sydney"
+        v4_subnet:
+          type: string
+          example: "10.0.0.0"
+        v4_subnet_mask:
+          type: string
+          example: "24"
+        owner_team:
+          $ref: '#/components/schemas/VPCTeam'
+        teams:
+          type: array
+          items:
+            $ref: '#/components/schemas/VPCTeam'
+        attached_vms_count:
+          type: integer
+          example: 5
+      required:
+        - id
+        - name
+        - description
+        - date_created
+        - status
+        - location
+        - v4_subnet
+        - v4_subnet_mask
+        - owner_team
+        - teams
+    VPCs:
+      type: object
+      properties:
+        vpcs:
+          type: array
+          items:
+            $ref: '#/components/schemas/VPC'
+    AttachedVM:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: a1b2c3d4-5678-9abc-def0-123456789abc
+        name:
+          type: string
+          example: "web-server-01"
+        power_status:
+          type: string
+          example: "running"
+        owner_team:
+          $ref: '#/components/schemas/VPCTeam'
+        mac:
+          type: string
+          example: "52:54:00:12:34:56"
+        vpc_id:
+          type: string
+          format: uuid
+          example: f5a3e2d8-9876-4abc-1234-543210fedcba
+        vpc_name:
+          type: string
+          example: "Production VPC"
+        address:
+          type: string
+          format: ipv4
+          example: "10.0.0.10"
+    VPCDetail:
+      type: object
+      properties:
+        vpc:
+          allOf:
+            - $ref: '#/components/schemas/VPC'
+            - type: object
+              properties:
+                attached_vms:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/AttachedVM'
+    NewVPC:
+      type: object
+      properties:
+        team_id:
+          type: string
+          format: uuid
+          example: c1d45377-b2a9-4407-ab8d-6909c34dfaac
+          description: "Team ID. Default team will be used if not provided."
+        location:
+          type: string
+          example: "sydney"
+        name:
+          type: string
+          example: "Production VPC"
+          maxLength: 200
+        description:
+          type: string
+          example: "VPC for production environment"
+          maxLength: 200
+        v4_subnet:
+          type: string
+          example: "10.0.0.0"
+          description: "IPv4 subnet prefix"
+        v4_subnet_mask:
+          type: string
+          example: "24"
+          description: "IPv4 subnet mask"
+      required:
+        - location
+        - name
+        - description
+        - v4_subnet
+        - v4_subnet_mask
+    UpdateVPC:
+      type: object
+      properties:
+        team_id:
+          type: string
+          format: uuid
+          example: c1d45377-b2a9-4407-ab8d-6909c34dfaac
+          description: "Team ID. Default team will be used if not provided."
+        name:
+          type: string
+          example: "Updated VPC Name"
+          maxLength: 255
+        description:
+          type: string
+          example: "Updated VPC description"
+          maxLength: 255
+      required:
+        - name
+        - description
+    FirewallGroup:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: e4d3c2b1-5678-9abc-def0-fedcba098765
+        description:
+          type: string
+          example: "Production Firewall"
+        created:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        updated:
+          type: string
+          format: date-time
+          example: "2024-01-20T14:45:00Z"
+        instance_count:
+          type: integer
+          example: 3
+          description: "Number of VMs using this firewall group"
+        rule_count:
+          type: integer
+          example: 5
+          description: "Number of firewall rules in this group"
+      required:
+        - id
+        - description
+        - created
+        - updated
+        - instance_count
+        - rule_count
+    FirewallGroups:
+      type: object
+      properties:
+        firewall_groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/FirewallGroup'
+    FirewallGroupDetail:
+      type: object
+      properties:
+        firewall_group:
+          $ref: '#/components/schemas/FirewallGroup'
+    OSTemplate:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: integer
+            format: int64
+            example: 2
+          name:
+            type: string
+            format: string
+            example: "Ubuntu x64 LTS"
+          family:
+            type: string
+            format: string
+            example: "ubuntu"
+    SnapshotDownloadURL:
+      type: object
+      properties:
+        url:
+          type: string
+          format: URL
+          example: https://syd.dl.onidel.com/download?fid=...
+    BackupDownloadURL:
+      type: object
+      properties:
+        url:
+          type: string
+          format: URL
+          example: https://syd.dl.onidel.com/download?fid=...
+    MeasuredBootImage:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 7c1f2a90-4b3d-4e21-9a8c-1d2e3f4a5b6c
+        filename:
+          type: string
+          example: debian-12.uki.efi
+        description:
+          type: string
+          example: debian-12 measured boot
+        size:
+          type: integer
+          format: int64
+          description: Size in bytes.
+          example: 52428800
+        created:
+          type: string
+          format: datetime
+          example: 2025-01-05T13:00:20.010960Z
+    MeasuredBootImages:
+      type: array
+      items:
+        $ref: '#/components/schemas/MeasuredBootImage'
+    CustomISO:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 7c1f2a90-4b3d-4e21-9a8c-1d2e3f4a5b6c
+        date_created:
+          type: string
+          format: datetime
+          example: 2025-01-05T13:00:20.010960Z
+        filename:
+          type: string
+          example: debian-12.iso
+        name:
+          type: string
+          example: debian-12.iso
+        desc:
+          type: string
+          example: ""
+        size:
+          type: integer
+          format: int64
+          description: Size in bytes.
+          example: 658505728
+        status:
+          type: integer
+          description: "Download progress percent (0-100); -1 indicates the download failed."
+          example: 100
+        is_system_iso:
+          type: boolean
+          example: false
+    CustomISOs:
+      type: array
+      items:
+        $ref: '#/components/schemas/CustomISO'
+    Snapshot:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: c1d45377-b2a9-4407-ab8d-6909c34dfaac
+        created_at:
+          type: string
+          format: datetime
+          example: 2025-01-05T13:00:20.010960Z
+        name:
+          type: string
+          format: string
+          example: vm-snapshot-name
+        desc:
+          type: string
+          format: string
+          example: snapshot @ 20/09/2025
+        size:
+          type: integer
+          format: int64
+          example: 20
+        status:
+          type: string
+          enum:
+            - available
+            - pending
+    Snapshots:
+      type: array
+      items:
+        $ref: '#/components/schemas/Snapshot'
+    Backup:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: c1d45377-b2a9-4407-ab8d-6909c34dfaac
+        created_at:
+          type: string
+          format: datetime
+          example: 2025-01-05T13:00:20.010960Z
+        size:
+          type: integer
+          format: int64
+          example: 20
+        instance:
+          type: string
+          format: uuid
+          example: c1d45377-b2a9-4407-ab8d-6909c34dfaac
+        status:
+          type: string
+          enum:
+            - available
+            - pending
+
+    VM:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: c1d45377-b2a9-4407-ab8d-6909c34dfaac
+        name:
+          type: string
+          format: string
+          example: "ubuntu-vm-4vcpu-8gb"
+        password:
+          type: string
+          description: The server's auto-generated administrator/root password.
+          example: "s3cr3t-p4ssw0rd"
+        vcpu:
+          type: integer
+          format: int64
+          example: 2
+        ram:
+          type: integer
+          format: int64
+          example: 4096
+        disk:
+          type: integer
+          format: int64
+          example: 40
+        bw_used:
+          type: number
+          format: float
+          example: 12.5
+        main_ipv4:
+          type: string
+          format: string
+          example: 160.22.79.122
+        main_ipv6:
+          type: string
+          format: string
+          example: "2401:a4a0:1:90::1"
+        template:
+          type: string
+          format: string
+          example: "Ubuntu 24.04 x64 LTS"
+        firewall_group_id:
+          type: string
+          format: uuid
+          nullable: true
+          example: ac135def-c613-4a08-fd8e-a20acbdd23a9
+        created_at:
+          type: string
+          format: datetime
+          example: "2024-10-04T10:20:22.922772Z"
+        renewed_at:
+          type: string
+          format: datetime
+          example: "2024-10-04T10:20:22.922772Z"
+        due_date:
+          type: string
+          format: datetime
+          example: "2024-10-04T10:20:22.922772Z"
+        recurring_amount:
+          type: number
+          format: float
+          example: 5.5
+        amount_paid:
+          type: number
+          format: float
+          example: 1.2345
+        payment_currency:
+          type: string
+          format: string
+          example: "AUD"
+        billing_cycle:
+          type: integer
+          format: int64
+          example: 1
+        status:
+          type: string
+          format: string
+          enum:
+            - building
+            - active
+            - suspended
+            - awaiting_payment
+            - taking_snaphot
+            - restoring
+            - terminating
+            - migrating
+
+    Backups:
+      type: array
+      items:
+        $ref: '#/components/schemas/Backup'
+    VMs:
+      type: array
+      items:
+        $ref: '#/components/schemas/VM'
+    NewVM:
+      type: object
+      properties:
+        name:
+          type: string
+          format: string
+          example: "vm-hostname"
+        payment_cycle:
+          type: string
+          format: string
+          enum:
+            - hourly
+            - monthly
+            - quarterly
+            - semiannually
+            - annually
+            - biennially
+            - triennially
+        instance_type:
+          type: string
+          format: uuid
+          example: ea645d53-c0e5-406d-8863-9ecd4235be94
+        location:
+          type: string
+          format: string
+          example: Sydney
+        cpu:
+          type: integer
+          format: int64
+          example: 2
+        ram:
+          type: integer
+          format: int64
+          example: 4096
+        disk:
+          type: integer
+          format: int64
+          example: 40
+        os:
+          type: integer
+          format: int64
+          example: 2
+          description: "OS template ID to deploy. Provide one of os, snapshot_id or iso_id."
+        snapshot_id:
+          type: string
+          format: uuid
+          example: 53959c6e-73d5-4476-9b19-d78fb8efac2c
+          description: "Snapshot ID to deploy from. Provide one of os, snapshot_id or iso_id."
+        iso_id:
+          type: string
+          format: uuid
+          example: 7c1f2a90-4b3d-4e21-9a8c-1d2e3f4a5b6c
+          description: "Custom or system ISO ID to boot from (BYOI, no base image). Provide one of os, snapshot_id or iso_id."
+        team_id:
+          type: string
+          format: uuid
+          example: 6484a164-d355-4947-ac2c-e8c09fb24fb0
+        ssh_keys:
+          type: array
+          items:
+            type: string
+            format: uuid
+          example: ["a3f2e5d8-1234-4abc-9876-543210fedcba"]
+          description: "List of SSH key IDs to be added to the VM for authentication"
+        vpcs:
+          type: array
+          items:
+            type: string
+            format: uuid
+          example: ["f5a3e2d8-9876-4abc-1234-543210fedcba"]
+          description: "List of VPC IDs to attach the VM to for private networking"
+        firewall_group_id:
+          type: string
+          format: uuid
+          example: "e4d3c2b1-5678-9abc-def0-fedcba098765"
+          description: "Firewall group ID to apply to the VM for security rules"
+        ipv6:
+          type: boolean
+          example: false
+          description: "Enable IPv6 for the VM (if available in the location)"
+        disable_ssh_blocking:
+          type: boolean
+          example: false
+          description: "Disable outgoing SSH blocking on the VM (allows outbound SSH connections on port 22)"
+        startup_script_id:
+          type: string
+          format: uuid
+          example: "b7e3f1a2-5678-4def-abcd-123456789abc"
+          description: "Startup script ID to execute on first boot (only applies when deploying with OS or snapshot)"
+    InstanceType:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: string
+            format: uuid
+            example: ea645d53-c0e5-406d-8863-9ecd4235be94
+          type:
+            type: string
+            format: string
+            example: "vhp"
+          cpu:
+            type: string
+            format: string
+            example: "amd"
+          max_vcpu:
+            type: integer
+            format: int64
+            example: 24
+          max_ram:
+            type: integer
+            format: int64
+            example: 40960
+          max_disk:
+            type: integer
+            format: int64
+            example: 1000
+          network_rate:
+            type: integer
+            format: int64
+            example: 128
+          locations:
+            type: array
+            items:
+              type: string
+              format: string
+              example: "Sydney"
+    ReservedIP:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Reserved IP UUID
+        name:
+          type: string
+          description: Name of the reserved IP
+        location:
+          type: string
+          description: Location name where the IP is allocated
+        status:
+          type: string
+          enum: [active, suspended]
+          description: Current status of the reserved IP
+        attachment:
+          type: object
+          nullable: true
+          description: VM attachment details, null if not attached
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: UUID of the attached VM
+            name:
+              type: string
+              description: Name of the attached VM
+        billing_cycle:
+          type: integer
+          description: Billing cycle in months
+        renewal_date:
+          type: string
+          format: date-time
+          description: Next renewal date
+        last_renewal:
+          type: string
+          format: date-time
+          description: Last renewal date
+        recurring_amount:
+          type: number
+          format: decimal
+          description: Recurring billing amount
+        currency:
+          type: string
+          description: Currency code for billing
+        total_billed:
+          type: number
+          format: decimal
+          description: Total amount billed
+        ip_addr:
+          type: string
+          format: ipv4
+          description: The reserved IP address
+        suspension_reason:
+          type: string
+          description: Reason for suspension (empty string if not suspended)
+      required:
+        - id
+        - name
+        - location
+        - status
+        - billing_cycle
+        - renewal_date
+        - last_renewal
+        - recurring_amount
+        - currency
+        - total_billed
+        - ip_addr
+        - suspension_reason
+    NewFirewallGroup:
+      type: object
+      properties:
+        team_id:
+          type: string
+          format: uuid
+        description:
+          type: string
+          maxLength: 255
+          example: "Web servers firewall"
+      required:
+        - description
+
+    UpdateFirewallGroup:
+      type: object
+      properties:
+        team_id:
+          type: string
+          format: uuid
+        description:
+          type: string
+          maxLength: 255
+          example: "Updated firewall description"
+      required:
+        - description
+
+    FirewallRule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        group:
+          type: string
+          format: uuid
+          description: Firewall group UUID
+        ip_type:
+          type: string
+          enum: [v4, v6]
+        action:
+          type: string
+          example: "allow"
+        protocol:
+          type: string
+          enum: [tcp, udp, icmp, ipv6-icmp]
+          description: "ICMP rules on a v6 subnet are stored and returned as ipv6-icmp"
+        port:
+          type: string
+          example: "443"
+          description: "Port number or range (e.g. '80', '8000:9000')"
+        subnet:
+          type: string
+          example: "0.0.0.0"
+          description: "IP address, CIDR, special value (Cloudflare, Onidel, etc.), or IP list reference (list:{uuid})"
+        subnet_size:
+          type: integer
+          example: 0
+          description: "CIDR prefix length"
+        desc:
+          type: string
+          example: "Allow HTTPS"
+
+    FirewallRules:
+      type: object
+      properties:
+        firewall_rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/FirewallRule'
+
+    FirewallRuleResponse:
+      type: object
+      properties:
+        firewall_rule:
+          $ref: '#/components/schemas/FirewallRule'
+
+    NewFirewallRule:
+      type: object
+      properties:
+        team_id:
+          type: string
+          format: uuid
+        protocol:
+          type: string
+          enum: [tcp, udp, icmp, ipv6-icmp]
+          example: "tcp"
+          description: "icmp with a v6 subnet and ipv6-icmp are equivalent; the rule is stored with the version-appropriate name"
+        port:
+          type: string
+          example: "443"
+          description: "Port number or range (e.g. '80', '8000:9000'). Not required for ICMP."
+        subnet:
+          type: string
+          example: "0.0.0.0"
+          description: "IP/CIDR, special value (Cloudflare, Onidel, HetrixTools, CloudFront, UptimeRobot), or IP list (list:{uuid})"
+        subnet_size:
+          type: integer
+          example: 0
+          description: "CIDR prefix length (a numeric string is also accepted)"
+        desc:
+          type: string
+          example: "Allow HTTPS traffic"
+      required:
+        - protocol
+        - subnet
+        - subnet_size
+
+    IPListSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "Office IPs"
+        description:
+          type: string
+          nullable: true
+          example: "Office network addresses"
+        entry_count:
+          type: integer
+          example: 5
+        used_by_count:
+          type: integer
+          description: Number of firewall rules referencing this list
+          example: 2
+        created_at:
+          type: string
+          format: date-time
+
+    IPLists:
+      type: object
+      properties:
+        ip_lists:
+          type: array
+          items:
+            $ref: '#/components/schemas/IPListSummary'
+        ip_list_limit:
+          type: integer
+          description: Maximum number of IP lists allowed for this team
+          example: 5
+        ip_list_entry_limit:
+          type: integer
+          description: Maximum entries per IP list for this team
+          example: 10
+
+    IPListEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [ipv4, ipv6]
+        value:
+          type: string
+          example: "192.168.1.0/24"
+        created_at:
+          type: string
+          format: date-time
+
+    IPListDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        entry_count:
+          type: integer
+        used_by_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/IPListEntry'
+
+    IPListDetailResponse:
+      type: object
+      properties:
+        ip_list:
+          $ref: '#/components/schemas/IPListDetail'
+
+    IPListCreateResponse:
+      type: object
+      properties:
+        ip_list:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+            description:
+              type: string
+              nullable: true
+
+    NewIPList:
+      type: object
+      properties:
+        team_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 64
+          example: "Office IPs"
+        description:
+          type: string
+          maxLength: 255
+          example: "Office network addresses"
+      required:
+        - name
+
+    UpdateIPList:
+      type: object
+      properties:
+        team_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 64
+          example: "Updated name"
+        description:
+          type: string
+          maxLength: 255
+          example: "Updated description"
+
+    NewIPListEntry:
+      type: object
+      properties:
+        team_id:
+          type: string
+          format: uuid
+        value:
+          type: string
+          example: "192.168.1.0/24"
+          description: "IPv4 or IPv6 address/CIDR. Type is auto-detected."
+        type:
+          type: string
+          enum: [ipv4, ipv6]
+          description: "Optional - auto-detected from value if not provided"
+      required:
+        - value
+
+    IPListEntryResponse:
+      type: object
+      properties:
+        entry:
+          $ref: '#/components/schemas/IPListEntry'
+
+    StartupScriptSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: b7e3f1a2-5678-4def-abcd-123456789abc
+        name:
+          type: string
+          example: "Install NGINX"
+        created:
+          type: string
+          format: date-time
+          example: "2024-06-15T08:00:00Z"
+        updated:
+          type: string
+          format: date-time
+          example: "2024-06-15T08:00:00Z"
+      required:
+        - id
+        - name
+        - created
+        - updated
+
+    StartupScriptDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: b7e3f1a2-5678-4def-abcd-123456789abc
+        name:
+          type: string
+          example: "Install NGINX"
+        content:
+          type: string
+          example: "#!/bin/bash\napt-get update && apt-get install -y nginx"
+        created:
+          type: string
+          format: date-time
+          example: "2024-06-15T08:00:00Z"
+        updated:
+          type: string
+          format: date-time
+          example: "2024-06-15T08:00:00Z"
+      required:
+        - id
+        - name
+        - content
+        - created
+        - updated
+
+    StartupScripts:
+      type: object
+      properties:
+        scripts:
+          type: array
+          items:
+            $ref: '#/components/schemas/StartupScriptSummary'
+
+    StartupScriptDetailResponse:
+      type: object
+      properties:
+        script:
+          $ref: '#/components/schemas/StartupScriptDetail'
+
+    NewStartupScript:
+      type: object
+      properties:
+        team_id:
+          type: string
+          format: uuid
+          example: c1d45377-b2a9-4407-ab8d-6909c34dfaac
+        name:
+          type: string
+          example: "Install NGINX"
+        content:
+          type: string
+          example: "#!/bin/bash\napt-get update && apt-get install -y nginx"
+      required:
+        - name
+        - content
+
+    UpdateStartupScript:
+      type: object
+      properties:
+        team_id:
+          type: string
+          format: uuid
+          example: c1d45377-b2a9-4407-ab8d-6909c34dfaac
+        name:
+          type: string
+          example: "Updated Script Name"
+        content:
+          type: string
+          example: "#!/bin/bash\napt-get update && apt-get install -y nginx certbot"
+      required:
+        - name
+        - content
+
+  securitySchemes:
+    api_key:
+      type: http
+      scheme: bearer

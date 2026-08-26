@@ -1,0 +1,16 @@
+# Binaries
+/bin/
+/api
+/worker
+
+# Environment & secrets
+.env
+.env.local
+
+# Go
+*.test
+*.out
+coverage.*
+
+# Editor/OS
+.DS_Store
