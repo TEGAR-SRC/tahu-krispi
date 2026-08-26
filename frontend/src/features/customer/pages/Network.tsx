@@ -1,6 +1,8 @@
-// Network: VPCs, firewall groups with their rules, IP lists and reserved
-// IPs — every tab backed by the live customer-plane endpoints.
+// Network: VPCs, firewall groups, IP lists and reserved IPs — every tab
+// backed by the live customer-plane endpoints. Firewall groups and IP lists
+// deep-link to their detail pages for rule / entry management.
 import { useCallback, useEffect, useState } from "react"
+import { Link } from "react-router-dom"
 import { Loader2Icon, PlusIcon, Trash2Icon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -58,30 +60,11 @@ interface FirewallGroup {
   created_at?: string
 }
 
-interface FirewallRule {
-  id: string
-  group?: string
-  direction?: string
-  protocol: string
-  port_from: number
-  port_to: number
-  subnet: string
-  action: string
-  desc?: string
-}
-
 interface IpList {
   id: string
   name: string
   description: string
   entry_count: number
-  created_at?: string
-}
-
-interface IpListEntry {
-  id: string
-  type: string
-  value: string
   created_at?: string
 }
 
@@ -360,7 +343,6 @@ function FirewallSection() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
   const [createOpen, setCreateOpen] = useState(false)
-  const [rulesFor, setRulesFor] = useState<FirewallGroup | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<FirewallGroup | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -404,13 +386,12 @@ function FirewallSection() {
       key: "name",
       header: "Name",
       render: (row) => (
-        <button
-          type="button"
-          className="text-left font-medium hover:underline"
-          onClick={() => setRulesFor(row)}
+        <Link
+          to={`/app/network/firewall/${row.id}`}
+          className="block max-w-72 truncate font-medium underline-offset-2 hover:underline"
         >
           {row.name}
-        </button>
+        </Link>
       ),
     },
     { key: "description", header: "Description" },
@@ -420,12 +401,9 @@ function FirewallSection() {
     {
       key: "actions",
       header: "",
-      className: "w-40",
+      className: "w-16",
       render: (row) => (
-        <div className="flex justify-end gap-1">
-          <Button size="sm" variant="outline" onClick={() => setRulesFor(row)}>
-            Rules…
-          </Button>
+        <div className="flex justify-end">
           <Button size="icon" variant="ghost" title="Delete…" onClick={() => setDeleteTarget(row)}>
             <Trash2Icon />
           </Button>
@@ -451,8 +429,6 @@ function FirewallSection() {
       />
 
       <CreateFirewallDialog open={createOpen} onOpenChange={setCreateOpen} onCreated={() => void load()} />
-
-      <FirewallRulesDialog group={rulesFor} onClose={() => setRulesFor(null)} onChanged={() => void load()} />
 
       <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>
@@ -546,192 +522,6 @@ function CreateFirewallDialog({
   )
 }
 
-function FirewallRulesDialog({
-  group,
-  onClose,
-  onChanged,
-}: {
-  group: FirewallGroup | null
-  onClose: () => void
-  onChanged: () => void
-}) {
-  const { orgId } = useOrg()
-  const [rules, setRules] = useState<FirewallRule[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<unknown>(null)
-  const [protocol, setProtocol] = useState("tcp")
-  const [portFrom, setPortFrom] = useState("443")
-  const [subnet, setSubnet] = useState("0.0.0.0/0")
-  const [action, setAction] = useState("accept")
-  const [desc, setDesc] = useState("")
-  const [busy, setBusy] = useState(false)
-
-  const load = useCallback(async () => {
-    if (!group || !orgId) return
-    setLoading(true)
-    setError(null)
-    try {
-      const { data } = await apiGet<FirewallRule[]>(`/firewall-groups/${group.id}/rules`, {
-        headers: orgHeaders(orgId),
-      })
-      setRules(data ?? [])
-    } catch (cause) {
-      setError(cause)
-    } finally {
-      setLoading(false)
-    }
-  }, [group, orgId])
-
-  useEffect(() => {
-    void load()
-  }, [load])
-
-  const addRule = async () => {
-    if (!group) return
-    if (!subnet.trim()) {
-      toast.error("Source subnet is required (e.g. 0.0.0.0/0)")
-      return
-    }
-    const port = Number(portFrom)
-    if (!Number.isFinite(port)) {
-      toast.error("Port must be a number")
-      return
-    }
-    setBusy(true)
-    try {
-      await apiPost(
-        `/firewall-groups/${group.id}/rules`,
-        {
-          protocol,
-          port_from: port,
-          port_to: port,
-          subnet: subnet.trim(),
-          action,
-          desc: desc.trim(),
-        },
-        { headers: orgHeaders(orgId) },
-      )
-      toast.success("Rule added")
-      setDesc("")
-      onChanged()
-      void load()
-    } catch (cause) {
-      toast.error(cause instanceof ApiError ? cause.message : "Failed to add rule")
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const deleteRule = async (rule: FirewallRule) => {
-    if (!group) return
-    try {
-      await apiDelete(`/firewall-groups/${group.id}/rules/${rule.id}`, {
-        headers: orgHeaders(orgId),
-      })
-      toast.success("Rule removed")
-      onChanged()
-      void load()
-    } catch (cause) {
-      toast.error(cause instanceof ApiError ? cause.message : "Failed to remove rule")
-    }
-  }
-
-  const columns: Array<SimpleColumn<FirewallRule>> = [
-    { key: "direction", header: "Dir", render: (row) => row.direction ?? "inbound" },
-    { key: "protocol", header: "Proto", render: (row) => row.protocol.toUpperCase() },
-    {
-      key: "ports",
-      header: "Ports",
-      render: (row) =>
-        row.port_from === row.port_to ? String(row.port_from) : `${row.port_from}–${row.port_to}`,
-    },
-    { key: "subnet", header: "Source", render: (row) => <span className="font-mono text-xs">{row.subnet}</span> },
-    { key: "action", header: "Action", render: (row) => <StatusBadge status={row.action} /> },
-    { key: "desc", header: "Note" },
-    {
-      key: "actions",
-      header: "",
-      className: "w-14",
-      render: (row) => (
-        <div className="flex justify-end">
-          <Button size="icon" variant="ghost" title="Remove rule" onClick={() => void deleteRule(row)}>
-            <Trash2Icon />
-          </Button>
-        </div>
-      ),
-    },
-  ]
-
-  return (
-    <Dialog open={group !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[85svh] overflow-y-auto sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Rules · {group?.name}</DialogTitle>
-          <DialogDescription>
-            Inbound rules evaluated top-down; first match wins.
-          </DialogDescription>
-        </DialogHeader>
-
-        <SimpleDataTable
-          columns={columns}
-          rows={rules}
-          loading={loading}
-          error={error}
-          skeletonRows={3}
-          emptyMessage={error ? undefined : "No rules yet."}
-          getRowKey={(row) => row.id}
-        />
-
-        <div className="grid grid-cols-2 gap-2 rounded-md border p-3 sm:grid-cols-5">
-          <div className="space-y-1">
-            <Label>Protocol</Label>
-            <Select value={protocol} onValueChange={setProtocol}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="tcp">TCP</SelectItem>
-                <SelectItem value="udp">UDP</SelectItem>
-                <SelectItem value="icmp">ICMP</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="rule-port">Port</Label>
-            <Input id="rule-port" type="number" min={1} max={65535} value={portFrom} onChange={(event) => setPortFrom(event.target.value)} />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="rule-subnet">Source CIDR</Label>
-            <Input id="rule-subnet" value={subnet} onChange={(event) => setSubnet(event.target.value)} />
-          </div>
-          <div className="space-y-1">
-            <Label>Action</Label>
-            <Select value={action} onValueChange={setAction}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="accept">Accept</SelectItem>
-                <SelectItem value="drop">Drop</SelectItem>
-                <SelectItem value="reject">Reject</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="col-span-2 flex items-end gap-2 sm:col-span-1">
-            <Button className="flex-1" variant="outline" onClick={() => void addRule()} disabled={busy || protocol === "icmp"}>
-              <PlusIcon /> Add rule
-            </Button>
-          </div>
-          <div className="col-span-2 space-y-1 sm:col-span-5">
-            <Label htmlFor="rule-desc">Note (optional)</Label>
-            <Input id="rule-desc" value={desc} onChange={(event) => setDesc(event.target.value)} placeholder="Allow HTTPS from anywhere" />
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
 // ---- IP lists -----------------------------------------------------------------
 
 function IpListSection() {
@@ -740,7 +530,6 @@ function IpListSection() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
   const [createOpen, setCreateOpen] = useState(false)
-  const [entriesFor, setEntriesFor] = useState<IpList | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<IpList | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -782,9 +571,12 @@ function IpListSection() {
       key: "name",
       header: "Name",
       render: (row) => (
-        <button type="button" className="text-left font-medium hover:underline" onClick={() => setEntriesFor(row)}>
+        <Link
+          to={`/app/ip-lists/${row.id}`}
+          className="block max-w-72 truncate font-medium underline-offset-2 hover:underline"
+        >
           {row.name}
-        </button>
+        </Link>
       ),
     },
     { key: "description", header: "Description" },
@@ -793,12 +585,9 @@ function IpListSection() {
     {
       key: "actions",
       header: "",
-      className: "w-40",
+      className: "w-16",
       render: (row) => (
-        <div className="flex justify-end gap-1">
-          <Button size="sm" variant="outline" onClick={() => setEntriesFor(row)}>
-            Entries…
-          </Button>
+        <div className="flex justify-end">
           <Button size="icon" variant="ghost" title="Delete…" onClick={() => setDeleteTarget(row)}>
             <Trash2Icon />
           </Button>
@@ -824,7 +613,6 @@ function IpListSection() {
       />
 
       <CreateIpListDialog open={createOpen} onOpenChange={setCreateOpen} onCreated={() => void load()} />
-      <IpListEntriesDialog list={entriesFor} onClose={() => setEntriesFor(null)} onChanged={() => void load()} />
 
       <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>
@@ -918,134 +706,6 @@ function CreateIpListDialog({
   )
 }
 
-function IpListEntriesDialog({
-  list,
-  onClose,
-  onChanged,
-}: {
-  list: IpList | null
-  onClose: () => void
-  onChanged: () => void
-}) {
-  const { orgId } = useOrg()
-  const [entries, setEntries] = useState<IpListEntry[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<unknown>(null)
-  const [value, setValue] = useState("")
-  const [description, setDescription] = useState("")
-  const [busy, setBusy] = useState(false)
-
-  const load = useCallback(async () => {
-    if (!list || !orgId) return
-    setLoading(true)
-    setError(null)
-    try {
-      const { data } = await apiGet<IpListEntry[]>(`/ip-lists/${list.id}`, {
-        headers: orgHeaders(orgId),
-      })
-      // The detail endpoint may answer with the list object or the raw entries.
-      const payload = data as unknown as IpListEntry[] | { entries?: IpListEntry[] }
-      setEntries(Array.isArray(payload) ? payload : (payload.entries ?? []))
-    } catch (cause) {
-      setError(cause)
-    } finally {
-      setLoading(false)
-    }
-  }, [list, orgId])
-
-  useEffect(() => {
-    void load()
-  }, [load])
-
-  const addEntry = async () => {
-    if (!list) return
-    if (!value.trim()) {
-      toast.error("IP or CIDR is required")
-      return
-    }
-    setBusy(true)
-    try {
-      await apiPost(
-        `/ip-lists/${list.id}/entries`,
-        { value: value.trim(), description: description.trim() },
-        { headers: orgHeaders(orgId) },
-      )
-      toast.success("Entry added")
-      setValue("")
-      setDescription("")
-      onChanged()
-      void load()
-    } catch (cause) {
-      toast.error(cause instanceof ApiError ? cause.message : "Failed to add entry")
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const removeEntry = async (entry: IpListEntry) => {
-    if (!list) return
-    try {
-      await apiDelete(`/ip-lists/${list.id}/entries/${entry.id}`, { headers: orgHeaders(orgId) })
-      toast.success("Entry removed")
-      onChanged()
-      void load()
-    } catch (cause) {
-      toast.error(cause instanceof ApiError ? cause.message : "Failed to remove entry")
-    }
-  }
-
-  const columns: Array<SimpleColumn<IpListEntry>> = [
-    { key: "value", header: "Address", render: (row) => <span className="font-mono text-sm">{row.value}</span> },
-    { key: "type", header: "Type" },
-    { key: "created_at", header: "Added", render: (row) => formatDateTime(row.created_at) },
-    {
-      key: "actions",
-      header: "",
-      className: "w-14",
-      render: (row) => (
-        <div className="flex justify-end">
-          <Button size="icon" variant="ghost" title="Remove" onClick={() => void removeEntry(row)}>
-            <Trash2Icon />
-          </Button>
-        </div>
-      ),
-    },
-  ]
-
-  return (
-    <Dialog open={list !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[85svh] overflow-y-auto sm:max-w-xl">
-        <DialogHeader>
-          <DialogTitle>Entries · {list?.name}</DialogTitle>
-        </DialogHeader>
-        <SimpleDataTable
-          columns={columns}
-          rows={entries}
-          loading={loading}
-          error={error}
-          skeletonRows={3}
-          emptyMessage={error ? undefined : "No entries."}
-          getRowKey={(row) => row.id}
-        />
-        <div className="grid gap-2 rounded-md border p-3 sm:grid-cols-[1fr_1fr_auto]">
-          <div className="space-y-1">
-            <Label htmlFor="iple-value">IP / CIDR *</Label>
-            <Input id="iple-value" value={value} onChange={(event) => setValue(event.target.value)} placeholder="203.0.113.7" />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="iple-desc">Comment</Label>
-            <Input id="iple-desc" value={description} onChange={(event) => setDescription(event.target.value)} />
-          </div>
-          <div className="flex items-end">
-            <Button variant="outline" onClick={() => void addEntry()} disabled={busy} className="w-full">
-              <PlusIcon /> Add
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
-}
 
 // ---- Reserved IPs ---------------------------------------------------------------
 

@@ -1,12 +1,15 @@
 // Platform-admin job queue: filter by status/queue, optional 5s auto-refresh,
 // retry/cancel actions and navigation into the dedicated job detail page.
-import { useCallback, useEffect, useState } from "react"
+// Queues seen in the loaded rows are also surfaced as quick-links to the
+// per-queue boards (/admin/jobs/queue/:queue).
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { Link } from "react-router-dom"
 import { RefreshCwIcon } from "lucide-react"
 import { toast } from "sonner"
 import { apiGet, apiPost, ApiError } from "@/lib/api"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
+import { Badge } from "@/components/ui/badge"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -100,6 +103,12 @@ export default function AdminJobsPage() {
     return () => window.clearInterval(handle)
   }, [autoRefresh, load])
 
+  // Queues observed in the currently loaded rows drive the quick-link chips.
+  const queues = useMemo(
+    () => [...new Set(rows.map((row) => row.queue).filter(Boolean))].sort(),
+    [rows],
+  )
+
   const runAction = async (
     job: AdminJobRow,
     action: "retry" | "cancel",
@@ -168,6 +177,22 @@ export default function AdminJobsPage() {
           }}
         />
       </div>
+
+      {queues.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-muted-foreground">Queue boards:</span>
+          {queues.map((name) => (
+            <Badge key={name} variant="secondary" asChild>
+              <Link
+                to={`/admin/jobs/queue/${encodeURIComponent(name)}`}
+                className="capitalize hover:bg-secondary/80"
+              >
+                {name}
+              </Link>
+            </Badge>
+          ))}
+        </div>
+      ) : null}
 
       <SimpleDataTable<AdminJobRow>
         columns={[

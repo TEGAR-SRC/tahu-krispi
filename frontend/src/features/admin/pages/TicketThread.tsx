@@ -2,12 +2,23 @@
 // ticket GET, so the ticket row (which carries organization_id) is resolved by
 // walking GET /admin/tickets; messages are then read through the org-scoped
 // GET /tickets/:id/messages with X-Organization-ID (staff tokens allowed).
-// Replies/assignment/close use the dedicated /admin/tickets/:ticket_id routes.
-import { useCallback, useEffect, useState } from "react"
+// Replies/assignment/close use the dedicated /admin/tickets/:ticket_id routes;
+// replies may carry up to 10 attachments (100 MB total) posted multipart to
+// POST /admin/tickets/:ticket_id/reply/attachments with per-file progress,
+// and message attachments download through the staff attachment endpoint.
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { toast } from "sonner"
-import { ArrowLeftIcon } from "lucide-react"
+import { ArrowLeftIcon, Loader2Icon, PaperclipIcon, XIcon } from "lucide-react"
 import { apiGet, apiPost, ApiError } from "@/lib/api"
+import {
+  downloadStaffTicketAttachment,
+  formatBytes,
+  MAX_REPLY_FILES,
+  MAX_TOTAL_BYTES,
+  uploadStaffTicketReply,
+  type StaffReplyAttachment,
+} from "./attachmentUpload"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { ErrorBanner } from "@/components/shared/ErrorBanner"
 import {
@@ -22,7 +33,9 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Progress } from "@/components/ui/progress"
 import {
   Select,
   SelectContent,
@@ -35,12 +48,15 @@ import { Textarea } from "@/components/ui/textarea"
 import { DetailField, StatusBadge, formatDateTime } from "./shared"
 import { findAdminTicket, type AdminTicketRow, type AdminUserRow } from "./identityLookup"
 
+type AttachmentView = StaffReplyAttachment
+
 interface TicketMessage {
   id: string
   author_type: string
   author_user_id: string
   body: string
   created_at: string
+  attachments?: AttachmentView[]
 }
 
 export default function TicketThreadPage() {
@@ -132,6 +148,10 @@ function Conversation({
   const [replyBody, setReplyBody] = useState("")
   const [internalNote, setInternalNote] = useState(false)
   const [sending, setSending] = useState(false)
+  const [files, setFiles] = useState<File[]>([])
+  // One 0-100 percentage per pending file while an attachment reply uploads.
+  const [filePercents, setFilePercents] = useState<number[] | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [closeOpen, setCloseOpen] = useState(false)
   const [assignees, setAssignees] = useState<AdminUserRow[]>([])
   const [assignTo, setAssignTo] = useState("")
@@ -165,6 +185,25 @@ function Conversation({
     }
   }, [])
 
+  const pickFiles = (selected: File[]) => {
+    if (selected.length === 0) return
+    const merged = [...files, ...selected].slice(0, MAX_REPLY_FILES)
+    if (files.length + selected.length > MAX_REPLY_FILES) {
+      toast.error(`At most ${MAX_REPLY_FILES} files per reply`)
+    }
+    if (merged.reduce((sum, file) => sum + file.size, 0) > MAX_TOTAL_BYTES) {
+      toast.error("Attachments exceed the 100 MB total size cap")
+      return
+    }
+    setFiles(merged)
+  }
+
+  const clearFiles = () => {
+    setFiles([])
+    setFilePercents(null)
+    if (fileInputRef.current) fileInputRef.current.value = ""
+  }
+
   const sendReply = async () => {
     if (replyBody.trim() === "") {
       toast.error("Reply text is required")
@@ -172,18 +211,47 @@ function Conversation({
     }
     setSending(true)
     try {
-      await apiPost(`/admin/tickets/${ticket.id}/reply`, {
-        body: replyBody.trim(),
-        internal_note: internalNote,
-      })
-      toast.success(internalNote ? "Internal note added" : "Reply sent")
+      if (files.length > 0) {
+        setFilePercents(files.map(() => 0))
+        await uploadStaffTicketReply(
+          ticket.id,
+          { body: replyBody.trim(), internalNote, files },
+          (percents) => setFilePercents(percents),
+        )
+        clearFiles()
+        toast.success(internalNote ? "Internal note added" : "Reply sent")
+      } else {
+        await apiPost(`/admin/tickets/${ticket.id}/reply`, {
+          body: replyBody.trim(),
+          internal_note: internalNote,
+        })
+        toast.success(internalNote ? "Internal note added" : "Reply sent")
+      }
       setReplyBody("")
       loadMessages()
       onMutated()
     } catch (cause) {
-      toast.error(cause instanceof ApiError ? cause.message : "Failed to send reply")
+      toast.error(
+        cause instanceof Error ? cause.message : "Failed to send reply",
+      )
     } finally {
       setSending(false)
+      setFilePercents(null)
+    }
+  }
+
+  const downloadAttachment = async (
+    messageId: string,
+    attachment: AttachmentView,
+  ) => {
+    try {
+      await downloadStaffTicketAttachment(ticket.id, {
+        messageId,
+        attachmentId: attachment.id,
+        filename: attachment.filename,
+      })
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : "Attachment download failed")
     }
   }
 
@@ -248,6 +316,24 @@ function Conversation({
                   <span>{formatDateTime(message.created_at)}</span>
                 </p>
                 <p className="whitespace-pre-wrap text-sm">{message.body}</p>
+                {(message.attachments?.length ?? 0) > 0 ? (
+                  <ul className="mt-2 space-y-0.5 border-t pt-2">
+                    {(message.attachments ?? []).map((attachment) => (
+                      <li key={attachment.id}>
+                        <button
+                          type="button"
+                          className="flex items-center gap-1.5 text-xs text-primary hover:underline disabled:opacity-50"
+                          onClick={() =>
+                            void downloadAttachment(message.id, attachment)
+                          }
+                        >
+                          <PaperclipIcon className="size-3 shrink-0" />
+                          {attachment.filename} ({formatBytes(attachment.size_bytes)})
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
               </li>
             ))}
           </ol>
@@ -263,15 +349,71 @@ function Conversation({
           value={replyBody}
           onChange={(event) => setReplyBody(event.target.value)}
         />
+        {files.length > 0 ? (
+          <ul className="flex flex-wrap gap-1.5">
+            {files.map((file, index) => (
+              <li
+                key={`${file.name}-${index}`}
+                className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs"
+              >
+                <PaperclipIcon className="size-3" />
+                {file.name} ({formatBytes(file.size)})
+                <button
+                  type="button"
+                  aria-label={`Remove ${file.name}`}
+                  disabled={sending}
+                  onClick={() => setFiles(files.filter((_, i) => i !== index))}
+                  className="rounded-full p-0.5 hover:bg-background"
+                >
+                  <XIcon className="size-3" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {filePercents !== null ? (
+          <ul className="space-y-1">
+            {files.map((file, index) => (
+              <li key={`${file.name}-${index}`} className="flex items-center gap-2 text-xs">
+                <span className="w-40 truncate text-muted-foreground">{file.name}</span>
+                <Progress value={filePercents[index] ?? 0} className="h-1 flex-1" />
+                <span className="w-10 shrink-0 text-right tabular-nums text-muted-foreground">
+                  {filePercents[index] ?? 0}%
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox
-              checked={internalNote}
-              onCheckedChange={(checked) => setInternalNote(checked === true)}
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 text-sm">
+              <Checkbox
+                checked={internalNote}
+                onCheckedChange={(checked) => setInternalNote(checked === true)}
+              />
+              Internal note
+            </label>
+            <Input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept="image/*,video/*,text/*,.pdf,.zip,.log"
+              className="hidden"
+              onChange={(event) => pickFiles(Array.from(event.target.files ?? []))}
             />
-            Internal note
-          </label>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={sending}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <PaperclipIcon /> Attach files
+            </Button>
+            <span className="text-xs text-muted-foreground">≤ {MAX_REPLY_FILES} files, 100 MB total</span>
+          </div>
           <Button size="sm" disabled={sending} onClick={() => void sendReply()}>
+            {sending ? <Loader2Icon className="animate-spin" /> : null}
             {sending ? "Sending…" : internalNote ? "Add note" : "Send reply"}
           </Button>
         </div>

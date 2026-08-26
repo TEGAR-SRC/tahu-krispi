@@ -78,10 +78,56 @@ export default function DokployHubPage() {
         </AlertDescription>
       </Alert>
 
+      <UpstreamManagerGrid />
       <EntityGrid />
       <TargetedSyncCard />
       <ExplorerCard />
     </div>
+  )
+}
+
+// ---- Upstream manager consoles ------------------------------------------------
+
+const UPSTREAM_CONSOLES = [
+  { slug: "project", title: "Projects", description: "Create, rename and delete upstream projects." },
+  { slug: "application", title: "Applications", description: "Apps plus deploy/start/stop lifecycle actions." },
+  { slug: "database", title: "Databases", description: "Postgres, MySQL, MariaDB, Mongo and Redis." },
+  { slug: "domain", title: "Domains", description: "Per-application domains with HTTPS settings." },
+  { slug: "deployment", title: "Deployments", description: "Deployment history, logs and kill switch." },
+  { slug: "certificate", title: "Certificates", description: "Custom TLS certificates (PEM)." },
+  { slug: "registry", title: "Registries", description: "Connected container registries." },
+  { slug: "server", title: "Servers", description: "Build/deploy hosts over SSH." },
+  { slug: "sshkey", title: "SSH keys", description: "SSH private keys used by the server." },
+] as const
+
+function UpstreamManagerGrid() {
+  return (
+    <section className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold">Upstream manager</h2>
+        <p className="text-sm text-muted-foreground">
+          Full CRUD straight against the Dokploy server — every action runs live.
+        </p>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {UPSTREAM_CONSOLES.map((console) => (
+          <Card key={console.slug} className="gap-3">
+            <CardHeader>
+              <CardTitle>{console.title}</CardTitle>
+              <CardDescription>{console.description}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" size="sm" asChild>
+                <Link to={`/admin/dokploy/manager/${console.slug}`}>
+                  Open console
+                  <ArrowUpRightIcon />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </section>
   )
 }
 

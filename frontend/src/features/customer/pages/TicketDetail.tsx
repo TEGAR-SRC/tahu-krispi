@@ -177,9 +177,15 @@ export default function CustomerTicketThreadPage() {
         { headers: { Authorization: `Bearer ${getToken() ?? ""}` } },
       )
       if (!response.ok) throw new Error(`Download failed (${response.status})`)
-      const payload = (await response.json()) as { url?: string }
-      if (!payload.url) throw new Error("No download link returned")
-      window.open(payload.url, "_blank", "noopener,noreferrer")
+      // Endpoint answers either a platform envelope {data:{url}} or a bare
+      // {url}; unwrap both before opening.
+      const payload = (await response.json()) as {
+        url?: string
+        data?: { url?: string }
+      }
+      const url = payload.data?.url ?? payload.url
+      if (!url) throw new Error("No download link returned")
+      window.open(url, "_blank", "noopener,noreferrer")
     } catch (cause) {
       toast.error(cause instanceof Error ? cause.message : "Attachment download failed")
     }

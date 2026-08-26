@@ -18,6 +18,7 @@ import {
   RotateCwIcon,
   ScrollTextIcon,
   ShieldIcon,
+  ScalingIcon,
   TerminalIcon,
   Trash2Icon,
 } from "lucide-react"
@@ -383,6 +384,12 @@ function quickTiles(instance: InstanceDetail): QuickTile[] {
       label: "Notes & tags",
       description: "Free-form notes and labels",
       icon: <ScrollTextIcon />,
+    },
+    {
+      to: `${base}/resize`,
+      label: "Resize",
+      description: "Upgrade CPU, RAM & disk",
+      icon: <ScalingIcon />,
     },
     {
       to: `${base}/snapshots`,

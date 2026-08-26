@@ -2,6 +2,7 @@
 // download / delete. Download links are short-lived; proxmox backups stream
 // through the backend, so downloads fetch the body with the bearer token.
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { Link } from "react-router-dom"
 import {
   ClockIcon,
   DownloadIcon,
@@ -9,6 +10,7 @@ import {
   Loader2Icon,
   PlusIcon,
   RotateCcwIcon,
+  ShieldCheckIcon,
   Trash2Icon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -315,9 +317,16 @@ export default function CustomerBackupsPage() {
         title="Backups & snapshots"
         description="Restore points for your instances. Downloads are short-lived links."
         actions={
-          <Button onClick={() => setCreateOpen(true)} disabled={instances.length === 0}>
-            <PlusIcon /> New snapshot
-          </Button>
+          <>
+            <Button variant="outline" asChild>
+              <Link to="/app/measured-boot">
+                <ShieldCheckIcon /> Measured boot images
+              </Link>
+            </Button>
+            <Button onClick={() => setCreateOpen(true)} disabled={instances.length === 0}>
+              <PlusIcon /> New snapshot
+            </Button>
+          </>
         }
       />
 

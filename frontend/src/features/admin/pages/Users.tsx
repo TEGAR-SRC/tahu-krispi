@@ -2,6 +2,7 @@
 // detail sheet with suspend/activate, platform-admin grant/revoke and
 // per-user resource limits (PATCH /admin/users/:user_id/limits).
 import { useCallback, useEffect, useState } from "react"
+import { Link } from "react-router-dom"
 import { toast } from "sonner"
 import { apiGet, apiPatch, apiPost, ApiError } from "@/lib/api"
 import { PageHeader } from "@/components/shared/PageHeader"
@@ -188,7 +189,12 @@ export default function AdminUsersPage() {
             header: "User",
             render: (row) => (
               <div className="min-w-0">
-                <p className="truncate font-medium">{row.email}</p>
+                <Link
+                  to={`/admin/users/${row.id}`}
+                  className="block truncate font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  {row.email}
+                </Link>
                 <p className="truncate text-xs text-muted-foreground">
                   {row.full_name || row.username || "—"}
                 </p>

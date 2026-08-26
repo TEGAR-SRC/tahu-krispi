@@ -37,13 +37,18 @@ func NewRepository(db *pgxpool.Pool) *Repository { return &Repository{db: db} }
 func (r *Repository) GetProfile(ctx context.Context, userID uuid.UUID) (*Profile, error) {
 	row := r.db.QueryRow(ctx, `
 SELECT u.id, u.email::text, COALESCE(u.phone_e164,''), COALESCE(u.username::text,''), u.status::text,
-       u.locale, u.timezone, p.avatar_object_id, p.preferences, p.metadata
+       u.locale, u.timezone,
+       COALESCE(p.full_name,''), COALESCE(p.display_name,''), COALESCE(p.company_name,''),
+       COALESCE(p.country_code,''), COALESCE(p.tax_id,''),
+       p.avatar_object_id, p.preferences, p.metadata
 FROM users u LEFT JOIN user_profiles p ON p.user_id=u.id
 WHERE u.id=$1 AND u.deleted_at IS NULL`, userID)
 	var p Profile
 	var avatar *uuid.UUID
 	if err := row.Scan(&p.UserID, &p.Email, &p.Phone, &p.Username, &p.Status,
-		&p.Locale, &p.Timezone, &avatar, &p.Preferences, &p.Metadata); err != nil {
+		&p.Locale, &p.Timezone,
+		&p.FullName, &p.DisplayName, &p.CompanyName, &p.CountryCode, &p.TaxID,
+		&avatar, &p.Preferences, &p.Metadata); err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, apperrors.New(apperrors.CodeNotFound, "user not found")
 		}

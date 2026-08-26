@@ -1,6 +1,7 @@
 // Instance detail side panel: overview + power actions, metrics, notes & tags,
 // and the upgrade-only resize picker.
 import { useCallback, useEffect, useState } from "react"
+import { Link } from "react-router-dom"
 import {
   HardDriveIcon,
   MemoryStickIcon,
@@ -9,6 +10,7 @@ import {
   PowerOffIcon,
   RotateCwIcon,
   SaveIcon,
+  ScalingIcon,
   TagIcon,
   XIcon,
 } from "lucide-react"
@@ -447,6 +449,12 @@ function ResizeTab({
 
   return (
     <div className="space-y-5">
+      <Button asChild variant="outline" size="sm" className="w-fit">
+        <Link to={`/app/instances/${instance.id}/resize`}>
+          <ScalingIcon /> Open full-page resize
+        </Link>
+      </Button>
+
       <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
         Resize is upgrade-only: every dimension must be ≥ the current spec
         (provider policy). Smaller options are disabled.

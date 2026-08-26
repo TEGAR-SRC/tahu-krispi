@@ -1,8 +1,10 @@
 // NOC ticket thread: resolves the ticket through the staff queue list (the
 // backend has no single-ticket GET), then renders the org-scoped message
 // thread plus the staff actions the tickets area grants — reply with optional
-// internal note, close, and assign to a staff user id.
-import { useCallback, useEffect, useState } from "react"
+// internal note and up to 10 attachments (POST /admin/tickets/:ticket_id/
+// reply/attachments), close, assign to a staff user id, and per-attachment
+// download through the staff attachment endpoint.
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { apiGet, apiPost } from "@/lib/api"
 import { toast } from "sonner"
@@ -32,11 +34,26 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
-import { Loader2Icon, SendIcon, TicketCheckIcon, UserRoundCogIcon } from "lucide-react"
+import {
+  Loader2Icon,
+  PaperclipIcon,
+  SendIcon,
+  TicketCheckIcon,
+  UserRoundCogIcon,
+  XIcon,
+} from "lucide-react"
 import type { TicketMessage, TicketRow } from "../lib"
-import { StatusBadge, fmtDateTime, formatBytes, toastApiError } from "../lib"
+import { StatusBadge, fmtDateTime, toastApiError } from "../lib"
+import {
+  downloadStaffTicketAttachment,
+  formatBytes,
+  MAX_REPLY_FILES,
+  MAX_TOTAL_BYTES,
+  uploadStaffTicketReply,
+} from "../../admin/pages/attachmentUpload"
 
 const RESOLVE_PAGE_SIZE = 100
 const RESOLVE_MAX_PAGES = 5
@@ -55,6 +72,10 @@ export default function NocTicketThreadPage() {
   const [replyBody, setReplyBody] = useState("")
   const [internalNote, setInternalNote] = useState(false)
   const [sending, setSending] = useState(false)
+  const [files, setFiles] = useState<File[]>([])
+  // One 0-100 percentage per pending file while an attachment reply uploads.
+  const [filePercents, setFilePercents] = useState<number[] | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [confirmClose, setConfirmClose] = useState(false)
   const [closing, setClosing] = useState(false)
   const [assigneeId, setAssigneeId] = useState("")
@@ -112,14 +133,48 @@ export default function NocTicketThreadPage() {
     if (ticket) void loadMessages()
   }, [ticket, loadMessages])
 
+  const pickFiles = useCallback(
+    (selected: File[]) => {
+      if (selected.length === 0) return
+      setFiles((current) => {
+        const merged = [...current, ...selected].slice(0, MAX_REPLY_FILES)
+        if (current.length + selected.length > MAX_REPLY_FILES) {
+          toast.error(`At most ${MAX_REPLY_FILES} files per reply`)
+        }
+        if (merged.reduce((sum, file) => sum + file.size, 0) > MAX_TOTAL_BYTES) {
+          toast.error("Attachments exceed the 100 MB total size cap")
+          return current
+        }
+        return merged
+      })
+    },
+    [],
+  )
+
+  const clearFiles = () => {
+    setFiles([])
+    setFilePercents(null)
+    if (fileInputRef.current) fileInputRef.current.value = ""
+  }
+
   const sendReply = useCallback(async () => {
     if (!ticket || !replyBody.trim()) return
     setSending(true)
     try {
-      await apiPost(`/admin/tickets/${ticket.id}/reply`, {
-        body: replyBody.trim(),
-        internal_note: internalNote,
-      })
+      if (files.length > 0) {
+        setFilePercents(files.map(() => 0))
+        await uploadStaffTicketReply(
+          ticket.id,
+          { body: replyBody.trim(), internalNote, files },
+          (percents) => setFilePercents(percents),
+        )
+        clearFiles()
+      } else {
+        await apiPost(`/admin/tickets/${ticket.id}/reply`, {
+          body: replyBody.trim(),
+          internal_note: internalNote,
+        })
+      }
       toast.success(internalNote ? "Internal note added" : "Reply sent")
       setReplyBody("")
       setInternalNote(false)
@@ -128,8 +183,25 @@ export default function NocTicketThreadPage() {
       toastApiError(cause, "Could not send the reply")
     } finally {
       setSending(false)
+      setFilePercents(null)
     }
-  }, [ticket, replyBody, internalNote, loadMessages])
+  }, [ticket, replyBody, internalNote, files, loadMessages])
+
+  const downloadAttachment = async (
+    messageId: string,
+    attachment: TicketMessage["attachments"][number],
+  ) => {
+    if (!ticket) return
+    try {
+      await downloadStaffTicketAttachment(ticket.id, {
+        messageId,
+        attachmentId: attachment.id,
+        filename: attachment.filename,
+      })
+    } catch (cause) {
+      toastApiError(cause, "Attachment download failed")
+    }
+  }
 
   const closeTicket = useCallback(async () => {
     if (!ticket) return
@@ -247,10 +319,19 @@ export default function NocTicketThreadPage() {
                   </header>
                   <p className="whitespace-pre-wrap text-sm">{message.body}</p>
                   {message.attachments.length > 0 ? (
-                    <ul className="mt-2 space-y-0.5">
+                    <ul className="mt-2 space-y-0.5 border-t pt-2">
                       {message.attachments.map((attachment) => (
-                        <li key={attachment.id} className="text-xs text-muted-foreground">
-                          Attachment: {attachment.filename} ({formatBytes(attachment.size_bytes)})
+                        <li key={attachment.id}>
+                          <button
+                            type="button"
+                            className="flex items-center gap-1.5 text-xs text-primary hover:underline disabled:opacity-50"
+                            onClick={() =>
+                              void downloadAttachment(message.id, attachment)
+                            }
+                          >
+                            <PaperclipIcon className="size-3 shrink-0" />
+                            {attachment.filename} ({formatBytes(attachment.size_bytes)})
+                          </button>
                         </li>
                       ))}
                     </ul>
@@ -273,11 +354,68 @@ export default function NocTicketThreadPage() {
                 value={replyBody}
                 onChange={(event) => setReplyBody(event.target.value)}
               />
+              {files.length > 0 ? (
+                <ul className="flex flex-wrap gap-1.5">
+                  {files.map((file, index) => (
+                    <li
+                      key={`${file.name}-${index}`}
+                      className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs"
+                    >
+                      <PaperclipIcon className="size-3" />
+                      {file.name} ({formatBytes(file.size)})
+                      <button
+                        type="button"
+                        aria-label={`Remove ${file.name}`}
+                        disabled={sending}
+                        onClick={() => setFiles(files.filter((_, i) => i !== index))}
+                        className="rounded-full p-0.5 hover:bg-background"
+                      >
+                        <XIcon className="size-3" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {filePercents !== null ? (
+                <ul className="space-y-1">
+                  {files.map((file, index) => (
+                    <li key={`${file.name}-${index}`} className="flex items-center gap-2 text-xs">
+                      <span className="w-40 truncate text-muted-foreground">{file.name}</span>
+                      <Progress value={filePercents[index] ?? 0} className="h-1 flex-1" />
+                      <span className="w-10 shrink-0 text-right tabular-nums text-muted-foreground">
+                        {filePercents[index] ?? 0}%
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <label className="flex items-center gap-2 text-sm">
-                  <Checkbox checked={internalNote} onCheckedChange={(v) => setInternalNote(v === true)} />
-                  Internal note only
-                </label>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox checked={internalNote} onCheckedChange={(v) => setInternalNote(v === true)} />
+                    Internal note only
+                  </label>
+                  <Input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept="image/*,video/*,text/*,.pdf,.zip,.log"
+                    className="hidden"
+                    onChange={(event) => pickFiles(Array.from(event.target.files ?? []))}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={sending}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <PaperclipIcon /> Attach files
+                  </Button>
+                  <span className="text-xs text-muted-foreground">
+                    ≤ {MAX_REPLY_FILES} files, 100 MB total
+                  </span>
+                </div>
                 <Button size="sm" disabled={sending || !replyBody.trim()} onClick={() => void sendReply()}>
                   {sending ? <Loader2Icon className="animate-spin" /> : <SendIcon />}
                   Send

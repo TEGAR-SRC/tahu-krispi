@@ -126,7 +126,12 @@ export default function CustomerWalletPage() {
       </div>
 
       <div className="space-y-3">
-        <h2 className="text-lg font-semibold">Transactions</h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold">Transactions</h2>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/app/wallet/transactions">View all transactions</Link>
+          </Button>
+        </div>
         <SimpleDataTable
           columns={columns}
           rows={transactions}

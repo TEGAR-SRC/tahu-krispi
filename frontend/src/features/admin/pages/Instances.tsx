@@ -1,11 +1,14 @@
 // Platform-admin instance inventory: every instance across organizations with
 // status filtering; rows navigate to the dedicated instance detail page which
-// owns provider actions, jobs and child counts.
-import { useEffect, useState } from "react"
+// owns provider actions, jobs and child counts. States seen in the loaded rows
+// are also surfaced as quick-links to the per-state boards
+// (/admin/instances/state/:state).
+import { useEffect, useMemo, useState } from "react"
 import { Link } from "react-router-dom"
 import { apiGet } from "@/lib/api"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -83,6 +86,12 @@ export default function AdminInstancesPage() {
     }
   }, [page, status])
 
+  // States observed in the currently loaded rows drive the quick-link chips.
+  const states = useMemo(
+    () => [...new Set(rows.map((row) => row.status).filter(Boolean))].sort(),
+    [rows],
+  )
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -111,6 +120,22 @@ export default function AdminInstancesPage() {
           </SelectContent>
         </Select>
       </div>
+
+      {states.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-muted-foreground">State boards:</span>
+          {states.map((state) => (
+            <Badge key={state} variant="secondary" asChild>
+              <Link
+                to={`/admin/instances/state/${encodeURIComponent(state)}`}
+                className="capitalize hover:bg-secondary/80"
+              >
+                {state}
+              </Link>
+            </Badge>
+          ))}
+        </div>
+      ) : null}
 
       <SimpleDataTable<AdminInstanceRow>
         columns={[

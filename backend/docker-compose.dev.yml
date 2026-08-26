@@ -63,7 +63,7 @@ services:
       /bin/sh -c "
       mc alias set local http://minio:9000 kilat kilat-secret &&
       for b in kilat-avatars kilat-documents kilat-isos kilat-tickets kilat-invoices kilat-cloud-dev; do
-        mc mb --ignore existing local/$$b;
+        mc mb --ignore-existing local/$$b;
       done"
 
 volumes:

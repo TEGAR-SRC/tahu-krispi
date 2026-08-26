@@ -1,7 +1,7 @@
 // Platform-admin organizations directory (GET /admin/organizations). The
 // endpoint supports pagination only — no search/status query params (verified
-// against the live API) — so the table is purely paginated. Rows link to the
-// per-organization detail page.
+// against the live API) — so the table is purely paginated. The org name and
+// the per-row Open button both link to the detail page.
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { apiGet } from "@/lib/api"
@@ -56,7 +56,12 @@ export default function OrganizationsPage() {
             header: "Organization",
             render: (row) => (
               <div className="min-w-0">
-                <p className="truncate font-medium">{row.name || row.slug}</p>
+                <Link
+                  to={`/admin/organizations/${row.id}`}
+                  className="block truncate font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  {row.name || row.slug}
+                </Link>
                 <p className="font-mono text-xs text-muted-foreground">{row.slug}</p>
               </div>
             ),

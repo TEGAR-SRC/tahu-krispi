@@ -8,6 +8,7 @@ import {
   LinkIcon,
   Loader2Icon,
   RefreshCwIcon,
+  ShieldCheckIcon,
   Trash2Icon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -272,6 +273,11 @@ export default function CustomerIsoPage() {
         description="Custom ISOs and measured boot images for your instances."
         actions={
           <>
+            <Button variant="outline" asChild>
+              <Link to="/app/measured-boot">
+                <ShieldCheckIcon /> Measured boot page
+              </Link>
+            </Button>
             <Button variant="outline" onClick={() => setUrlOpen(true)}>
               <LinkIcon /> Add from URL
             </Button>

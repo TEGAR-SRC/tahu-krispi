@@ -1,7 +1,9 @@
 // Platform-admin audit trail: filter by actor uuid and action substring, then
-// expand any row to inspect the raw JSON record returned by the API.
+// expand any row to inspect the raw JSON record returned by the API. The
+// currently loaded filtered rows can be exported as a CSV blob download.
 import { useEffect, useState } from "react"
-import { ChevronDownIcon, ChevronRightIcon } from "lucide-react"
+import { ChevronDownIcon, ChevronRightIcon, DownloadIcon } from "lucide-react"
+import { toast } from "sonner"
 import { apiGet } from "@/lib/api"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
@@ -23,6 +25,25 @@ interface AuditLogRow {
 }
 
 const PER_PAGE = 20
+
+const CSV_COLUMNS = [
+  "id",
+  "created_at",
+  "action",
+  "resource_type",
+  "resource_id",
+  "actor_user_id",
+  "actor_api_key_id",
+  "organization_id",
+  "ip",
+  "request_id",
+] as const
+
+/** Quotes a CSV cell when it contains separators, quotes or newlines. */
+function csvCell(value: unknown): string {
+  const text = value === null || value === undefined ? "" : String(value)
+  return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
+}
 
 export default function AdminAuditLogsPage() {
   const [rows, setRows] = useState<AuditLogRow[]>([])
@@ -64,6 +85,34 @@ export default function AdminAuditLogsPage() {
     }
   }, [page, actor, action])
 
+  // Client-side export of the rows currently loaded under the active filters
+  // (i.e. the visible page of the filtered result set).
+  const exportCsv = () => {
+    if (rows.length === 0) return
+    try {
+      const lines = [
+        CSV_COLUMNS.join(","),
+        ...rows.map((row) =>
+          CSV_COLUMNS.map((column) => csvCell(row[column])).join(","),
+        ),
+      ]
+      const blob = new Blob([lines.join("\r\n")], {
+        type: "text/csv;charset=utf-8",
+      })
+      const url = URL.createObjectURL(blob)
+      const anchor = document.createElement("a")
+      anchor.href = url
+      anchor.download = `audit-logs-${new Date().toISOString().slice(0, 10)}.csv`
+      document.body.appendChild(anchor)
+      anchor.click()
+      anchor.remove()
+      URL.revokeObjectURL(url)
+      toast.success(`Exported ${rows.length} audit entries`)
+    } catch {
+      toast.error("Could not generate the CSV export")
+    }
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -90,6 +139,14 @@ export default function AdminAuditLogsPage() {
             setExpandedId(null)
           }}
         />
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={loading || rows.length === 0}
+          onClick={exportCsv}
+        >
+          <DownloadIcon /> Export CSV
+        </Button>
       </div>
 
       <SimpleDataTable<AuditLogRow>
