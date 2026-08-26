@@ -319,6 +319,69 @@ const MyAuditLogs = lazy(() =>
   import("@/features/customer/pages/account/AuditLogs"),
 )
 
+// ---- Lazy pages: wave 3 --------------------------------------------------------
+const StaffProfile = lazy(() => import("@/features/staff-account/ProfilePage"))
+const StaffSecurity = lazy(() =>
+  import("@/features/staff-account/SecurityPage"),
+)
+const StaffApiKeys = lazy(() =>
+  import("@/features/staff-account/ApiKeysPage"),
+)
+const StaffNotifications = lazy(() =>
+  import("@/features/staff-account/NotificationsPage"),
+)
+
+const DokployProjectConsole = lazy(() =>
+  import("@/features/admin/pages/dokploy/manager/ProjectConsole"),
+)
+const DokployApplicationConsole = lazy(() =>
+  import("@/features/admin/pages/dokploy/manager/ApplicationConsole"),
+)
+const DokployDatabaseConsole = lazy(() =>
+  import("@/features/admin/pages/dokploy/manager/DatabaseConsole"),
+)
+const DokployDomainConsole = lazy(() =>
+  import("@/features/admin/pages/dokploy/manager/DomainConsole"),
+)
+const DokployDeploymentConsole = lazy(() =>
+  import("@/features/admin/pages/dokploy/manager/DeploymentConsole"),
+)
+const DokployCertificateConsole = lazy(() =>
+  import("@/features/admin/pages/dokploy/manager/CertificateConsole"),
+)
+const DokployRegistryConsole = lazy(() =>
+  import("@/features/admin/pages/dokploy/manager/RegistryConsole"),
+)
+const DokployServerConsole = lazy(() =>
+  import("@/features/admin/pages/dokploy/manager/ServerConsole"),
+)
+const DokploySshKeyConsole = lazy(() =>
+  import("@/features/admin/pages/dokploy/manager/SshKeyConsole"),
+)
+
+const JobsQueueBoard = lazy(() =>
+  import("@/features/admin/pages/JobsQueueBoard"),
+)
+const InstancesStateBoard = lazy(() =>
+  import("@/features/admin/pages/InstancesStateBoard"),
+)
+
+const InstanceResize = lazy(() =>
+  import("@/features/customer/pages/instances/Resize"),
+)
+const MeasuredBootPage = lazy(() =>
+  import("@/features/customer/pages/MeasuredBoot"),
+)
+const FirewallGroupDetail = lazy(() =>
+  import("@/features/customer/pages/network/FirewallGroupDetail"),
+)
+const IpListDetail = lazy(() =>
+  import("@/features/customer/pages/network/IpListDetail"),
+)
+const WalletTransactionsPage = lazy(() =>
+  import("@/features/customer/pages/WalletTransactions"),
+)
+
 // ---- Guards -------------------------------------------------------------------
 
 interface RequireRoleProps {
@@ -493,6 +556,53 @@ export default function AppRoutes() {
           />
           <Route path="affiliate/settings" element={<AffiliateSettings />} />
           <Route path="affiliate/earnings" element={<AffiliateEarnings />} />
+
+          <Route path="account/profile" element={<StaffProfile />} />
+          <Route path="account/security" element={<StaffSecurity />} />
+          <Route path="account/api-keys" element={<StaffApiKeys />} />
+          <Route path="account/notifications" element={<StaffNotifications />} />
+
+          <Route
+            path="dokploy/manager/project"
+            element={<DokployProjectConsole />}
+          />
+          <Route
+            path="dokploy/manager/application"
+            element={<DokployApplicationConsole />}
+          />
+          <Route
+            path="dokploy/manager/database"
+            element={<DokployDatabaseConsole />}
+          />
+          <Route
+            path="dokploy/manager/domain"
+            element={<DokployDomainConsole />}
+          />
+          <Route
+            path="dokploy/manager/deployment"
+            element={<DokployDeploymentConsole />}
+          />
+          <Route
+            path="dokploy/manager/certificate"
+            element={<DokployCertificateConsole />}
+          />
+          <Route
+            path="dokploy/manager/registry"
+            element={<DokployRegistryConsole />}
+          />
+          <Route
+            path="dokploy/manager/server"
+            element={<DokployServerConsole />}
+          />
+          <Route
+            path="dokploy/manager/sshkey"
+            element={<DokploySshKeyConsole />}
+          />
+          <Route path="jobs/queue/:queue" element={<JobsQueueBoard />} />
+          <Route
+            path="instances/state/:state"
+            element={<InstancesStateBoard />}
+          />
         </Route>
 
         <Route
@@ -508,6 +618,10 @@ export default function AppRoutes() {
           <Route path="instances/:instanceId" element={<NocInstanceDetail />} />
           <Route path="jobs" element={<NocJobs />} />
           <Route path="jobs/:jobId" element={<NocJobDetail />} />
+          <Route path="account/profile" element={<StaffProfile />} />
+          <Route path="account/security" element={<StaffSecurity />} />
+          <Route path="account/api-keys" element={<StaffApiKeys />} />
+          <Route path="account/notifications" element={<StaffNotifications />} />
           <Route path="providers" element={<NocProviders />} />
           <Route path="providers/:providerId" element={<NocProviderDetail />} />
           <Route
@@ -553,6 +667,10 @@ export default function AppRoutes() {
         >
           <Route index element={<FinanceSummary />} />
           <Route path="reports" element={<FinanceReports />} />
+          <Route path="account/profile" element={<StaffProfile />} />
+          <Route path="account/security" element={<StaffSecurity />} />
+          <Route path="account/api-keys" element={<StaffApiKeys />} />
+          <Route path="account/notifications" element={<StaffNotifications />} />
           <Route path="orders" element={<FinanceOrders />} />
           <Route path="orders/:orderId" element={<FinanceOrderDetail />} />
           <Route path="invoices" element={<FinanceInvoices />} />
@@ -616,6 +734,10 @@ export default function AppRoutes() {
             path="instances/:instanceId/snapshots"
             element={<InstanceSnapshots />}
           />
+          <Route
+            path="instances/:instanceId/resize"
+            element={<InstanceResize />}
+          />
           <Route path="iso" element={<CustomerIso />} />
           <Route path="iso/:isoId" element={<IsoDetail />} />
           <Route path="backups" element={<CustomerBackups />} />
@@ -625,6 +747,16 @@ export default function AppRoutes() {
 
           <Route path="wallet" element={<CustomerWallet />} />
           <Route path="wallet/topup" element={<Topup />} />
+          <Route
+            path="wallet/transactions"
+            element={<WalletTransactionsPage />}
+          />
+          <Route path="measured-boot" element={<MeasuredBootPage />} />
+          <Route
+            path="network/firewall/:firewallId"
+            element={<FirewallGroupDetail />}
+          />
+          <Route path="ip-lists/:listId" element={<IpListDetail />} />
           <Route path="orders" element={<CustomerOrders />} />
           <Route path="orders/:orderId" element={<CustomerOrderDetail />} />
           <Route path="invoices" element={<CustomerInvoices />} />

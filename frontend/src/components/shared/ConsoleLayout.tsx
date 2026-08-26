@@ -2,7 +2,7 @@
 // sidebar navigation + header with the signed-in user menu + routed Outlet.
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom"
 import type { LucideIcon } from "lucide-react"
-import { LogOutIcon, TerminalIcon } from "lucide-react"
+import { LogOutIcon, SettingsIcon, TerminalIcon } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -29,7 +29,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
-import { useAuth } from "@/lib/auth"
+import { useAuth, homePathFor } from "@/lib/auth"
 
 export interface ConsoleNavItem {
   title: string
@@ -157,6 +157,14 @@ export function ConsoleLayout({ brand, brandTagline, navSections }: ConsoleLayou
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() =>
+                      navigate(`${homePathFor(role)}/account/profile`)
+                    }
+                  >
+                    <SettingsIcon />
+                    Account settings
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOutIcon />
                     Log out
