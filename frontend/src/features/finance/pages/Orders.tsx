@@ -1,6 +1,7 @@
 // Admin orders ledger: status/search filtered paged table, detail dialog with
 // items/invoices/coupon/quote breakdown, and void action (finance allowed).
 import { useCallback, useEffect, useState } from "react"
+import { Link } from "react-router-dom"
 import { apiGet, apiPost, ApiError } from "@/lib/api"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/shared/PageHeader"
@@ -209,7 +210,14 @@ export default function FinanceOrdersPage() {
           {
             key: "public_id",
             header: "Order",
-            render: (row) => <span className="font-mono text-xs">{row.public_id}</span>,
+            render: (row) => (
+              <Link
+                to={`/finance/orders/${row.id}`}
+                className="font-mono text-xs underline-offset-4 hover:underline"
+              >
+                {row.public_id}
+              </Link>
+            ),
           },
           { key: "org_slug", header: "Organization" },
           {

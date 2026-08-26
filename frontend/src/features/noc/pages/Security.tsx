@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { apiDelete, apiGet, apiPost } from "@/lib/api"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { StatCard } from "@/components/shared/StatCard"
 import { SimpleDataTable, type SimpleColumn } from "@/components/shared/SimpleDataTable"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -18,9 +19,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Loader2Icon, ShieldAlertIcon, ShieldBanIcon, CircleCheckIcon } from "lucide-react"
+import {
+  Loader2Icon,
+  ShieldAlertIcon,
+  ShieldBanIcon,
+  CircleCheckIcon,
+  KeyRoundIcon,
+  TriangleAlertIcon,
+} from "lucide-react"
 import {
   type BlockedNetwork,
+  type Provider,
   type SecurityIncident,
   StatusBadge,
   fmtDateTime,
@@ -39,8 +48,81 @@ interface IncidentRow extends SecurityIncident {
   resolved_at: string
 }
 
+// ---- Certificate expiry board -------------------------------------------------
+
+/** One entry of GET /admin/providers/:id/nodes/:node/certs (PVE certificate info). */
+interface NodeCertificate {
+  filename?: string
+  fingerprint?: string
+  issuer?: string
+  subject?: string
+  "not-after"?: string
+  "not-before"?: string
+}
+
+interface ClusterPayload {
+  provider_id: string
+  code: string
+  nodes?: Array<{ node?: string; status?: string }>
+  resources?: unknown[]
+}
+
+interface CertRow {
+  key: string
+  providerId: string
+  providerName: string
+  node: string
+  subject: string
+  fingerprint: string
+  issuer: string
+  notAfterRaw: string
+  expiresAt: Date | null
+  /** Whole days until expiry; negative when already expired. */
+  daysRemaining: number | null
+}
+
 const CIDR_PATTERN =
   /^(\d{1,3}\.){3}\d{1,3}\/\d{1,2}$|^([0-9a-fA-F:]+)\/\d{1,3}$/
+
+function parseApiDate(value?: string | null): Date | null {
+  if (!value) return null
+  const direct = new Date(value)
+  if (!Number.isNaN(direct.getTime())) return direct
+  const normalized = value.replace(" ", "T").replace(/([+-]\d{2})$/, "$1:00")
+  const parsed = new Date(normalized)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
+function certDaysRemaining(cert: NodeCertificate): Date | null {
+  return parseApiDate(cert["not-after"])
+}
+
+function CertExpiryBadge({ row }: { row: CertRow }) {
+  if (row.daysRemaining === null) {
+    return (
+      <Badge variant="outline" className="text-muted-foreground">
+        unparsable date
+      </Badge>
+    )
+  }
+  if (row.daysRemaining < 0) {
+    return <Badge variant="destructive">expired</Badge>
+  }
+  if (row.daysRemaining < 14) {
+    return <Badge variant="destructive">{row.daysRemaining} d left</Badge>
+  }
+  if (row.daysRemaining < 30) {
+    return (
+      <Badge
+        variant="outline"
+        className="border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+      >
+        {row.daysRemaining} d left
+      </Badge>
+    )
+  }
+  return <Badge variant="outline">{row.daysRemaining} d left</Badge>
+}
 
 export default function NocSecurityPage() {
   const [incidents, setIncidents] = useState<IncidentRow[]>([])
@@ -52,6 +134,11 @@ export default function NocSecurityPage() {
   const [networksLoading, setNetworksLoading] = useState(true)
   const [networksError, setNetworksError] = useState<unknown>(null)
 
+  const [certRows, setCertRows] = useState<CertRow[]>([])
+  const [certsLoading, setCertsLoading] = useState(true)
+  const [certsError, setCertsError] = useState<unknown>(null)
+  const [certWarnings, setCertWarnings] = useState<string[]>([])
+
   const [resolvingId, setResolvingId] = useState<string | null>(null)
   const [confirmResolve, setConfirmResolve] = useState<IncidentRow | null>(null)
 
@@ -62,9 +149,107 @@ export default function NocSecurityPage() {
   const [confirmUnblock, setConfirmUnblock] = useState<BlockedNetwork | null>(null)
   const [deletingNetwork, setDeletingNetwork] = useState<BlockedNetwork | null>(null)
 
+  const loadCerts = useCallback(async () => {
+    setCertsLoading(true)
+    setCertsError(null)
+    setCertWarnings([])
+    try {
+      const providersEnvelope = await apiGet<Provider[]>("/admin/providers")
+      // The certs endpoints are proxmox-only on this backend; only enabled
+      // proxmox-kind providers can answer.
+      const targets = providersEnvelope.data.filter(
+        (p) => p.enabled && p.kind === "proxmox",
+      )
+      if (targets.length === 0) {
+        setCertRows([])
+        setCertWarnings([])
+        return
+      }
+
+      const providerResults = await Promise.allSettled(
+        targets.map(async (provider) => {
+          const clusterEnvelope = await apiGet<ClusterPayload>(
+            `/admin/providers/${provider.id}/cluster`,
+          )
+          const nodes = [...new Set((clusterEnvelope.data.nodes ?? [])
+            .map((entry) => String(entry.node ?? ""))
+            .filter(Boolean))]
+
+          const nodeResults = await Promise.allSettled(
+            nodes.map(async (node) => {
+              const envelope = await apiGet<NodeCertificate[]>(
+                `/admin/providers/${provider.id}/nodes/${encodeURIComponent(node)}/certs`,
+              )
+              return { node, certs: Array.isArray(envelope.data) ? envelope.data : [] }
+            }),
+          )
+
+          return { provider, nodes, nodeResults }
+        }),
+      )
+
+      const rows: CertRow[] = []
+      const warnings: string[] = []
+      for (const providerResult of providerResults) {
+        if (providerResult.status === "rejected") {
+          const cause = providerResult.reason
+          warnings.push(
+            `Provider cluster unreachable: ${cause instanceof Error ? cause.message : String(cause)}`,
+          )
+          continue
+        }
+        const { provider, nodes, nodeResults } = providerResult.value
+        if (nodes.length === 0) {
+          warnings.push(`${provider.name}: cluster reported no nodes.`)
+        }
+        for (let index = 0; index < nodeResults.length; index += 1) {
+          const nodeResult = nodeResults[index]
+          const node = nodes[index]
+          if (nodeResult.status === "rejected") {
+            const cause = nodeResult.reason
+            warnings.push(
+              `${provider.name}/${node}: ${cause instanceof Error ? cause.message : String(cause)}`,
+            )
+            continue
+          }
+          for (const cert of nodeResult.value.certs) {
+            const expiresAt = certDaysRemaining(cert)
+            rows.push({
+              key: `${provider.id}:${node}:${cert.fingerprint ?? cert.filename ?? rows.length}`,
+              providerId: provider.id,
+              providerName: provider.name,
+              node,
+              subject: cert.subject || cert.filename || "—",
+              fingerprint: cert.fingerprint ?? "",
+              issuer: cert.issuer ?? "",
+              notAfterRaw: cert["not-after"] ?? "",
+              expiresAt,
+              daysRemaining:
+                expiresAt === null
+                  ? null
+                  : Math.ceil((expiresAt.getTime() - Date.now()) / (24 * 60 * 60 * 1000)),
+            })
+          }
+        }
+      }
+      rows.sort((a, b) => {
+        if (a.daysRemaining === null) return 1
+        if (b.daysRemaining === null) return -1
+        return a.daysRemaining - b.daysRemaining
+      })
+      setCertRows(rows)
+      setCertWarnings(warnings)
+    } catch (cause) {
+      setCertsError(cause)
+    } finally {
+      setCertsLoading(false)
+    }
+  }, [])
+
   const load = useCallback(async () => {
     setIncidentsLoading(true)
     setNetworksLoading(true)
+    void loadCerts()
     try {
       const envelope = await apiGet<IncidentRow[]>("/admin/security-incidents", {
         query: { page: 1, per_page: 50 },
@@ -88,7 +273,7 @@ export default function NocSecurityPage() {
     } finally {
       setNetworksLoading(false)
     }
-  }, [])
+  }, [loadCerts])
 
   useEffect(() => {
     void load()
@@ -151,7 +336,17 @@ export default function NocSecurityPage() {
     [load],
   )
 
-  const openIncidents = incidents.filter((i) => i.status !== "resolved" && i.status !== "dismissed").length
+  const openIncidents = incidents.filter(
+    (i) => i.status !== "resolved" && i.status !== "dismissed",
+  ).length
+
+  const expiringSoon = useMemo(
+    () =>
+      certRows.filter(
+        (row) => row.daysRemaining !== null && row.daysRemaining < 30,
+      ).length,
+    [certRows],
+  )
 
   const incidentColumns: Array<SimpleColumn<IncidentRow>> = [
     { key: "type", header: "Type", render: (row) => <span className="font-medium">{row.type}</span> },
@@ -238,7 +433,7 @@ export default function NocSecurityPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Security"
-        description="Security incidents and network blocking. Audit logs are platform-admin only."
+        description="Security incidents, network blocking and provider certificate expiry."
         actions={
           <Button variant="outline" size="sm" onClick={() => void load()}>
             Refresh
@@ -246,7 +441,7 @@ export default function NocSecurityPage() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-3">
         <StatCard
           label="Open incidents"
           value={openIncidents}
@@ -259,7 +454,106 @@ export default function NocSecurityPage() {
           hint="active firewall blocks"
           icon={<ShieldBanIcon />}
         />
+        <StatCard
+          label={"Certs expiring <30 d"}
+          value={expiringSoon}
+          hint={`${certRows.length} certificates tracked`}
+          icon={<KeyRoundIcon />}
+        />
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Provider certificate expiry</CardTitle>
+          <CardDescription>
+            Node certificates of every enabled Proxmox provider, soonest expiry first. Collected
+            via the NOC-readable cluster and certs endpoints.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {certsLoading ? (
+            <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+              <Loader2Icon className="size-4 animate-spin" /> Scanning provider certificates…
+            </div>
+          ) : certsError ? (
+            <p className="text-destructive text-sm">
+              Certificate board unavailable:{" "}
+              {certsError instanceof Error ? certsError.message : "request failed"}
+            </p>
+          ) : certRows.length === 0 && certWarnings.length === 0 ? (
+            <p className="rounded-md border bg-muted/40 p-4 text-sm text-muted-foreground">
+              No enabled Proxmox-kind provider is available to scan. Enable one with configured
+              credentials to populate this board.
+            </p>
+          ) : (
+            <>
+              {certRows.length > 0 ? (
+                <div className="overflow-x-auto rounded-md border">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b bg-muted/50 text-left text-xs text-muted-foreground">
+                        <th className="px-3 py-2 font-medium">Subject</th>
+                        <th className="px-3 py-2 font-medium">Provider / node</th>
+                        <th className="px-3 py-2 font-medium">Issuer</th>
+                        <th className="px-3 py-2 font-medium">Not after</th>
+                        <th className="px-3 py-2 text-right font-medium">Remaining</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {certRows.map((row) => (
+                        <tr key={row.key} className="border-b last:border-b-0">
+                          <td className="max-w-64 px-3 py-2">
+                            <p className="truncate" title={row.subject}>
+                              {row.subject}
+                            </p>
+                            {row.fingerprint ? (
+                              <p
+                                className="truncate font-mono text-[10px] text-muted-foreground"
+                                title={row.fingerprint}
+                              >
+                                {row.fingerprint}
+                              </p>
+                            ) : null}
+                          </td>
+                          <td className="px-3 py-2 text-xs">
+                            {row.providerName}
+                            <span className="text-muted-foreground"> · {row.node}</span>
+                          </td>
+                          <td className="max-w-48 truncate px-3 py-2 text-xs text-muted-foreground" title={row.issuer}>
+                            {row.issuer || "—"}
+                          </td>
+                          <td className="px-3 py-2 text-xs">
+                            {row.expiresAt ? fmtDateTime(row.notAfterRaw) : row.notAfterRaw || "—"}
+                          </td>
+                          <td className="px-3 py-2 text-right">
+                            <CertExpiryBadge row={row} />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No certificates could be collected — see the scan failures below.
+                </p>
+              )}
+              {certWarnings.length > 0 ? (
+                <div className="space-y-1 rounded-md border border-amber-500/40 bg-amber-500/5 p-3">
+                  <p className="flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+                    <TriangleAlertIcon className="size-3.5" /> Partial results — some scans failed:
+                  </p>
+                  <ul className="list-inside list-disc space-y-0.5 text-xs text-muted-foreground">
+                    {certWarnings.map((warning) => (
+                      <li key={warning}>{warning}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

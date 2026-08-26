@@ -1,6 +1,7 @@
 // Platform-admin job queue: filter by status/queue, optional 5s auto-refresh,
-// retry/cancel actions and a detail dialog with the raw payload JSON.
+// retry/cancel actions and navigation into the dedicated job detail page.
 import { useCallback, useEffect, useState } from "react"
+import { Link } from "react-router-dom"
 import { RefreshCwIcon } from "lucide-react"
 import { toast } from "sonner"
 import { apiGet, apiPost, ApiError } from "@/lib/api"
@@ -17,13 +18,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import {
   Select,
@@ -34,14 +28,7 @@ import {
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import type { PagedMeta } from "@/lib/types"
-import {
-  DetailField,
-  JsonBlock,
-  PaginationBar,
-  SearchFilter,
-  StatusBadge,
-  formatDateTime,
-} from "./shared"
+import { PaginationBar, SearchFilter, StatusBadge, formatDateTime } from "./shared"
 
 interface AdminJobRow {
   id: string
@@ -60,13 +47,6 @@ interface AdminJobRow {
   completed_at: string
 }
 
-interface AdminJobDetail extends AdminJobRow {
-  payload: unknown
-  locked_at: string
-  updated_at: string
-  related_instance_public_id: string
-}
-
 const JOB_STATUSES = ["queued", "running", "retry", "success", "failed", "cancelled"]
 const PER_PAGE = 20
 const AUTO_REFRESH_MS = 5000
@@ -81,7 +61,6 @@ export default function AdminJobsPage() {
   const [error, setError] = useState<unknown>(null)
   const [autoRefresh, setAutoRefresh] = useState(false)
 
-  const [detail, setDetail] = useState<AdminJobDetail | null>(null)
   const [cancelTarget, setCancelTarget] = useState<AdminJobRow | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
 
@@ -120,20 +99,6 @@ export default function AdminJobsPage() {
     const handle = window.setInterval(() => void load(true), AUTO_REFRESH_MS)
     return () => window.clearInterval(handle)
   }, [autoRefresh, load])
-
-  // Keep an open detail dialog in sync while auto-refresh is running.
-  useEffect(() => {
-    if (!autoRefresh || !detail) return
-    const id = detail.id
-    const handle = window.setInterval(() => {
-      apiGet<AdminJobDetail>(`/admin/jobs/${id}`)
-        .then(({ data }) => setDetail(data))
-        .catch(() => {
-          // Row may disappear; leave the stale detail on screen.
-        })
-    }, AUTO_REFRESH_MS)
-    return () => window.clearInterval(handle)
-  }, [autoRefresh, detail])
 
   const runAction = async (
     job: AdminJobRow,
@@ -211,7 +176,12 @@ export default function AdminJobsPage() {
             header: "Job",
             render: (row) => (
               <div className="min-w-0">
-                <p className="truncate font-medium">{row.job_type}</p>
+                <Link
+                  to={`/admin/jobs/${row.id}`}
+                  className="block truncate font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  {row.job_type}
+                </Link>
                 <p className="truncate font-mono text-xs text-muted-foreground">
                   {row.id.slice(0, 8)}…
                 </p>
@@ -286,60 +256,6 @@ export default function AdminJobsPage() {
       />
 
       <PaginationBar meta={meta} onPageChange={setPage} disabled={loading} />
-
-      {/* Job detail with payload JSON. */}
-      <Dialog open={detail !== null} onOpenChange={(open) => !open && setDetail(null)}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
-          {detail ? (
-            <>
-              <DialogHeader>
-                <DialogTitle>{detail.job_type}</DialogTitle>
-                <DialogDescription>
-                  Queue {detail.queue} ·{" "}
-                  <span className="font-mono">{detail.id}</span>
-                </DialogDescription>
-              </DialogHeader>
-              <dl className="grid grid-cols-2 gap-4 md:grid-cols-3">
-                <DetailField label="Status">
-                  <StatusBadge status={detail.status} />
-                </DetailField>
-                <DetailField label="Attempts">
-                  {detail.attempts}/{detail.max_attempts}
-                </DetailField>
-                <DetailField label="Locked by">{detail.locked_by || "—"}</DetailField>
-                <DetailField label="Resource">
-                  {detail.resource_type || "—"}
-                  {detail.resource_id ? ` · ${detail.resource_id.slice(0, 8)}…` : ""}
-                </DetailField>
-                {detail.related_instance_public_id ? (
-                  <DetailField label="Related instance">
-                    <span className="font-mono text-xs">
-                      {detail.related_instance_public_id}
-                    </span>
-                  </DetailField>
-                ) : null}
-                <DetailField label="Run after">
-                  {formatDateTime(detail.run_after)}
-                </DetailField>
-                <DetailField label="Created">{formatDateTime(detail.created_at)}</DetailField>
-                <DetailField label="Completed">
-                  {formatDateTime(detail.completed_at)}
-                </DetailField>
-              </dl>
-              {detail.last_error ? (
-                <div className="rounded-md bg-destructive/10 p-3 text-xs text-destructive">
-                  <p className="font-semibold">Last error</p>
-                  <p className="mt-1 break-all whitespace-pre-wrap">{detail.last_error}</p>
-                </div>
-              ) : null}
-              <div className="space-y-1.5">
-                <Label>Payload</Label>
-                <JsonBlock value={detail.payload} />
-              </div>
-            </>
-          ) : null}
-        </DialogContent>
-      </Dialog>
 
       <AlertDialog
         open={cancelTarget !== null}

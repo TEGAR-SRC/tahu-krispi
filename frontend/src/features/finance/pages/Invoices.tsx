@@ -1,6 +1,7 @@
 // Admin invoice ledger: status/search filtered paged table, detail dialog with
 // line items, applied payments and payment events, plus void action.
 import { useCallback, useEffect, useState } from "react"
+import { Link } from "react-router-dom"
 import { apiGet, apiPost, ApiError } from "@/lib/api"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/shared/PageHeader"
@@ -196,10 +197,15 @@ export default function FinanceInvoicesPage() {
             key: "invoice_number",
             header: "Invoice",
             render: (row) => (
-              <div>
-                <p className="font-medium">{row.invoice_number}</p>
-                <p className="font-mono text-xs text-muted-foreground">{row.public_id}</p>
-              </div>
+              <Link
+                to={`/finance/invoices/${row.id}`}
+                className="underline-offset-4 hover:underline"
+              >
+                <span className="block font-medium">{row.invoice_number}</span>
+                <span className="block font-mono text-xs text-muted-foreground">
+                  {row.public_id}
+                </span>
+              </Link>
             ),
           },
           { key: "org_slug", header: "Organization" },

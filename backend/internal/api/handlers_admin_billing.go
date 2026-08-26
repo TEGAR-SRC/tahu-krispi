@@ -2,6 +2,7 @@
 package api
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -639,10 +640,11 @@ ON CONFLICT (organization_id, currency) DO NOTHING`, orgID, currency); err != ni
 	}
 
 	var balance float64
+	var balanceText string
 	if err := s.db.QueryRow(ctx,
-		`SELECT balance::text FROM wallets WHERE id=$1`, walletID).Scan(&balance); err != nil {
-		balance = -1 // read-back failure must not fail an applied ledger entry
-	}
+		`SELECT balance::text FROM wallets WHERE id=$1`, walletID).Scan(&balanceText); err == nil {
+	fmt.Sscanf(balanceText, "%f", &balance)
+	} // on read-back failure keep zero rather than failing an applied ledger entry
 	s.admAuditMeta(c, "admin.wallet.adjust", "organization", &orgID, map[string]any{
 		"wallet_id": walletID, "direction": direction, "amount": in.Amount,
 		"currency": currency, "description": description,

@@ -1,7 +1,9 @@
-// Customer instances: list with state badges, provisioning wizard (plan or
-// custom spec + live price quote), power actions, and destructive delete that
-// requires typing the instance name.
+// Customer instances: list with state badges, links into the per-instance
+// deep-dive pages, power actions, and destructive delete that requires typing
+// the instance name. Creation happens on the full-page wizard at
+// /app/instances/new.
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { Link } from "react-router-dom"
 import {
   Loader2Icon,
   PlayIcon,
@@ -12,17 +14,8 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,9 +43,7 @@ import { StatusBadge } from "../components"
 import { formatDateTime, formatMoney } from "../format"
 import { orgHeaders, useOrg } from "../useOrg"
 import { InstanceDetailSheet } from "../instances/InstanceDetailSheet"
-import type { CustomerInstance, Plan, PriceQuote, Region } from "../instances/types"
-
-const BILLING_PERIODS = ["hourly", "monthly", "quarterly", "semiannual", "annual"] as const
+import type { CustomerInstance } from "../instances/types"
 
 export default function CustomerInstancesPage() {
   const { orgId } = useOrg()
@@ -64,7 +55,6 @@ export default function CustomerInstancesPage() {
 
   const [selected, setSelected] = useState<CustomerInstance | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
-  const [createOpen, setCreateOpen] = useState(false)
 
   // Pending destructive actions: stop / reboot confirm + typed delete.
   const [confirmAction, setConfirmAction] = useState<{
@@ -162,7 +152,12 @@ export default function CustomerInstancesPage() {
       header: "Name",
       render: (row) => (
         <div className="min-w-0">
-          <p className="truncate font-medium">{row.name}</p>
+          <Link
+            to={`/app/instances/${row.id}`}
+            className="block max-w-56 truncate font-medium underline-offset-4 hover:underline"
+          >
+            {row.name}
+          </Link>
           <p className="truncate text-xs text-muted-foreground">{row.public_id ?? row.id}</p>
         </div>
       ),
@@ -249,8 +244,10 @@ export default function CustomerInstancesPage() {
         title="Instances"
         description="Provision, control and inspect your virtual machines."
         actions={
-          <Button onClick={() => setCreateOpen(true)}>
-            <PlusIcon /> Create instance
+          <Button asChild>
+            <Link to="/app/instances/new">
+              <PlusIcon /> Create instance
+            </Link>
           </Button>
         }
       />
@@ -315,15 +312,6 @@ export default function CustomerInstancesPage() {
           setDetailOpen(false)
           setDeleteTarget(instance)
           setDeleteTyped("")
-        }}
-      />
-
-      <CreateInstanceDialog
-        open={createOpen}
-        onOpenChange={setCreateOpen}
-        onCreated={() => {
-          setCreateOpen(false)
-          void load()
         }}
       />
 
@@ -392,325 +380,5 @@ export default function CustomerInstancesPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  )
-}
-
-// ---- Provisioning wizard -----------------------------------------------------
-
-function CreateInstanceDialog({
-  open,
-  onOpenChange,
-  onCreated,
-}: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onCreated: () => void
-}) {
-  const { orgId } = useOrg()
-  const [name, setName] = useState("")
-  const [regions, setRegions] = useState<Region[]>([])
-  const [plans, setPlans] = useState<Plan[]>([])
-  const [catalogLoading, setCatalogLoading] = useState(false)
-  const [regionId, setRegionId] = useState("")
-  const [mode, setMode] = useState<"plan" | "custom">("plan")
-  const [planId, setPlanId] = useState("")
-  const [cpu, setCpu] = useState(1)
-  const [ram, setRam] = useState(1024)
-  const [disk, setDisk] = useState(20)
-  const [currency, setCurrency] = useState("IDR")
-  const [billingPeriod, setBillingPeriod] = useState<string>("monthly")
-  const [quote, setQuote] = useState<PriceQuote | null>(null)
-  const [quoteError, setQuoteError] = useState<string | null>(null)
-  const [submitting, setSubmitting] = useState(false)
-
-  useEffect(() => {
-    if (!open) return
-    setCatalogLoading(true)
-    Promise.all([apiGet<Region[]>("/regions"), apiGet<Plan[]>("/plans")])
-      .then(([regionsRes, plansRes]) => {
-        setRegions((regionsRes.data ?? []).filter((region) => region.enabled))
-        setPlans(plansRes.data ?? [])
-      })
-      .catch((cause) =>
-        toast.error(cause instanceof Error ? cause.message : "Failed to load catalog"),
-      )
-      .finally(() => setCatalogLoading(false))
-  }, [open])
-
-  const plan = plans.find((candidate) => candidate.id === planId) ?? null
-
-  // Live quote whenever a priceable selection is complete.
-  useEffect(() => {
-    if (!open || !regionId) return
-    if (mode === "plan" && !plan) return
-    let cancelled = false
-    const body =
-      mode === "plan"
-        ? { plan_id: plan?.id, region_id: regionId, currency, billing_period: billingPeriod }
-        : {
-            region_id: regionId,
-            currency,
-            billing_period: billingPeriod,
-            custom_resources: {
-              vcpu: cpu,
-              ram_gb: Math.round((ram / 1024) * 100) / 100,
-              nvme_gb: disk,
-            },
-          }
-    const timer = setTimeout(() => {
-      apiPost<PriceQuote>("/pricing/quote", body, { headers: orgHeaders(orgId) })
-        .then(({ data }) => {
-          if (!cancelled) {
-            setQuote(data)
-            setQuoteError(null)
-          }
-        })
-        .catch((cause) => {
-          if (!cancelled) {
-            setQuote(null)
-            setQuoteError(cause instanceof ApiError ? cause.message : "Pricing unavailable")
-          }
-        })
-    }, 350)
-    return () => {
-      cancelled = true
-      clearTimeout(timer)
-    }
-  }, [open, regionId, mode, plan, cpu, ram, disk, currency, billingPeriod, orgId])
-
-  const reset = () => {
-    setName("")
-    setRegionId("")
-    setMode("plan")
-    setPlanId("")
-    setCpu(1)
-    setRam(1024)
-    setDisk(20)
-    setCurrency("IDR")
-    setBillingPeriod("monthly")
-    setQuote(null)
-    setQuoteError(null)
-  }
-
-  const submit = async () => {
-    if (!name.trim()) {
-      toast.error("Name is required")
-      return
-    }
-    if (!regionId) {
-      toast.error("Choose a region")
-      return
-    }
-    if (mode === "custom" && (cpu <= 0 || ram <= 0 || disk <= 0)) {
-      toast.error("vCPU, RAM and disk must be positive")
-      return
-    }
-    setSubmitting(true)
-    try {
-      await apiPost<CustomerInstance>(
-        "/instances",
-        {
-          name: name.trim(),
-          region_id: regionId,
-          cpu: mode === "plan" ? (plan?.vcpu ?? cpu) : cpu,
-          ram: mode === "plan" ? (plan?.ram_mb ?? ram) : ram,
-          disk: mode === "plan" ? (plan?.disk_gb ?? disk) : disk,
-          currency,
-          billing_period: billingPeriod,
-          recurring_amount: quote?.total ?? 0,
-        },
-        { headers: orgHeaders(orgId) },
-      )
-      toast.success("Instance provisioning started")
-      reset()
-      onCreated()
-    } catch (cause) {
-      toast.error(cause instanceof ApiError ? cause.message : "Failed to create instance")
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        if (!next) reset()
-        onOpenChange(next)
-      }}
-    >
-      <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Create instance</DialogTitle>
-          <DialogDescription>
-            Pick a region and either a published plan or a custom spec. Pricing comes from the
-            live quote API.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="ci-name">Name *</Label>
-            <Input
-              id="ci-name"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="my-server-01"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Region *</Label>
-            <Select value={regionId} onValueChange={setRegionId}>
-              <SelectTrigger>
-                <SelectValue placeholder={catalogLoading ? "Loading…" : "Choose region"} />
-              </SelectTrigger>
-              <SelectContent>
-                {regions.map((region) => (
-                  <SelectItem key={region.id} value={region.id}>
-                    {region.name} ({region.code})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Spec</Label>
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                type="button"
-                variant={mode === "plan" ? "default" : "outline"}
-                onClick={() => setMode("plan")}
-              >
-                From plan
-              </Button>
-              <Button
-                type="button"
-                variant={mode === "custom" ? "default" : "outline"}
-                onClick={() => setMode("custom")}
-              >
-                Custom spec
-              </Button>
-            </div>
-          </div>
-
-          {mode === "plan" ? (
-            <div className="grid gap-2 sm:grid-cols-2">
-              {plans.length === 0 && !catalogLoading ? (
-                <p className="text-sm text-muted-foreground sm:col-span-2">No plans available.</p>
-              ) : null}
-              {plans.map((candidate) => (
-                <button
-                  key={candidate.id}
-                  type="button"
-                  onClick={() => setPlanId(candidate.id)}
-                  className={`rounded-md border px-3 py-2 text-left text-sm transition-colors hover:bg-muted ${
-                    candidate.id === planId ? "border-primary bg-primary/5" : ""
-                  }`}
-                >
-                  <span className="block font-medium">{candidate.name}</span>
-                  <span className="block text-xs tabular-nums text-muted-foreground">
-                    {candidate.vcpu} vCPU · {candidate.ram_mb} MB · {candidate.disk_gb} GB
-                  </span>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-3 gap-2">
-              <div className="space-y-1">
-                <Label htmlFor="ci-cpu">vCPU</Label>
-                <Input
-                  id="ci-cpu"
-                  type="number"
-                  min={1}
-                  value={cpu}
-                  onChange={(event) => setCpu(Math.max(1, Number(event.target.value) || 1))}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="ci-ram">RAM (MB)</Label>
-                <Input
-                  id="ci-ram"
-                  type="number"
-                  min={128}
-                  step={128}
-                  value={ram}
-                  onChange={(event) => setRam(Math.max(128, Number(event.target.value) || 128))}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="ci-disk">Disk (GB)</Label>
-                <Input
-                  id="ci-disk"
-                  type="number"
-                  min={5}
-                  value={disk}
-                  onChange={(event) => setDisk(Math.max(5, Number(event.target.value) || 5))}
-                />
-              </div>
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-1.5">
-              <Label>Currency</Label>
-              <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="IDR">IDR</SelectItem>
-                  <SelectItem value="USD">USD</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Billing period</Label>
-              <Select value={billingPeriod} onValueChange={setBillingPeriod}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {BILLING_PERIODS.map((period) => (
-                    <SelectItem key={period} value={period} className="capitalize">
-                      {period}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="rounded-md border px-3 py-2.5 text-sm">
-            {quoteError ? (
-              <p className="text-muted-foreground">
-                Price estimate unavailable: {quoteError}. You can still create the instance.
-              </p>
-            ) : quote ? (
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">
-                  Estimated total ({quote.billing_period ?? billingPeriod}, incl. tax)
-                </span>
-                <span className="font-semibold tabular-nums">
-                  {formatMoney(quote.total, quote.currency)}
-                </span>
-              </div>
-            ) : (
-              <p className="text-muted-foreground">Choose region and spec to see pricing…</p>
-            )}
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button onClick={() => void submit()} disabled={submitting}>
-            {submitting ? <Loader2Icon className="animate-spin" /> : null} Create instance
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   )
 }

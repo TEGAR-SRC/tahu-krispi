@@ -4,7 +4,8 @@
 // (POST /admin/invoices/:invoice_id/void). The API exposes no mark-paid
 // action, so paid state only ever comes from the payment flow.
 import { useState } from "react"
-import { EyeIcon, MoreHorizontalIcon } from "lucide-react"
+import { Link } from "react-router-dom"
+import { EyeIcon, MoreHorizontalIcon, SquareArrowOutUpRightIcon } from "lucide-react"
 import { toast } from "sonner"
 import { apiGet, apiPost, ApiError } from "@/lib/api"
 import { PageHeader } from "@/components/shared/PageHeader"
@@ -167,7 +168,12 @@ export default function BillingInvoicesPage() {
       header: "Invoice",
       render: (row) => (
         <div className="flex flex-col">
-          <span className="font-medium">{row.invoice_number}</span>
+          <Link
+            to={`/admin/billing/invoices/${row.id}`}
+            className="font-medium underline-offset-4 hover:underline"
+          >
+            {row.invoice_number}
+          </Link>
           <span className="font-mono text-xs text-muted-foreground">
             {row.public_id}
           </span>
@@ -221,6 +227,11 @@ export default function BillingInvoicesPage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <Link to={`/admin/billing/invoices/${row.id}`}>
+                <SquareArrowOutUpRightIcon /> Open full page
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => openDetail(row)}>
               <EyeIcon /> View detail
             </DropdownMenuItem>

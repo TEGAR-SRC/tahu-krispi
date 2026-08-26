@@ -3,6 +3,7 @@
 // read via GET /wallet with the org context header. Includes a transaction
 // drill-down and a credit/debit adjustment action (POST /admin/wallets/:org/adjust).
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { Link } from "react-router-dom"
 import { apiGet, apiPost, ApiError } from "@/lib/api"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/shared/PageHeader"
@@ -238,10 +239,15 @@ export default function FinanceWalletsPage() {
         key: "org",
         header: "Organization",
         render: (row) => (
-          <div>
-            <p className="font-medium">{row.org_slug}</p>
-            <p className="font-mono text-xs text-muted-foreground">{row.org_public_id}</p>
-          </div>
+          <Link
+            to={`/finance/wallets/${row.organization_id}`}
+            className="block underline-offset-4 hover:underline"
+          >
+            <span className="block font-medium">{row.org_slug}</span>
+            <span className="block font-mono text-xs text-muted-foreground">
+              {row.org_public_id}
+            </span>
+          </Link>
         ),
       },
       {

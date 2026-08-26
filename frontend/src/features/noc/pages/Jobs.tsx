@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react"
+import { Link } from "react-router-dom"
 import { apiGet, apiPost } from "@/lib/api"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/shared/PageHeader"
@@ -113,7 +114,12 @@ export default function NocJobsPage() {
       header: "Job",
       render: (row) => (
         <div className="min-w-0">
-          <p className="truncate font-medium">{row.job_type}</p>
+          <Link
+            to={`/noc/jobs/${row.id}`}
+            className="block truncate font-medium underline-offset-4 hover:underline"
+          >
+            {row.job_type}
+          </Link>
           <p className="truncate text-xs text-muted-foreground">
             {row.resource_type ? `${row.resource_type} ${row.resource_id.slice(0, 8)}…` : row.id.slice(0, 8) + "…"}
           </p>

@@ -4,6 +4,7 @@
 // credit/debit goes through POST /admin/wallets/:org_id/adjust; the ledger
 // drill-down uses GET /v1/wallet/transactions.
 import { useCallback, useEffect, useState } from "react"
+import { Link } from "react-router-dom"
 import { ListIcon, ScaleIcon } from "lucide-react"
 import { toast } from "sonner"
 import { apiGet, apiPost, ApiError } from "@/lib/api"
@@ -228,7 +229,13 @@ export default function BillingWalletsPage() {
       header: "Organization",
       render: (org) => (
         <div className="flex flex-col">
-          <span className="font-medium">{org.name || org.slug}</span>
+          <Link
+            to={`/admin/billing/wallets/${org.id}`}
+            title="Open wallet page"
+            className="font-medium underline-offset-4 hover:underline"
+          >
+            {org.name || org.slug}
+          </Link>
           <span className="text-xs text-muted-foreground">{org.public_id}</span>
         </div>
       ),

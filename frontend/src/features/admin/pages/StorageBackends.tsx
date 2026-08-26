@@ -2,6 +2,7 @@
 // configuration. PUT upserts by code; credentials are write-only. The DELETE
 // endpoint only disables a backend (enabled=false), it never removes the row.
 import { useEffect, useState } from "react"
+import { Link } from "react-router-dom"
 import { toast } from "sonner"
 import { apiDelete, apiGet, apiPut, ApiError } from "@/lib/api"
 import { PageHeader } from "@/components/shared/PageHeader"
@@ -96,7 +97,12 @@ export default function AdminStorageBackendsPage() {
             header: "Backend",
             render: (row) => (
               <div className="min-w-0">
-                <p className="truncate font-medium">{row.name}</p>
+                <Link
+                  to={`/admin/storage-backends/${row.code}`}
+                  className="block truncate font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  {row.name}
+                </Link>
                 <p className="truncate font-mono text-xs text-muted-foreground">{row.code}</p>
               </div>
             ),

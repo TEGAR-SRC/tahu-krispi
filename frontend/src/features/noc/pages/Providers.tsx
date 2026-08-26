@@ -1,34 +1,41 @@
 import { useCallback, useEffect, useState } from "react"
+import { Link } from "react-router-dom"
 import { apiGet, apiPost } from "@/lib/api"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/shared/PageHeader"
-import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
+import { ErrorBanner } from "@/components/shared/ErrorBanner"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Loader2Icon, RefreshCwIcon, SearchIcon, LockIcon } from "lucide-react"
-import { ProxmoxDrillDown } from "../components/ProxmoxDrillDown"
-import { VmwareDrillDown } from "../components/VmwareDrillDown"
-import {
-  KindBadge,
-  type Provider,
-  StatusBadge,
-  fmtDateTime,
-  toastApiError,
-} from "../lib"
+  ArrowRightIcon,
+  BoxesIcon,
+  DatabaseBackupIcon,
+  FlameKindlingIcon,
+  HardDriveIcon,
+  LayersIcon,
+  Loader2Icon,
+  LockIcon,
+  RefreshCwIcon,
+  ShieldCheckIcon,
+  ShieldHalfIcon,
+} from "lucide-react"
+import { type Provider, KindBadge, StatusBadge, fmtDateTime, toastApiError } from "../lib"
+
+/** NOC-readable launchpad surfaces per provider kind; routes live in routes.tsx. */
+const PROXMOX_SURFACES = [
+  { to: "cluster", label: "Cluster", icon: LayersIcon },
+  { to: "nodes", label: "Nodes", icon: HardDriveIcon },
+  { to: "storages", label: "Storages", icon: BoxesIcon },
+  { to: "backup-jobs", label: "Backup jobs", icon: DatabaseBackupIcon },
+  { to: "firewall", label: "Firewall", icon: ShieldHalfIcon },
+  { to: "services", label: "Services", icon: FlameKindlingIcon },
+] as const
 
 export default function NocProvidersPage() {
   const [rows, setRows] = useState<Provider[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
   const [syncingId, setSyncingId] = useState<string | null>(null)
-  const [inspectId, setInspectId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -59,8 +66,6 @@ export default function NocProvidersPage() {
     }
   }, [])
 
-  const inspecting = rows.find((row) => row.id === inspectId) ?? null
-
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -73,135 +78,140 @@ export default function NocProvidersPage() {
         }
       />
 
-      <SimpleDataTable
-        columns={[
-          {
-            key: "name",
-            header: "Provider",
-            render: (row) => (
-              <div className="min-w-0">
-                <p className="truncate font-medium">{row.name}</p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {row.code}
-                  {row.api_base_url ? ` · ${row.api_base_url}` : ""}
-                </p>
-              </div>
-            ),
-          },
-          { key: "kind", header: "Kind", render: (row) => <KindBadge kind={row.kind} /> },
-          {
-            key: "enabled",
-            header: "Enabled",
-            render: (row) => <StatusBadge status={row.enabled ? "enabled" : "disabled"} />,
-          },
-          {
-            key: "health_status",
-            header: "Health",
-            render: (row) => <StatusBadge status={row.health_status} />,
-          },
-          {
-            key: "has_credentials",
-            header: "Credentials",
-            render: (row) =>
-              row.has_credentials ? (
-                <span className="text-sm">configured</span>
-              ) : (
-                <span className="flex items-center gap-1 text-sm text-muted-foreground">
-                  <LockIcon className="size-3" /> not set
+      {error ? (
+        <ErrorBanner error={error} />
+      ) : loading ? (
+        <div className="grid gap-4 lg:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <Skeleton key={index} className="h-48 w-full rounded-lg" />
+          ))}
+        </div>
+      ) : rows.length === 0 ? (
+        <p className="rounded-md border p-6 text-center text-sm text-muted-foreground">
+          No providers registered yet.
+        </p>
+      ) : (
+        <div className="grid gap-4 xl:grid-cols-2">
+          {rows.map((provider) => (
+            <article
+              key={provider.id}
+              className="flex flex-col gap-3 rounded-lg border bg-card p-4 text-card-foreground shadow-sm"
+            >
+              <header className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <Link
+                    to={`/noc/providers/${provider.id}`}
+                    className="block truncate font-medium hover:underline"
+                  >
+                    {provider.name}
+                  </Link>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {provider.code}
+                    {provider.api_base_url ? ` · ${provider.api_base_url}` : ""}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  <KindBadge kind={provider.kind} />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Trigger sync for ${provider.name}`}
+                    disabled={syncingId !== null}
+                    onClick={() => void sync(provider)}
+                  >
+                    {syncingId === provider.id ? (
+                      <Loader2Icon className="animate-spin" />
+                    ) : (
+                      <RefreshCwIcon />
+                    )}
+                  </Button>
+                </div>
+              </header>
+
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <StatusBadge status={provider.health_status} />
+                <StatusBadge status={provider.enabled ? "enabled" : "disabled"} />
+                {provider.has_credentials ? (
+                  <span className="flex items-center gap-1 text-muted-foreground">
+                    <ShieldCheckIcon className="size-3" /> credentials configured
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 text-muted-foreground">
+                    <LockIcon className="size-3" /> credentials not set
+                  </span>
+                )}
+                <span className="text-muted-foreground">
+                  registered {fmtDateTime(provider.created_at)}
                 </span>
-              ),
-          },
-          { key: "created_at", header: "Registered", render: (row) => fmtDateTime(row.created_at) },
-          {
-            key: "actions",
-            header: "",
-            className: "w-40 text-right",
-            render: (row) => (
-              <div className="flex justify-end gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={`Inspect ${row.name}`}
-                  onClick={() => setInspectId(row.id)}
-                >
-                  <SearchIcon />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={`Trigger sync for ${row.name}`}
-                  disabled={syncingId !== null}
-                  onClick={() => void sync(row)}
-                >
-                  {syncingId === row.id ? (
-                    <Loader2Icon className="animate-spin" />
-                  ) : (
-                    <RefreshCwIcon />
-                  )}
-                </Button>
               </div>
-            ),
-          },
-        ]}
-        rows={rows}
-        loading={loading}
-        error={error}
-        skeletonRows={4}
-        emptyMessage="No providers registered yet."
-        getRowKey={(row) => row.id}
-      />
 
-      <Dialog open={inspecting !== null} onOpenChange={(open) => !open && setInspectId(null)}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
-              {inspecting?.name}
-              {inspecting ? <KindBadge kind={inspecting.kind} /> : null}
-            </DialogTitle>
-            <DialogDescription>
-              Live drill-down of NOC-readable endpoints. Write operations on these surfaces
-              are restricted to platform admins.
-            </DialogDescription>
-          </DialogHeader>
-
-          {inspecting ? (
-            inspecting.kind === "proxmox" ? (
-              <ProxmoxDrillDown providerId={inspecting.id} />
-            ) : inspecting.kind === "vmware" ? (
-              <VmwareDrillDown providerId={inspecting.id} />
-            ) : inspecting.kind === "dokploy" ? (
-              <DokployNote name={inspecting.name} baseUrl={inspecting.api_base_url} />
-            ) : (
-              <p className="rounded-md border bg-muted/40 p-4 text-sm text-muted-foreground">
-                No provider-specific drill-down is available for kind
-                {" "}
-                <span className="font-medium">{inspecting.kind}</span>. Cluster observability
-                endpoints are implemented for Proxmox; inventory and guest metrics for VMware.
-              </p>
-            )
-          ) : null}
-        </DialogContent>
-      </Dialog>
+              <footer className="mt-auto space-y-2 border-t pt-3">
+                <p className="text-xs font-medium text-muted-foreground">Open a surface</p>
+                <nav className="flex flex-wrap gap-x-4 gap-y-1.5">
+                  <LaunchLink to={`/noc/providers/${provider.id}`} label="Overview" primary />
+                  {provider.kind === "proxmox"
+                    ? PROXMOX_SURFACES.map((surface) => (
+                        <LaunchLink
+                          key={surface.to}
+                          to={`/noc/providers/${provider.id}/${surface.to}`}
+                          label={surface.label}
+                          icon={<surface.icon />}
+                        />
+                      ))
+                    : null}
+                </nav>
+                {provider.kind === "vmware" ? (
+                  <p className="text-xs text-muted-foreground">
+                    VMware inventory and guest metrics are platform-admin surfaces on this backend;
+                    the NOC role receives HTTP 403 on them.
+                  </p>
+                ) : null}
+                {provider.kind === "dokploy" ? (
+                  <p className="text-xs text-muted-foreground">
+                    All Dokploy operations — proxy, mirror database and sync — are platform-admin
+                    only on this backend.
+                  </p>
+                ) : null}
+                {provider.kind !== "proxmox" &&
+                provider.kind !== "vmware" &&
+                provider.kind !== "dokploy" ? (
+                  <p className="text-xs text-muted-foreground">
+                    No cluster observability surfaces for kind {provider.kind}; only the overview
+                    and the provider-level sync above.
+                  </p>
+                ) : null}
+              </footer>
+            </article>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
 
-function DokployNote({ name, baseUrl }: { name: string; baseUrl: string }) {
+function LaunchLink({
+  to,
+  label,
+  icon,
+  primary = false,
+}: {
+  to: string
+  label: string
+  icon?: React.ReactNode
+  primary?: boolean
+}) {
   return (
-    <Card>
-      <CardContent className="space-y-3 px-4 py-4 text-sm">
-        <p className="font-medium">{name} — PaaS control plane</p>
-        <dl className="grid grid-cols-[8rem_1fr] gap-x-4 gap-y-1">
-          <dt className="text-muted-foreground">Server URL</dt>
-          <dd className="break-all">{baseUrl || "—"}</dd>
-        </dl>
-        <p className="text-muted-foreground">
-          All Dokploy operations — the universal proxy, the mirror database and sync — are
-          platform-admin only on this backend. The NOC role receives HTTP&nbsp;403 on every
-          one of them, so this console intentionally exposes no Dokploy actions beyond the
-          provider-level sync job above.
-        </p>
-      </CardContent>
-    </Card>
+    <Link
+      to={to}
+      className={
+        primary
+          ? "flex items-center gap-1 text-sm font-medium hover:underline"
+          : "flex items-center gap-1 text-xs hover:underline [&_svg]:size-3"
+      }
+    >
+      {icon}
+      {label}
+      <ArrowRightIcon className={primary ? "size-3.5" : "size-3"} />
+    </Link>
   )
 }

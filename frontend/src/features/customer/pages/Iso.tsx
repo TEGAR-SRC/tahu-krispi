@@ -2,6 +2,7 @@
 // progress, retry of failed registrations, delete, and measured boot image
 // management (upload / attach to instance / detach / delete).
 import { useCallback, useEffect, useState } from "react"
+import { Link } from "react-router-dom"
 import {
   CloudUploadIcon,
   LinkIcon,
@@ -205,7 +206,16 @@ export default function CustomerIsoPage() {
       header: "Name",
       render: (row) => (
         <div className="min-w-0">
-          <p className="truncate font-medium">{row.name}</p>
+          {row.id ? (
+            <Link
+              to={`/app/iso/${row.id}`}
+              className="block max-w-72 truncate font-medium underline-offset-2 hover:underline"
+            >
+              {row.name}
+            </Link>
+          ) : (
+            <p className="truncate font-medium">{row.name}</p>
+          )}
           <p className="truncate text-xs text-muted-foreground">{row.filename ?? row.source_url ?? ""}</p>
         </div>
       ),

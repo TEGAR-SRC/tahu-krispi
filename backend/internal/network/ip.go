@@ -404,8 +404,13 @@ ON CONFLICT (provider_id, address) DO UPDATE SET ptr_record=EXCLUDED.ptr_record,
 }
 
 func (s *Service) DeleteRDNS(ctx context.Context, orgID, instanceID uuid.UUID, ipAddress string) error {
+	if parseIP(ipAddress) == nil {
+		return invalidField("ip_addr", "invalid IP address")
+	}
+	// Compare on host(address) so a stored /32-style entry matches the bare
+	// address (or any prefix form) sent by the client.
 	tag, err := s.db.Exec(ctx, `
-DELETE FROM reverse_dns_records WHERE organization_id=$1 AND instance_id=$2 AND address=$3::inet`,
+DELETE FROM reverse_dns_records WHERE organization_id=$1 AND instance_id=$2 AND host(address)=host($3::inet)`,
 		orgID, instanceID, ipAddress)
 	if err != nil {
 		return err

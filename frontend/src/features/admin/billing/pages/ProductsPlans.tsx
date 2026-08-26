@@ -4,6 +4,7 @@
 // /admin/plans/:plan_id/prices — insert-only; the API exposes no price or
 // plan listing beyond the two list endpoints and no edit/delete actions).
 import { useState } from "react"
+import { Link } from "react-router-dom"
 import { DollarSignIcon, PencilIcon, PlusIcon } from "lucide-react"
 import { toast } from "sonner"
 import { apiPost, apiPatch, ApiError } from "@/lib/api"
@@ -382,7 +383,13 @@ export default function BillingProductsPlansPage() {
       header: "Product",
       render: (product) => (
         <div className="flex flex-col">
-          <span className="font-medium">{product.name}</span>
+          <Link
+            to={`/admin/billing/products/${product.id}`}
+            title="Open product detail page"
+            className="font-medium underline-offset-4 hover:underline"
+          >
+            {product.name}
+          </Link>
           <span className="font-mono text-xs text-muted-foreground">{product.code}</span>
         </div>
       ),
@@ -425,12 +432,16 @@ export default function BillingProductsPlansPage() {
       header: "Plan",
       render: (plan) => (
         <div className="flex flex-col">
-          <span className="font-medium">
+          <Link
+            to={`/admin/billing/plans/${plan.id}`}
+            title="Open plan prices page"
+            className="font-medium underline-offset-4 hover:underline"
+          >
             {plan.name}
             {plan.featured ? (
               <span className="ml-2 align-middle text-xs text-primary">★ featured</span>
             ) : null}
-          </span>
+          </Link>
           <span className="font-mono text-xs text-muted-foreground">{plan.code}</span>
         </div>
       ),

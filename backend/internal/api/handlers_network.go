@@ -1,6 +1,8 @@
 package api
 
 import (
+	"net/url"
+
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 
@@ -229,6 +231,11 @@ func (s *Server) handleDeleteRDNS(c fiber.Ctx) error {
 		return mw.WriteError(c, errValidation("invalid instance id"))
 	}
 	ipAddr := c.Params("*")
+	// Wildcard segments arrive percent-encoded when the value contains "/"
+	// (CIDR notation); decode before validation.
+	if decoded, decErr := url.PathUnescape(ipAddr); decErr == nil && decoded != "" {
+		ipAddr = decoded
+	}
 	if ipAddr == "" {
 		return mw.WriteError(c, errValidation("ip_addr path param required"))
 	}

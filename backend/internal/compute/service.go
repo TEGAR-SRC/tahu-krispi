@@ -169,6 +169,11 @@ VALUES ('provisioning','provision_instance','instance',$1,$2::jsonb)`, inst.ID, 
 	if err = tx.Commit(ctx); err != nil {
 		return nil, err
 	}
+	// Return the fully hydrated row (name/spec/status), not just the two
+	// columns returned by the INSERT.
+	if out, gerr := s.GetByIDAndOrg(ctx, inst.ID, in.OrganizationID); gerr == nil {
+		return out, nil
+	}
 	return &inst, nil
 }
 

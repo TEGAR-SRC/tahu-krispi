@@ -3,7 +3,8 @@
 // linked invoices, coupon redemption and quote breakdown) and voiding
 // (POST /admin/orders/:order_id/void).
 import { useState, type ReactNode } from "react"
-import { EyeIcon, MoreHorizontalIcon } from "lucide-react"
+import { Link } from "react-router-dom"
+import { EyeIcon, MoreHorizontalIcon, SquareArrowOutUpRightIcon } from "lucide-react"
 import { toast } from "sonner"
 import { apiGet, apiPost, ApiError } from "@/lib/api"
 import { PageHeader } from "@/components/shared/PageHeader"
@@ -173,7 +174,14 @@ export default function BillingOrdersPage() {
     {
       key: "public_id",
       header: "Order",
-      render: (row) => <span className="font-mono text-xs">{row.public_id}</span>,
+      render: (row) => (
+        <Link
+          to={`/admin/billing/orders/${row.id}`}
+          className="font-mono text-xs underline-offset-4 hover:underline"
+        >
+          {row.public_id}
+        </Link>
+      ),
     },
     { key: "org_slug", header: "Organization" },
     {
@@ -212,6 +220,11 @@ export default function BillingOrdersPage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <Link to={`/admin/billing/orders/${row.id}`}>
+                <SquareArrowOutUpRightIcon /> Open full page
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => openDetail(row)}>
               <EyeIcon /> View details
             </DropdownMenuItem>

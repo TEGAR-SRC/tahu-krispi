@@ -47,13 +47,12 @@ func (s *Service) CreateSnapshot(ctx context.Context, instanceID, orgID, userID 
 		return nil, err
 	}
 	var snapID uuid.UUID
-	var publicID string
 	err := s.db.QueryRow(ctx, `
 INSERT INTO snapshots(organization_id, provider_id, instance_id, name, description, status)
 SELECT $1, i.provider_id, i.id, $2, NULLIF($3,''), 'pending'
 FROM instances i WHERE i.id=$4 AND i.organization_id=$5 AND i.deleted_at IS NULL
-RETURNING id, public_id`,
-		orgID, name, desc, instanceID, orgID).Scan(&snapID, &publicID)
+RETURNING id`,
+		orgID, name, desc, instanceID, orgID).Scan(&snapID)
 	if err != nil {
 		return nil, fmt.Errorf("insert snapshot: %w", err)
 	}
@@ -65,25 +64,26 @@ INSERT INTO jobs(queue, job_type, resource_type, resource_id, payload)
 VALUES ('provisioning','create_snapshot','snapshot',$1,$2::jsonb)`, snapID, payload); err != nil {
 		return nil, err
 	}
-	return &Snapshot{ID: snapID, PublicID: publicID, Name: name, Status: "pending"}, nil
+	return &Snapshot{ID: snapID, PublicID: snapID.String(), Name: name, Status: "pending"}, nil
 }
 
 func (s *Service) ListSnapshots(ctx context.Context, orgID uuid.UUID) ([]Snapshot, error) {
 	rows, err := s.db.Query(ctx, `
-SELECT id, public_id, name, status::text, COALESCE(size_bytes,0), created_at::text
+SELECT id, name, status::text, COALESCE(size_bytes,0), created_at::text
 FROM snapshots WHERE deleted_at IS NULL AND organization_id=$1 ORDER BY created_at DESC`, orgID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var out []Snapshot
+	out := []Snapshot{}
 	for rows.Next() {
 		var sn Snapshot
-		var sizeStr string
-		if err := rows.Scan(&sn.ID, &sn.PublicID, &sn.Name, &sn.Status, &sizeStr, &sn.CreatedAt); err != nil {
+		if err := rows.Scan(&sn.ID, &sn.Name, &sn.Status, &sn.SizeBytes, &sn.CreatedAt); err != nil {
 			return nil, err
 		}
-		fmt.Sscanf(sizeStr, "%f", new(float64))
+		// The snapshots table has no public_id column; expose the raw UUID so
+		// clients still receive a stable identifier.
+		sn.PublicID = sn.ID.String()
 		out = append(out, sn)
 	}
 	return out, rows.Err()

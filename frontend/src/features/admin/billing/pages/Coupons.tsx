@@ -4,6 +4,7 @@
 // Note: as of writing GET /admin/coupons answers 500 on this environment
 // (backend scan bug), which the page surfaces honestly via the error banner.
 import { useState } from "react"
+import { Link } from "react-router-dom"
 import { PencilIcon, PlusIcon, TicketPercentIcon, Trash2Icon } from "lucide-react"
 import { toast } from "sonner"
 import { apiGet, apiPost, apiDelete, ApiError } from "@/lib/api"
@@ -275,7 +276,13 @@ export default function BillingCouponsPage() {
       header: "Code",
       render: (coupon) => (
         <div className="flex flex-col">
-          <span className="font-mono text-xs font-medium uppercase">{coupon.code}</span>
+          <Link
+            to={`/admin/billing/coupons/${coupon.id}`}
+            title="Open coupon detail page"
+            className="font-mono text-xs font-medium uppercase underline-offset-4 hover:underline"
+          >
+            {coupon.code}
+          </Link>
           {coupon.description ? (
             <span className="line-clamp-1 text-xs text-muted-foreground">
               {coupon.description}

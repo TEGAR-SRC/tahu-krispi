@@ -2,6 +2,7 @@
 // Redemptions are browsed through order details, the only endpoint that
 // exposes coupon_redemption records today.
 import { useCallback, useEffect, useState } from "react"
+import { Link } from "react-router-dom"
 import { apiGet, apiPost, apiDelete, ApiError } from "@/lib/api"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/shared/PageHeader"
@@ -243,10 +244,13 @@ export default function FinanceCouponsPage() {
       key: "code",
       header: "Code",
       render: (row) => (
-        <div className="flex items-center gap-2">
+        <Link
+          to={`/finance/coupons/${row.id}`}
+          className="flex items-center gap-2 underline-offset-4 hover:underline"
+        >
           <TagIcon className="size-3.5 text-muted-foreground" />
           <span className="font-mono font-medium">{row.code}</span>
-        </div>
+        </Link>
       ),
     },
     {

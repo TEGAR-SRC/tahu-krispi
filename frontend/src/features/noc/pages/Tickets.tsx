@@ -1,8 +1,20 @@
 import { useCallback, useEffect, useState } from "react"
+import type { ReactNode } from "react"
+import { useNavigate } from "react-router-dom"
 import { apiGet, apiPost } from "@/lib/api"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/shared/PageHeader"
-import { SimpleDataTable, type SimpleColumn } from "@/components/shared/SimpleDataTable"
+import { ErrorBanner } from "@/components/shared/ErrorBanner"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -33,7 +45,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Loader2Icon, MessagesSquareIcon, SendIcon, TicketCheckIcon, UserRoundCogIcon } from "lucide-react"
+import {
+  Loader2Icon,
+  MessagesSquareIcon,
+  SendIcon,
+  TicketCheckIcon,
+  UserRoundCogIcon,
+} from "lucide-react"
 import {
   type TicketMessage,
   type TicketRow,
@@ -44,9 +62,66 @@ import {
 } from "../lib"
 
 const PER_PAGE = 20
-const TICKET_STATUSES = ["open", "waiting_customer", "waiting_staff", "resolved", "closed"] as const
+const TICKET_STATUSES = [
+  "open",
+  "waiting_customer",
+  "waiting_staff",
+  "resolved",
+  "closed",
+] as const
+
+/** Parses backend timestamps like `2026-08-26 11:21:17.281941+07`. */
+function parseApiDate(value?: string | null): Date | null {
+  if (!value) return null
+  const direct = new Date(value)
+  if (!Number.isNaN(direct.getTime())) return direct
+  const normalized = value.replace(" ", "T").replace(/([+-]\d{2})$/, "$1:00")
+  const parsed = new Date(normalized)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
+/** Compact humanized age, e.g. `3h ago` / `2d ago`; em-dash when unparsable. */
+function timeAgo(value?: string | null): string {
+  const date = parseApiDate(value)
+  if (!date) return "—"
+  const seconds = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000))
+  if (seconds < 60) return "just now"
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 48) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  return `${days}d ago`
+}
+
+function PriorityBadge({ priority }: { priority: string }) {
+  const p = priority.toLowerCase()
+  if (p === "urgent" || p === "high") {
+    return <Badge variant="destructive" className="capitalize">{priority}</Badge>
+  }
+  if (p === "medium") {
+    return <Badge variant="secondary" className="capitalize">{priority}</Badge>
+  }
+  if (!p) return <span className="text-sm text-muted-foreground">—</span>
+  return <Badge variant="outline" className="capitalize">{priority}</Badge>
+}
+
+/**
+ * SLA-ish tint for the age of tickets that are not yet closed/resolved:
+ * muted under 48h, amber under 72h, red beyond.
+ */
+function ageTone(row: TicketRow): string {
+  if (row.status === "closed" || row.status === "resolved") return ""
+  const created = parseApiDate(row.created_at)
+  if (!created) return ""
+  const hours = (Date.now() - created.getTime()) / (60 * 60 * 1000)
+  if (hours >= 72) return "font-medium text-destructive"
+  if (hours >= 48) return "font-medium text-amber-600 dark:text-amber-400"
+  return "text-muted-foreground"
+}
 
 export default function NocTicketsPage() {
+  const navigate = useNavigate()
   const [rows, setRows] = useState<TicketRow[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -87,54 +162,11 @@ export default function NocTicketsPage() {
 
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE))
 
-  const columns: Array<SimpleColumn<TicketRow>> = [
-    { key: "ticket_number", header: "#", className: "font-mono text-xs" },
-    {
-      key: "subject",
-      header: "Subject",
-      render: (row) => (
-        <div className="min-w-0">
-          <p className="truncate font-medium">{row.subject}</p>
-          <p className="truncate text-xs text-muted-foreground">{row.org_slug}</p>
-        </div>
-      ),
-    },
-    { key: "priority", header: "Priority", render: (row) => row.priority || "—" },
-    { key: "status", header: "Status", render: (row) => <StatusBadge status={row.status} /> },
-    {
-      key: "assigned_to",
-      header: "Assignee",
-      render: (row) =>
-        row.assigned_to ? (
-          <span className="font-mono text-xs">{row.assigned_to.slice(0, 8)}…</span>
-        ) : (
-          "—"
-        ),
-    },
-    { key: "created_at", header: "Created", render: (row) => fmtDateTime(row.created_at) },
-    { key: "last_reply_at", header: "Last reply", render: (row) => fmtDateTime(row.last_reply_at) },
-    {
-      key: "actions",
-      header: "",
-      className: "w-16",
-      render: (row) => (
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={`Open thread for ${row.ticket_number}`}
-          onClick={() => setActiveTicket(row)}
-        >
-          <MessagesSquareIcon />
-        </Button>
-      ),
-    },
-  ]
-
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Tickets"
-        description="Staff queue across all organizations."
+        description="Staff queue across all organizations. Click a row for the thread."
         actions={
           <Button variant="outline" size="sm" onClick={() => void load(page)} disabled={loading}>
             Refresh
@@ -161,15 +193,85 @@ export default function NocTicketsPage() {
         </span>
       </div>
 
-      <SimpleDataTable
-        columns={columns}
-        rows={rows}
-        loading={loading}
-        error={error}
-        skeletonRows={8}
-        emptyMessage="No tickets match the current filter."
-        getRowKey={(row) => row.id}
-      />
+      {error ? (
+        <ErrorBanner error={error} />
+      ) : loading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 8 }).map((_, rowIndex) => (
+            <Skeleton key={rowIndex} className="h-9 w-full" />
+          ))}
+        </div>
+      ) : rows.length === 0 ? (
+        <p className="rounded-md border p-6 text-center text-sm text-muted-foreground">
+          No tickets match the current filter.
+        </p>
+      ) : (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="font-mono text-xs">#</TableHead>
+                <TableHead>Subject</TableHead>
+                <TableHead>Priority</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Assignee</TableHead>
+                <TableHead>Age</TableHead>
+                <TableHead>Last reply</TableHead>
+                <TableHead className="w-16 text-right">Thread</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  className="cursor-pointer"
+                  onClick={() => void navigate(`/noc/tickets/${row.id}`)}
+                >
+                  <TableCell className="font-mono text-xs">{row.ticket_number}</TableCell>
+                  <TableCell>
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{row.subject}</p>
+                      <p className="truncate text-xs text-muted-foreground">{row.org_slug}</p>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <PriorityBadge priority={row.priority} />
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge status={row.status} />
+                  </TableCell>
+                  <TableCell>
+                    {row.assigned_to ? (
+                      <span className="font-mono text-xs">{row.assigned_to.slice(0, 8)}…</span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell title={`Created ${fmtDateTime(row.created_at)}`}>
+                    <span className={`text-sm ${ageTone(row)}`}>{timeAgo(row.created_at)}</span>
+                  </TableCell>
+                  <TableCell>{fmtDateTime(row.last_reply_at)}</TableCell>
+                  <TableCell className="text-right">
+                    <div
+                      className="flex justify-end"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Open reply dialog for ${row.ticket_number}`}
+                        onClick={() => setActiveTicket(row)}
+                      >
+                        <MessagesSquareIcon />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       <div className="flex items-center justify-end gap-3">
         <Button
@@ -205,6 +307,7 @@ export default function NocTicketsPage() {
   )
 }
 
+/** Inline staff reply dialog; kept alongside row-click navigation to the thread page. */
 function ThreadDialog({
   ticket,
   open,
@@ -306,11 +409,7 @@ function ThreadDialog({
             <DialogTitle className="flex flex-wrap items-center gap-2">
               {ticket.ticket_number}
               <StatusBadge status={ticket.status} />
-              {ticket.priority ? (
-                <span className="text-xs font-normal text-muted-foreground">
-                  priority {ticket.priority}
-                </span>
-              ) : null}
+              <PriorityBadge priority={ticket.priority} />
             </DialogTitle>
             <DialogDescription>
               {ticket.subject} · {ticket.org_slug}
@@ -329,29 +428,7 @@ function ThreadDialog({
               <p className="py-4 text-sm text-muted-foreground">No messages in this thread.</p>
             ) : (
               messages.map((message) => (
-                <article
-                  key={message.id}
-                  className={
-                    message.author_type === "staff"
-                      ? "rounded-md border border-primary/30 bg-primary/5 p-3"
-                      : "rounded-md border p-3"
-                  }
-                >
-                  <header className="mb-1 flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                    <span className="font-medium capitalize">{message.author_type}</span>
-                    <span>{fmtDateTime(message.created_at)}</span>
-                  </header>
-                  <p className="text-sm whitespace-pre-wrap">{message.body}</p>
-                  {message.attachments.length > 0 ? (
-                    <ul className="mt-2 space-y-0.5">
-                      {message.attachments.map((attachment) => (
-                        <li key={attachment.id} className="text-xs text-muted-foreground">
-                          Attachment: {attachment.filename} ({formatBytes(attachment.size_bytes)})
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
-                </article>
+                <MessageBubble key={message.id} message={message} />
               ))
             )}
           </div>
@@ -441,5 +518,32 @@ function ThreadDialog({
         </AlertDialogContent>
       </AlertDialog>
     </>
+  )
+}
+
+function MessageBubble({ message }: { message: TicketMessage }): ReactNode {
+  return (
+    <article
+      className={
+        message.author_type === "staff"
+          ? "rounded-md border border-primary/30 bg-primary/5 p-3"
+          : "rounded-md border p-3"
+      }
+    >
+      <header className="mb-1 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+        <span className="font-medium capitalize">{message.author_type}</span>
+        <span>{fmtDateTime(message.created_at)}</span>
+      </header>
+      <p className="text-sm whitespace-pre-wrap">{message.body}</p>
+      {message.attachments.length > 0 ? (
+        <ul className="mt-2 space-y-0.5">
+          {message.attachments.map((attachment) => (
+            <li key={attachment.id} className="text-xs text-muted-foreground">
+              Attachment: {attachment.filename} ({formatBytes(attachment.size_bytes)})
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </article>
   )
 }
