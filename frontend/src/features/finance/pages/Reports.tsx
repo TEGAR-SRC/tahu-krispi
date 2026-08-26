@@ -30,7 +30,7 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart"
 import { DownloadIcon, RefreshCwIcon } from "lucide-react"
-import { formatMoney, formatNumber } from "../lib"
+import { formatMoney, formatNumber } from "../lib-utils"
 import type { FinanceSummaryData } from "../lib"
 
 const PERIODS = [7, 30, 90, 365] as const

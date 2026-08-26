@@ -30,9 +30,9 @@ import { StatusBadge } from "../shared"
 import {
   ConfirmDialog,
   ProviderShell,
-  useInfraGet,
   type HAResource,
 } from "./shared"
+import { useInfraGet } from "./infra"
 
 const RESOURCE_TYPES = ["vm", "ct"]
 

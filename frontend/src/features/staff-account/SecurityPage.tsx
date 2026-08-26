@@ -247,7 +247,7 @@ function SessionsCard() {
                   header: "Device",
                   render: (row) => (
                     <span
-                      className="block max-w-[280px] truncate"
+                      className="block max-w-70 truncate"
                       title={row.user_agent}
                     >
                       {row.device_name || row.user_agent || "Unknown device"}
@@ -390,7 +390,7 @@ function SecurityEventsCard() {
                   key: "user_agent",
                   header: "Client",
                   render: (row) => (
-                    <span className="block max-w-[240px] truncate" title={row.user_agent}>
+                    <span className="block max-w-60 truncate" title={row.user_agent}>
                       {row.user_agent || "—"}
                     </span>
                   ),

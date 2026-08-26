@@ -28,8 +28,10 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { StatusBadge, formatDateTime } from "../shared"
-import { useInfraGet, type ProviderRow } from "./shared"
+import { StatusBadge } from "../shared"
+import { formatDateTime } from "../format"
+import { type ProviderRow } from "./shared"
+import { useInfraGet } from "./infra"
 
 interface SectionLink {
   to: string

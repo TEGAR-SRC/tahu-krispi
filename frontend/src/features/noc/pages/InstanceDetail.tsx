@@ -30,7 +30,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Separator } from "@/components/ui/separator"
 import { Loader2Icon } from "lucide-react"
 import type { InstanceDetail as InstanceRowDetail } from "../lib"
-import { StatusBadge, fmtDateTime, formatMoney, toastApiError } from "../lib"
+import { StatusBadge } from "../lib"
+import { fmtDateTime, formatMoney, toastApiError } from "../lib-utils"
 
 /**
  * The live GET /admin/instances/:id payload carries more columns than the

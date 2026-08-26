@@ -17,11 +17,9 @@ import {
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { RefreshCwIcon } from "lucide-react"
-import { fmtDateTime } from "../../lib"
+import { fmtDateTime } from "../../lib-utils"
 import {
   AdminOnlyHint,
-  fmtFraction,
-  fmtUptime,
   HealthBadge,
   type PveClusterPayload,
   type PveCpuModel,
@@ -30,9 +28,8 @@ import {
   type PveResource,
   type PveTask,
   ProviderSurfaceNote,
-  useNocProvider,
-  useTyped,
 } from "./pve"
+import { fmtFraction, fmtUptime, useNocProvider, useTyped } from "./pve-utils"
 import { ProviderSubBreadcrumb } from "./ProviderDetail"
 
 export default function NocProviderClusterPage() {

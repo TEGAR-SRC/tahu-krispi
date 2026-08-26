@@ -13,14 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  RawResourceTable,
-  RawDataView,
-  useRawResource,
-  autoColumns,
-} from "./RawResourceTable"
+import { RawResourceTable, RawDataView } from "./RawResourceTable"
+import { useRawResource, autoColumns, type RawRow } from "./rawResourceUtils"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
-import type { RawRow } from "./RawResourceTable"
 
 export function VmwareDrillDown({ providerId }: { providerId: string }) {
   const base = `/admin/providers/${providerId}`

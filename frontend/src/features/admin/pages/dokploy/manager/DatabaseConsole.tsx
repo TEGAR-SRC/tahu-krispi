@@ -5,7 +5,8 @@
 // live relay and the bundled Dokploy v0.30.2 OpenAPI spec.
 import { useState } from "react"
 import type { DokployConsoleSpec } from "./engine"
-import { DokployEngine, loadEnvironmentOptions } from "./engine"
+import { DokployEngine } from "./engine"
+import { loadEnvironmentOptions } from "./upstream"
 import { Label } from "@/components/ui/label"
 import {
   Select,

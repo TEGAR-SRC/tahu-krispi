@@ -14,8 +14,8 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { formatBytes } from "./shared"
-import { ProviderShell, useInfraGet } from "./shared"
+import { formatBytes, useInfraGet } from "./infra"
+import { ProviderShell } from "./shared"
 
 interface InventoryPayload {
   provider_id: string

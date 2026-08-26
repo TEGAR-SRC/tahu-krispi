@@ -152,22 +152,22 @@ export default function DokploySettingsAuditLogsPage() {
               placeholder="Filter by user email…"
               value={userEmail}
               onChange={(e) => setUserEmail(e.target.value)}
-              className="max-w-[220px]"
+              className="max-w-55"
             />
             <Input
               placeholder="Filter by resource name…"
               value={resourceName}
               onChange={(e) => setResourceName(e.target.value)}
-              className="max-w-[220px]"
+              className="max-w-55"
             />
             <Input
               placeholder="Resource type (project, service…)"
               value={resourceType}
               onChange={(e) => setResourceType(e.target.value)}
-              className="max-w-[240px]"
+              className="max-w-60"
             />
             <Select value={action} onValueChange={setAction}>
-              <SelectTrigger className="w-[150px]">
+              <SelectTrigger className="w-37.5">
                 <SelectValue placeholder="All actions" />
               </SelectTrigger>
               <SelectContent>

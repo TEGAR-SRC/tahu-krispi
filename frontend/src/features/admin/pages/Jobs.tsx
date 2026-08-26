@@ -31,7 +31,8 @@ import {
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import type { PagedMeta } from "@/lib/types"
-import { PaginationBar, SearchFilter, StatusBadge, formatDateTime } from "./shared"
+import { PaginationBar, SearchFilter, StatusBadge } from "./shared"
+import { formatDateTime } from "./format"
 
 interface AdminJobRow {
   id: string
@@ -157,7 +158,7 @@ export default function AdminJobsPage() {
             setPage(1)
           }}
         >
-          <SelectTrigger className="w-[170px]">
+          <SelectTrigger className="w-42.5">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>

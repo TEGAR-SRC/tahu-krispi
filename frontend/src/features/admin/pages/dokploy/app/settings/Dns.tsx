@@ -357,7 +357,7 @@ function RecordDialog({
               </SelectContent>
             </Select>
           </FieldRow>
-          <FieldRow label="Name" hint="Use @ for the root domain." error={fieldErrors.name ?? fieldErrorsFromText(submitError, "name")}>
+          <FieldRow label="Name" hint="Use @ for the root domain." error={fieldErrors.name}>
             <Input placeholder="app.example.com" value={values.name} onChange={(e) => set("name", e.target.value)} />
           </FieldRow>
           <FieldRow label={values.type === "A" ? "IPv4 Address" : "Target"} error={fieldErrors.content}>
@@ -380,11 +380,6 @@ function RecordDialog({
       </DialogContent>
     </Dialog>
   )
-}
-
-/** Best-effort mapping of upstream zod field errors surfaced in the banner text. */
-function fieldErrorsFromText(_message: string | null, _field: string): string | undefined {
-  return undefined
 }
 
 function ZonesDialog({ provider }: { provider: DnsProviderRow }) {
@@ -529,7 +524,7 @@ function ZoneRecords({
               <Badge variant="outline" className="shrink-0">
                 {record.type}
               </Badge>
-              <span className="max-w-[160px] truncate font-medium">{record.name}</span>
+              <span className="max-w-40 truncate font-medium">{record.name}</span>
               <span className="text-muted-foreground flex-1 truncate">→ {record.content}</span>
               {editable ? (
                 <RecordDialog

@@ -4,7 +4,8 @@
 // (existence confirmed via upstream zod validation errors) and the bundled
 // Dokploy v0.30.2 OpenAPI spec.
 import type { DokployConsoleSpec } from "./engine"
-import { DokployEngine, StatusBadge, loadEnvironmentOptions } from "./engine"
+import { DokployEngine, StatusBadge } from "./engine"
+import { loadEnvironmentOptions } from "./upstream"
 
 function lifecycle(key: string, label: string, path: string) {
   return {

@@ -277,7 +277,7 @@ export default function WebhooksPage() {
                     header: "Last error",
                     render: (row) => (
                       <span
-                        className="block max-w-[220px] truncate text-xs"
+                        className="block max-w-55 truncate text-xs"
                         title={row.last_error}
                       >
                         {row.last_error || "—"}

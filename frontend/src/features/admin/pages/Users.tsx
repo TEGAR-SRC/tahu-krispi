@@ -38,8 +38,8 @@ import {
   PaginationBar,
   SearchFilter,
   StatusBadge,
-  formatDateTime,
 } from "./shared"
+import { formatDateTime } from "./format"
 
 interface AdminUserRow {
   id: string
@@ -167,7 +167,7 @@ export default function AdminUsersPage() {
             setPage(1)
           }}
         >
-          <SelectTrigger className="w-[170px]">
+          <SelectTrigger className="w-42.5">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>

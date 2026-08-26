@@ -29,8 +29,8 @@ import {
   type Provider,
   StatusBadge,
   KindBadge,
-  fmtDateTime,
 } from "../lib"
+import { fmtDateTime } from "../lib-utils"
 
 const INSTANCE_STATES = [
   "active",

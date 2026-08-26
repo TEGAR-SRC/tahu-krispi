@@ -16,10 +16,9 @@ import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
 import { StatusBadge } from "../shared"
 import {
   ProviderShell,
-  formatBytes,
-  useInfraGet,
   type CephStatusPayload,
 } from "./shared"
+import { formatBytes, useInfraGet } from "./infra"
 
 interface PgStateRow {
   state_name?: string

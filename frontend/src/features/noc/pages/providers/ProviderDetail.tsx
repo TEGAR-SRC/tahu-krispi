@@ -31,8 +31,10 @@ import {
   ServerCogIcon,
   ShieldHalfIcon,
 } from "lucide-react"
-import { KindBadge, StatusBadge, fmtDateTime, toastApiError } from "../../lib"
-import { AdminOnlyHint, HealthBadge, useNocProvider } from "./pve"
+import { KindBadge, StatusBadge } from "../../lib"
+import { fmtDateTime, toastApiError } from "../../lib-utils"
+import { AdminOnlyHint, HealthBadge } from "./pve"
+import { useNocProvider } from "./pve-utils"
 
 const SUBPAGES = [
   {

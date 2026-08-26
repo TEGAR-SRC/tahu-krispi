@@ -23,7 +23,8 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { TagIcon } from "lucide-react"
-import { DetailRow, formatDateTime, formatMoney, StatusBadge } from "../lib"
+import { DetailRow, StatusBadge } from "../lib"
+import { formatDateTime, formatMoney } from "../lib-utils"
 
 interface CouponDetailData {
   id: string

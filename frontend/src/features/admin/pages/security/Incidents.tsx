@@ -26,7 +26,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import type { PagedMeta } from "@/lib/types"
-import { PaginationBar, StatusBadge, formatDateTime } from "../shared"
+import { PaginationBar, StatusBadge } from "../shared"
+import { formatDateTime } from "../format"
 
 interface IncidentRow {
   id: string
@@ -112,7 +113,7 @@ export default function SecurityIncidentsPage() {
             setPage(1)
           }}
         >
-          <SelectTrigger className="w-[190px]">
+          <SelectTrigger className="w-47.5">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>

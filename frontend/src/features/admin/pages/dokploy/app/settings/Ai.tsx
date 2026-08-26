@@ -440,7 +440,7 @@ function CustomProvidersDialog({ onSaved }: { onSaved: () => void }) {
                 }
               />
               <Input
-                className="flex-[2]"
+                className="flex-2"
                 placeholder="https://llm.internal.company/v1"
                 value={provider.apiUrl}
                 onChange={(e) =>

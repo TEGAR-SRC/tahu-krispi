@@ -31,7 +31,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { PlusIcon } from "lucide-react"
-import { formatDateTime, formatMoney, TablePagination } from "../lib"
+import { TablePagination } from "../lib"
+import { formatDateTime, formatMoney } from "../lib-utils"
 
 interface CustomRate {
   id: string

@@ -9,7 +9,8 @@ import { PageHeader } from "@/components/shared/PageHeader"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
 import { Button } from "@/components/ui/button"
 import type { PagedMeta } from "@/lib/types"
-import { JsonBlock, PaginationBar, SearchFilter, formatDateTime } from "./shared"
+import { JsonBlock, PaginationBar, SearchFilter } from "./shared"
+import { formatDateTime } from "./format"
 
 interface AuditLogRow {
   id: number

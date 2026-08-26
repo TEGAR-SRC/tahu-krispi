@@ -30,7 +30,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { StatusBadge, PaginationBar, formatDateTime, formatMoney } from "../shared"
+import { StatusBadge, PaginationBar } from "../shared"
+import { formatDateTime, formatMoney } from "../format"
 
 interface EarningRow {
   id: string

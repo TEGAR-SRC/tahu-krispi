@@ -32,9 +32,8 @@ import {
   type Provider,
   type SecurityIncident,
   StatusBadge,
-  fmtDateTime,
-  toastApiError,
 } from "../lib"
+import { fmtDateTime, toastApiError } from "../lib-utils"
 
 interface IncidentRow extends SecurityIncident {
   id: string

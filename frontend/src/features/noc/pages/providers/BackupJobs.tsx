@@ -9,13 +9,10 @@ import { Badge } from "@/components/ui/badge"
 import { RefreshCwIcon } from "lucide-react"
 import {
   AdminOnlyHint,
-  flagLabel,
-  fmtEpoch,
   type PveBackupJob,
   ProviderSurfaceNote,
-  useNocProvider,
-  useTyped,
 } from "./pve"
+import { flagLabel, fmtEpoch, useNocProvider, useTyped } from "./pve-utils"
 import { ProviderSubBreadcrumb } from "./ProviderDetail"
 
 export default function NocProviderBackupJobsPage() {

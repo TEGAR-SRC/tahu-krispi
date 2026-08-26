@@ -38,7 +38,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
-import { DetailBreadcrumbs, useApiDetail } from "./detailShared"
+import { DetailBreadcrumbs } from "./detailShared"
+import { useApiDetail } from "./use-api-detail"
 import { Pager, StatusBadge, formatDateTime, formatMoney } from "./shared"
 
 interface WalletInfo {

@@ -21,12 +21,10 @@ import { Label } from "@/components/ui/label"
 import {
   ConfirmDialog,
   ProviderShell,
-  formatBytes,
-  formatUptime,
-  useInfraGet,
   type PoolRow,
   type PveClusterResource,
 } from "./shared"
+import { formatBytes, formatUptime, useInfraGet } from "./infra"
 
 export default function ProviderPoolsPage() {
   const params = useParams()

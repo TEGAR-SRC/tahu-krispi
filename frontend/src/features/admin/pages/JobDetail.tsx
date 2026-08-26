@@ -24,7 +24,8 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { DetailField, JsonBlock, StatusBadge, formatDateTime } from "./shared"
+import { DetailField, JsonBlock, StatusBadge } from "./shared"
+import { formatDateTime } from "./format"
 import { ConfirmDialog } from "./providers/shared"
 
 interface JobDetailPayload {

@@ -14,7 +14,7 @@ import { StatCard } from "@/components/shared/StatCard"
 import { ErrorBanner } from "@/components/shared/ErrorBanner"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
 import type { PagedMeta } from "@/lib/types"
-import { formatDateTime, formatMoney } from "./shared"
+import { formatDateTime, formatMoney } from "./format"
 
 interface ListEnvelopeMeta {
   meta?: PagedMeta & Record<string, unknown>

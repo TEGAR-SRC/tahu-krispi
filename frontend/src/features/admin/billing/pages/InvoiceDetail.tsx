@@ -28,8 +28,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   DetailBreadcrumbs,
   DetailField,
-  useApiDetail,
 } from "./detailShared"
+import { useApiDetail } from "./use-api-detail"
 import { StatusBadge, formatDateTime, formatMoney } from "./shared"
 
 interface InvoiceItem {

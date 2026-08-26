@@ -3,7 +3,8 @@
 // toggleEnable/delete verified by contract via the live relay's zod errors
 // and the bundled Dokploy v0.30.2 OpenAPI spec.
 import type { DokployConsoleSpec } from "./engine"
-import { DokployEngine, StatusBadge, loadApplicationOptions } from "./engine"
+import { DokployEngine, StatusBadge } from "./engine"
+import { loadApplicationOptions } from "./upstream"
 import { Badge } from "@/components/ui/badge"
 
 const spec: DokployConsoleSpec = {

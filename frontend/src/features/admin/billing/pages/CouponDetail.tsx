@@ -14,8 +14,8 @@ import { Progress } from "@/components/ui/progress"
 import {
   DetailBreadcrumbs,
   DetailField,
-  useApiDetail,
 } from "./detailShared"
+import { useApiDetail } from "./use-api-detail"
 import { StatusBadge, formatDateTime, formatMoney } from "./shared"
 
 interface CouponRedemption {

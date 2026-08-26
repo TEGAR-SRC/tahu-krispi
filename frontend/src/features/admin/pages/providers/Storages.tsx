@@ -41,18 +41,17 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { formatDateTime } from "../shared"
+import { formatDateTime } from "../format"
 import {
   ConfirmDialog,
   ProviderShell,
-  formatBytes,
-  useInfraGet,
   type ClusterPayload,
   type ClusterStorage,
   type FileRestoreEntry,
   type PveNodeStatus,
   type StorageContentItem,
 } from "./shared"
+import { formatBytes, useInfraGet } from "./infra"
 
 const STORAGE_TYPES = [
   "dir",
@@ -249,7 +248,7 @@ function CreateStorageDialog({ open, busy, onOpenChange, onSubmit }: StorageDial
   const [extraJson, setExtraJson] = useState("{}")
 
   const submit = () => {
-    let extra: Record<string, unknown> = {}
+    let extra: Record<string, unknown>
     try {
       extra = JSON.parse(extraJson || "{}") as Record<string, unknown>
     } catch {

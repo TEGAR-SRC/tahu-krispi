@@ -58,11 +58,8 @@ import {
   type InstanceDetail,
   type InstanceRow,
   StatusBadge,
-  fmtDateTime,
-  formatMoney,
-  previewValue,
-  toastApiError,
 } from "../lib"
+import { fmtDateTime, formatMoney, previewValue, toastApiError } from "../lib-utils"
 
 const PER_PAGE = 20
 const INSTANCE_STATES = [
@@ -184,7 +181,7 @@ export default function NocInstancesPage() {
         setPendingOp(null)
       }
     },
-    [detail, targetNode, load, page],
+    [detail, targetNode, load, page, openDetail],
   )
 
   // Org filter stays client-side over the fetched page; the backend exposes no

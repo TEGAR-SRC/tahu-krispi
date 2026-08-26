@@ -37,7 +37,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import type { PagedMeta } from "@/lib/types"
-import { DetailField, PaginationBar, StatusBadge, formatDateTime } from "./shared"
+import { DetailField, PaginationBar, StatusBadge } from "./shared"
+import { formatDateTime } from "./format"
 
 interface AdminTicketRow {
   id: string
@@ -131,7 +132,7 @@ export default function AdminTicketsPage() {
             setPage(1)
           }}
         >
-          <SelectTrigger className="w-[210px]">
+          <SelectTrigger className="w-52.5">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>

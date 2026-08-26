@@ -1,7 +1,7 @@
 // K6 · Settings ▸ Sessions — parity with pages/dashboard/settings/sessions.tsx
 // (+ sessions/show-sessions.tsx): user.listSessions table with filters and
 // user.revokeSession behind a confirm (current session is never revocable).
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 import { LogOutIcon, SmartphoneIcon } from "lucide-react"
 import { PageHeader } from "@/components/shared/PageHeader"
@@ -65,12 +65,18 @@ export default function DokploySettingsSessionsPage() {
     }
   }
 
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 60000)
+    return () => clearInterval(timer)
+  }, [])
+
   const rows = useMemo(() => {
-    const now = Date.now()
+    const nowMs = now
     let list = data ?? []
     if (statusFilter !== "all") {
       list = list.filter((s) => {
-        const expired = s.expiresAt ? new Date(s.expiresAt).getTime() <= now : false
+        const expired = s.expiresAt ? new Date(s.expiresAt).getTime() <= nowMs : false
         return statusFilter === "expired" ? expired : !expired
       })
     }
@@ -84,7 +90,7 @@ export default function DokploySettingsSessionsPage() {
       )
     }
     return list
-  }, [data, statusFilter, search])
+  }, [data, statusFilter, search, now])
 
   const columns: Array<SimpleColumn<SessionRow>> = [
     {

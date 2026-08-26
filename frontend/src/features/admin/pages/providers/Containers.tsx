@@ -13,11 +13,10 @@ import {
 import { StatusBadge } from "../shared"
 import {
   ProviderShell,
-  formatBytes,
-  useInfraGet,
   type ClusterPayload,
   type ContainerRow,
 } from "./shared"
+import { formatBytes, useInfraGet } from "./infra"
 
 export default function ProviderContainersPage() {
   const params = useParams()

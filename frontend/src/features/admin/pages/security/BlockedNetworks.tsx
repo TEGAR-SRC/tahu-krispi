@@ -21,7 +21,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import type { PagedMeta } from "@/lib/types"
-import { PaginationBar, formatDateTime } from "../shared"
+import { PaginationBar } from "../shared"
+import { formatDateTime } from "../format"
 
 interface BlockedNetworkRow {
   id: string

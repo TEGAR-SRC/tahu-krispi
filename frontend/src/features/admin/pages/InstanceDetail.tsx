@@ -36,7 +36,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
-import { StatusBadge, formatDateTime, formatMoney } from "./shared"
+import { StatusBadge } from "./shared"
+import { formatDateTime, formatMoney } from "./format"
 import { ConfirmDialog } from "./providers/shared"
 
 interface InstanceJob {

@@ -9,13 +9,10 @@ import { Progress } from "@/components/ui/progress"
 import { StatusBadge } from "../shared"
 import {
   ProviderShell,
-  formatBytes,
-  formatPercent,
-  formatUptime,
-  useInfraGet,
   type ClusterPayload,
   type PveNodeStatus,
 } from "./shared"
+import { formatBytes, formatPercent, formatUptime, useInfraGet } from "./infra"
 
 const nodeName = (node: PveNodeStatus) => String(node.node ?? node.name ?? "—")
 

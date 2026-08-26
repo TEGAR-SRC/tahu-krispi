@@ -46,7 +46,8 @@ import {
   XIcon,
 } from "lucide-react"
 import type { TicketMessage, TicketRow } from "../lib"
-import { StatusBadge, fmtDateTime, toastApiError } from "../lib"
+import { StatusBadge } from "../lib"
+import { fmtDateTime, toastApiError } from "../lib-utils"
 import {
   downloadStaffTicketAttachment,
   formatBytes,

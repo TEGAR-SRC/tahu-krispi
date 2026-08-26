@@ -32,7 +32,8 @@ import { EmptyState } from "@/components/shared/EmptyState"
 import { ErrorBanner } from "@/components/shared/ErrorBanner"
 import { ApiError } from "@/lib/api"
 import { JsonBlock } from "../shared"
-import { ProviderShell, useInfraGet } from "./shared"
+import { ProviderShell } from "./shared"
+import { useInfraGet } from "./infra"
 
 interface PerfPayload {
   provider_id: string

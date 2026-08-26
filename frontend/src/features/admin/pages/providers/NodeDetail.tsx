@@ -36,15 +36,13 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { JsonBlock, formatDateTime } from "../shared"
+import { JsonBlock } from "../shared"
+import { formatDateTime } from "../format"
 import {
   ConfirmDialog,
-  formatBytes,
-  formatPercent,
-  formatUptime,
-  useInfraGet,
   type ClusterStorage,
 } from "./shared"
+import { formatBytes, formatPercent, formatUptime, useInfraGet } from "./infra"
 
 interface NodeDetailPayload {
   Name?: string
@@ -102,7 +100,7 @@ interface CertRow {
   [key: string]: unknown
 }
 
-const COMMANDS = ["reboot", "shutdown", "wakeonlan"] as const
+type NodeCommand = "reboot" | "shutdown" | "wakeonlan"
 
 /** URL prefix of one node under /admin/providers/:provider_id/nodes/:node. */
 function clusterBase(providerId: string, node: string): string {
@@ -121,7 +119,7 @@ export default function ProviderNodeDetailPage() {
     providerId ? `/admin/providers/${providerId}/cluster-storages` : null,
   )
 
-  const [command, setCommand] = useState<(typeof COMMANDS)[number] | null>(null)
+  const [command, setCommand] = useState<NodeCommand | null>(null)
   const [busy, setBusy] = useState(false)
 
   // Ad-hoc vzdump dialog state.

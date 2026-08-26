@@ -4,7 +4,8 @@
 // log viewer were verified by contract against the live relay and the bundled
 // Dokploy v0.30.2 OpenAPI spec.
 import type { DokployConsoleSpec } from "./engine"
-import { DokployEngine, StatusBadge, loadApplicationOptions } from "./engine"
+import { DokployEngine, StatusBadge } from "./engine"
+import { loadApplicationOptions } from "./upstream"
 
 const spec: DokployConsoleSpec = {
   title: "Dokploy deployments",

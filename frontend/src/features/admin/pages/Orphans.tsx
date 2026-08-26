@@ -19,7 +19,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import type { PagedMeta } from "@/lib/types"
-import { PaginationBar, StatusBadge, formatDateTime } from "./shared"
+import { PaginationBar, StatusBadge } from "./shared"
+import { formatDateTime } from "./format"
 
 interface OrphanRow {
   id: string

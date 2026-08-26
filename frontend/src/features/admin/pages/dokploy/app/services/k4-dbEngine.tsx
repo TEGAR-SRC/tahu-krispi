@@ -340,7 +340,7 @@ type FieldErrors = Record<string, string>
  */
 function extractFieldErrors(error: UpstreamError): FieldErrors {
   const out: FieldErrors = {}
-  let parsed: unknown = null
+  let parsed: unknown
   try {
     parsed = typeof error.body === "string" ? JSON.parse(error.body) : error.body
   } catch {
@@ -469,7 +469,7 @@ function JsonViewer({ payload }: { payload: unknown }) {
     }
   }, [payload])
   return (
-    <pre className="max-h-[420px] overflow-auto rounded-md bg-muted p-3 font-mono text-xs leading-relaxed">
+    <pre className="max-h-105 overflow-auto rounded-md bg-muted p-3 font-mono text-xs leading-relaxed">
       {text}
     </pre>
   )
@@ -1219,7 +1219,7 @@ function LogsTab({ config, row }: { config: KindConfig; row: Row }) {
             </div>
             {logsError ? <UpstreamBanner error={logsError} /> : null}
             {logs !== null ? (
-              <pre className="max-h-[480px] overflow-auto rounded-md bg-muted p-3 font-mono text-xs leading-relaxed">
+              <pre className="max-h-120 overflow-auto rounded-md bg-muted p-3 font-mono text-xs leading-relaxed">
                 {logs || "(empty log output)"}
               </pre>
             ) : null}

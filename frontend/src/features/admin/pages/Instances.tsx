@@ -18,7 +18,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import type { PagedMeta } from "@/lib/types"
-import { PaginationBar, StatusBadge, formatDateTime } from "./shared"
+import { PaginationBar, StatusBadge } from "./shared"
+import { formatDateTime } from "./format"
 
 interface AdminInstanceRow {
   id: string
@@ -106,7 +107,7 @@ export default function AdminInstancesPage() {
             setPage(1)
           }}
         >
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-45">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>

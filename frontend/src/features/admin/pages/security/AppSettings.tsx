@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
-import { formatDateTime } from "../shared"
+import { formatDateTime } from "../format"
 
 interface SettingPayload {
   key: string

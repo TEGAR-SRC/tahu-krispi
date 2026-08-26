@@ -39,10 +39,9 @@ import {
 import { BanIcon } from "lucide-react"
 import {
   DetailRow,
-  formatDateTime,
-  formatMoney,
   StatusBadge,
 } from "../lib"
+import { formatDateTime, formatMoney } from "../lib-utils"
 import type {
   AdminInvoiceDetail,
   AdminPaymentRow,

@@ -13,10 +13,10 @@ import {
 import { StatusBadge } from "../shared"
 import {
   ProviderShell,
-  useInfraGet,
   type SdnVnet,
   type SdnZone,
 } from "./shared"
+import { useInfraGet } from "./infra"
 
 export default function ProviderSdnPage() {
   const params = useParams()

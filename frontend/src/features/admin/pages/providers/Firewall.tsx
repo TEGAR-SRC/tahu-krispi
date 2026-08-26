@@ -31,10 +31,10 @@ import { StatusBadge } from "../shared"
 import {
   ConfirmDialog,
   ProviderShell,
-  useInfraGet,
   type FirewallGroup,
   type FirewallRule,
 } from "./shared"
+import { useInfraGet } from "./infra"
 
 export default function ProviderFirewallPage() {
   const params = useParams()

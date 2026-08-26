@@ -30,11 +30,10 @@ import { BanIcon, SearchIcon } from "lucide-react"
 import {
   DetailRow,
   FilterChips,
-  formatDateTime,
-  formatMoney,
   StatusBadge,
   TablePagination,
 } from "../lib"
+import { formatDateTime, formatMoney } from "../lib-utils"
 import type {
   AdminOrderDetail,
   AdminOrderRow,

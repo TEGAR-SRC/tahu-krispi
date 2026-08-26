@@ -29,8 +29,8 @@ import { Separator } from "@/components/ui/separator"
 import {
   DetailBreadcrumbs,
   DetailField,
-  useApiDetail,
 } from "./detailShared"
+import { useApiDetail } from "./use-api-detail"
 import { StatusBadge, formatDateTime, formatMoney } from "./shared"
 
 interface OrderItem {

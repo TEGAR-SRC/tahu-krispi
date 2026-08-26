@@ -45,7 +45,8 @@ import {
 } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
-import { DetailField, StatusBadge, formatDateTime } from "./shared"
+import { DetailField, StatusBadge } from "./shared"
+import { formatDateTime } from "./format"
 import { findAdminTicket, type AdminTicketRow, type AdminUserRow } from "./identityLookup"
 
 type AttachmentView = StaffReplyAttachment

@@ -29,11 +29,10 @@ import {
 import { Undo2Icon } from "lucide-react"
 import {
   FilterChips,
-  formatDateTime,
-  formatMoney,
   StatusBadge,
   TablePagination,
 } from "../lib"
+import { formatDateTime, formatMoney } from "../lib-utils"
 
 interface AffiliateEarning {
   id: string

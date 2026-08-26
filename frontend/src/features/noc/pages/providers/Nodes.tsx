@@ -8,14 +8,11 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { ArrowRightIcon, RefreshCwIcon } from "lucide-react"
 import {
-  fmtFraction,
-  fmtUptime,
   type PveClusterPayload,
   type PveNode,
   ProviderSurfaceNote,
-  useNocProvider,
-  useTyped,
 } from "./pve"
+import { fmtFraction, fmtUptime, useNocProvider, useTyped } from "./pve-utils"
 import { ProviderSubBreadcrumb } from "./ProviderDetail"
 
 function UsageCell({ label, fraction }: { label: string; fraction: number | null }) {

@@ -24,7 +24,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
-import { DetailField, StatusBadge, formatDateTime } from "./shared"
+import { DetailField, StatusBadge } from "./shared"
+import { formatDateTime } from "./format"
 import { findAdminOrg, type AdminOrgRow } from "./identityLookup"
 
 export default function OrganizationDetailPage() {

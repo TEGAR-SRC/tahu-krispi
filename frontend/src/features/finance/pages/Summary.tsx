@@ -25,11 +25,9 @@ import {
 } from "@/components/ui/chart"
 import { ReceiptTextIcon, TrendingUpIcon, WalletIcon, ClockIcon } from "lucide-react"
 import {
-  formatMoney,
-  formatNumber,
-  parseTimestamp,
   StatusBadge,
 } from "../lib"
+import { formatMoney, formatNumber, parseTimestamp } from "../lib-utils"
 import type {
   AdminInvoiceRow,
   AdminOrderRow,

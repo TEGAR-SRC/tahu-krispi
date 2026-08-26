@@ -12,7 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { RawResourceTable, useRawResource, type RawRow } from "./RawResourceTable"
+import { RawResourceTable } from "./RawResourceTable"
+import { useRawResource, type RawRow } from "./rawResourceUtils"
 
 const NODE_SUBRESOURCES = [
   { value: "detail", label: "Detail" },

@@ -18,10 +18,9 @@ import {
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { HeartPulseIcon } from "lucide-react"
-import { formatBytes } from "../../lib"
+import { formatBytes } from "../../lib-utils"
 import {
   AdminOnlyHint,
-  fmtFraction,
   HealthBadge,
   type PveClusterPayload,
   type PveContainer,
@@ -29,9 +28,8 @@ import {
   type PveVnet,
   type PveZone,
   ProviderSurfaceNote,
-  useNocProvider,
-  useTyped,
 } from "./pve"
+import { fmtFraction, useNocProvider, useTyped } from "./pve-utils"
 import { ProviderSubBreadcrumb } from "./ProviderDetail"
 
 /** Ceph status arrives as a deep go-proxmox struct; surface the key fields. */

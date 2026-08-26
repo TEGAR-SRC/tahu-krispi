@@ -14,18 +14,14 @@ import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import {
   AdminOnlyHint,
-  fmtEpoch,
-  fmtFraction,
-  fmtUptime,
   type PveCert,
   type PveDisk,
   type PveNodeStorage,
   type PveTask,
   ProviderSurfaceNote,
-  useNocProvider,
-  useTyped,
 } from "./pve"
-import { formatBytes } from "../../lib"
+import { fmtEpoch, fmtFraction, fmtUptime, useNocProvider, useTyped } from "./pve-utils"
+import { formatBytes } from "../../lib-utils"
 import { ProviderSubBreadcrumb } from "./ProviderDetail"
 
 /** Raw node payload from GET .../nodes/:node/detail (go-proxmox Node). */

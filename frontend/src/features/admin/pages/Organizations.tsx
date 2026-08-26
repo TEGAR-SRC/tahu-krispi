@@ -9,7 +9,8 @@ import { PageHeader } from "@/components/shared/PageHeader"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
 import { Button } from "@/components/ui/button"
 import type { PagedMeta } from "@/lib/types"
-import { PaginationBar, StatusBadge, formatDateTime } from "./shared"
+import { PaginationBar, StatusBadge } from "./shared"
+import { formatDateTime } from "./format"
 import type { AdminOrgRow } from "./identityLookup"
 
 const PER_PAGE = 20

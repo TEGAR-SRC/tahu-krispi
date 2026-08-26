@@ -15,7 +15,8 @@ import {
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { AdminOnlyHint, type PveFwGroup, type PveFwRule, ProviderSurfaceNote, useNocProvider, useTyped } from "./pve"
+import { AdminOnlyHint, type PveFwGroup, type PveFwRule, ProviderSurfaceNote } from "./pve"
+import { useNocProvider, useTyped } from "./pve-utils"
 import { ProviderSubBreadcrumb } from "./ProviderDetail"
 
 const ruleColumns: Array<SimpleColumn<PveFwRule>> = [
