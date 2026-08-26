@@ -48,7 +48,8 @@ FROM coupons c`
 
 func scanAdmCoupon(row admRowScanner) (*admCouponRow, error) {
 	var c admCouponRow
-	var discountValue, maxDiscount, minOrder string
+	var discountValue string
+	var maxDiscount, minOrder *string
 	if err := row.Scan(&c.ID, &c.Code, &c.Description, &c.DiscountType, &discountValue,
 		&c.Currency, &maxDiscount, &minOrder, &c.MaxRedemptions, &c.PerUserLimit,
 		&c.StartsAt, &c.EndsAt, &c.DurationValue, &c.DurationUnit, &c.RedeemedCount,
@@ -56,9 +57,11 @@ func scanAdmCoupon(row admRowScanner) (*admCouponRow, error) {
 		return nil, err
 	}
 	c.DiscountValue = admParseFloat(discountValue)
-	c.MinOrderAmount = admParseFloat(minOrder)
-	if maxDiscount != "" {
-		v := admParseFloat(maxDiscount)
+	if minOrder != nil {
+		c.MinOrderAmount = admParseFloat(*minOrder)
+	}
+	if maxDiscount != nil {
+		v := admParseFloat(*maxDiscount)
 		c.MaxDiscount = &v
 	}
 	return &c, nil

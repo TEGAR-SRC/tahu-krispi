@@ -45,7 +45,7 @@ func (s *Server) adminListInstances(c fiber.Ctx) error {
 	args := []any{}
 	if status != "" {
 		args = append(args, status)
-		where += " AND i.status=$" + admPlaceholder(len(args))
+		where += " AND i.status=" + admPlaceholder(len(args))
 	}
 	orgFilter, args, err := admOrgFilter("i.organization_id", c.Query("organization_id"), args)
 	if err != nil {
@@ -267,11 +267,11 @@ func (s *Server) adminListJobs(c fiber.Ctx) error {
 	args := []any{}
 	if status != "" {
 		args = append(args, status)
-		where += " AND j.status=$" + admPlaceholder(len(args))
+		where += " AND j.status=" + admPlaceholder(len(args))
 	}
 	if queueName != "" {
 		args = append(args, queueName)
-		where += " AND j.queue=$" + admPlaceholder(len(args))
+		where += " AND j.queue=" + admPlaceholder(len(args))
 	}
 
 	var total int
@@ -469,7 +469,7 @@ func (s *Server) adminListIncidents(c fiber.Ctx) error {
 	args := []any{}
 	if status != "" {
 		args = append(args, status)
-		where += " WHERE si.status=$" + admPlaceholder(len(args))
+		where += " WHERE si.status=" + admPlaceholder(len(args))
 	}
 
 	var total int

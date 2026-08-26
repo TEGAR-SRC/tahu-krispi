@@ -40,7 +40,7 @@ func (s *Server) adminListTickets(c fiber.Ctx) error {
 	args := []any{}
 	if status != "" {
 		args = append(args, status)
-		where += " WHERE t.status=$" + admPlaceholder(len(args))
+		where += " WHERE t.status=" + admPlaceholder(len(args))
 	}
 
 	var total int
@@ -216,11 +216,11 @@ func (s *Server) adminListAuditLogs(c fiber.Ctx) error {
 			return mw.WriteError(c, vErrField("actor", "must be a valid user uuid"))
 		}
 		args = append(args, actorID)
-		where += " AND a.actor_user_id=$" + admPlaceholder(len(args))
+		where += " AND a.actor_user_id=" + admPlaceholder(len(args))
 	}
 	if actionRaw := strings.TrimSpace(c.Query("action")); actionRaw != "" {
 		args = append(args, "%"+lower(actionRaw)+"%")
-		where += " AND a.action ILIKE $" + admPlaceholder(len(args))
+		where += " AND a.action ILIKE " + admPlaceholder(len(args))
 	}
 
 	var total int
