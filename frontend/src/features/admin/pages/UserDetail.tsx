@@ -69,8 +69,6 @@ export default function UserDetailPage() {
   useEffect(() => {
     if (!userId) return
     let cancelled = false
-    setLoading(true)
-    setError(null)
     findAdminUser(userId)
       .then((row) => {
         if (cancelled) return

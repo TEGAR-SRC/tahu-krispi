@@ -59,7 +59,6 @@ export default function SecurityIncidentsPage() {
 
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
     apiGet<IncidentRow[]>("/admin/security-incidents", {
       query: {
         page,

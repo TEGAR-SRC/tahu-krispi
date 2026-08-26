@@ -57,7 +57,6 @@ function NotesCard({ instanceId }: { instanceId: string | undefined }) {
   useEffect(() => {
     if (!instanceId || !orgId) return
     let cancelled = false
-    setLoading(true)
     apiGet<{ notes?: string }>(`/instances/${instanceId}/notes`, {
       headers: orgHeaders(orgId),
     })
@@ -182,7 +181,6 @@ function TagsCard({ instanceId }: { instanceId: string | undefined }) {
   useEffect(() => {
     if (!instanceId || !orgId) return
     let cancelled = false
-    setLoading(true)
     apiGet<{ tags?: string[] }>(`/instances/${instanceId}/tags`, {
       headers: orgHeaders(orgId),
     })

@@ -74,7 +74,10 @@ export default function DokploySchedulesPage() {
   const reload = () => setReloadKey((value) => value + 1)
 
   useEffect(() => {
-    if (scopeType === "dokploy-server") setServerId("")
+    if (scopeType === "dokploy-server") {
+      const t = setTimeout(() => setServerId(""), 0)
+      return () => clearTimeout(t)
+    }
   }, [scopeType])
 
   const openCreate = () => setDraft({ ...emptyDraft, scheduleType: scopeType, serverId })

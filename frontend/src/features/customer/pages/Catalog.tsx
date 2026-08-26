@@ -207,7 +207,9 @@ function PriceCalculator({
 
   // Auto-select the first plan once loaded.
   useEffect(() => {
-    if (!planId && plans.length > 0) setPlanId(plans[0].id)
+    if (planId || plans.length === 0) return
+    const t = setTimeout(() => setPlanId(plans[0].id), 0)
+    return () => clearTimeout(t)
   }, [plans, planId])
 
   // Debounced live quote: refires ~0.5 s after the inputs settle.

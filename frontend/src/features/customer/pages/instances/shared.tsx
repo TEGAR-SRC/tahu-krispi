@@ -141,7 +141,8 @@ export function useInstance(instanceId: string | undefined): UseInstanceResult {
   }, [instanceId, orgId])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   return { instance, loading, error, reload: load }

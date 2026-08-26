@@ -91,8 +91,6 @@ export default function SubscriptionsPage() {
 
   const load = useCallback(async () => {
     if (!orgId) return
-    setLoading(true)
-    setError(null)
     try {
       const [subRes, planRes] = await Promise.all([
         apiGet<Subscription[]>("/subscriptions", {
@@ -112,7 +110,8 @@ export default function SubscriptionsPage() {
   }, [orgId, page])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   const toggleRow = async (subscription: Subscription) => {

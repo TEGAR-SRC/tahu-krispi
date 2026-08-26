@@ -79,7 +79,8 @@ export default function FinanceAffiliateEarningsPage() {
   }, [page, status])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   const reverseEarning = useCallback(async () => {

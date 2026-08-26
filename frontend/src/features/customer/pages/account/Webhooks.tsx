@@ -102,7 +102,8 @@ export default function WebhooksPage() {
   }, [orgId])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   useEffect(() => {

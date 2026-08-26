@@ -60,11 +60,10 @@ export function useInfraGet<T>(
   const queryKey = JSON.stringify(query ?? null)
   useEffect(() => {
     if (!path) {
-      setState({ data: null, loading: false, error: null })
-      return
+      const t = setTimeout(() => setState({ data: null, loading: false, error: null }), 0)
+      return () => clearTimeout(t)
     }
     let cancelled = false
-    setState((previous) => ({ ...previous, loading: true }))
     apiGet<T>(path, { query: query ?? undefined })
       .then((envelope) => {
         if (!cancelled) setState({ data: envelope.data, loading: false, error: null })

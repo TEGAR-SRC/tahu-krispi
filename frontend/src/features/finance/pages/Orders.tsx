@@ -137,7 +137,8 @@ export default function FinanceOrdersPage() {
   }, [page, status, appliedSearch])
 
   useEffect(() => {
-    void loadList()
+    const t = setTimeout(() => void loadList(), 0)
+    return () => clearTimeout(t)
   }, [loadList])
 
   const openDetail = useCallback(async (orderId: string) => {

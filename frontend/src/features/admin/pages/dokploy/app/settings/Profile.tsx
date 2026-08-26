@@ -100,14 +100,17 @@ function ProfileForm() {
   const email = user?.email ?? ""
   useEffect(() => {
     if (!loading && email && hydratedEmail !== email) {
-      setHydratedEmail(email)
-      setValues((v) => ({
-        ...v,
-        firstName: user?.firstName ?? "",
-        lastName: user?.lastName ?? "",
-        email,
-        image: user?.image ?? "",
-      }))
+      const t = setTimeout(() => {
+        setHydratedEmail(email)
+        setValues((v) => ({
+          ...v,
+          firstName: user?.firstName ?? "",
+          lastName: user?.lastName ?? "",
+          email,
+          image: user?.image ?? "",
+        }))
+      }, 0)
+      return () => clearTimeout(t)
     }
   }, [loading, email, hydratedEmail, user])
 

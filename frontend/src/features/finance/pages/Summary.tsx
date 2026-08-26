@@ -124,7 +124,8 @@ export default function FinanceSummaryPage() {
   }, [])
 
   useEffect(() => {
-    void load(days)
+    const t = setTimeout(() => void load(days), 0)
+    return () => clearTimeout(t)
   }, [load, days])
 
   const trend = useMemo(

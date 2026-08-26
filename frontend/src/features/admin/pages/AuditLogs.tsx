@@ -59,7 +59,6 @@ export default function AdminAuditLogsPage() {
   // the raw input so the user can correct it instead of losing their text.
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
     apiGet<AuditLogRow[]>("/admin/audit-logs", {
       query: {
         page,

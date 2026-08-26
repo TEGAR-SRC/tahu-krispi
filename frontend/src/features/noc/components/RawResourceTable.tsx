@@ -38,8 +38,6 @@ export function useRawResource(
   useEffect(() => {
     if (!enabled) return
     let cancelled = false
-    setLoading(true)
-    setError(null)
     apiGet<unknown>(path, {
       query: JSON.parse(queryString) as Record<string, string | number | boolean>,
     })

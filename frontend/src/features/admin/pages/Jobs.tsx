@@ -94,7 +94,8 @@ export default function AdminJobsPage() {
   )
 
   useEffect(() => {
-    void load(false)
+    const t = setTimeout(() => void load(false), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   useEffect(() => {

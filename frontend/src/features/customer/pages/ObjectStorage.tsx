@@ -169,12 +169,13 @@ export default function ObjectStoragePage() {
   }, [orgId])
 
   useEffect(() => {
-    void loadServices()
+    const t = setTimeout(() => void loadServices(), 0)
     apiGet<Region[]>("/regions")
       .then(({ data }) => setRegions((data ?? []).filter((r) => r.enabled)))
       .catch(() => {
         // The create wizard degrades to "auto region" when regions fail.
       })
+    return () => clearTimeout(t)
   }, [loadServices])
 
   const loadSelected = useCallback(

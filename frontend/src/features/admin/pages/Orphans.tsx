@@ -50,7 +50,6 @@ export default function OrphansPage() {
 
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
     apiGet<OrphanRow[]>("/admin/orphans", { query: { page, per_page: PER_PAGE } })
       .then((envelope) => {
         if (cancelled) return

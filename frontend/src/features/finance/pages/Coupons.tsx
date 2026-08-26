@@ -138,7 +138,8 @@ export default function FinanceCouponsPage() {
   }, [page])
 
   useEffect(() => {
-    void loadCoupons()
+    const t = setTimeout(() => void loadCoupons(), 0)
+    return () => clearTimeout(t)
   }, [loadCoupons])
 
   // Scans recent orders for coupon redemptions exposed in order details.

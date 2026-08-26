@@ -123,7 +123,8 @@ export default function CustomerIsoPage() {
   }, [orgId])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   const addFromUrl = async () => {
@@ -494,7 +495,8 @@ function MeasuredBootSection({ onUsageChanged }: { onUsageChanged: () => void })
   }, [orgId])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   const upload = async (file: File, description: string) => {

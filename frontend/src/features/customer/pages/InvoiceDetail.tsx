@@ -130,7 +130,8 @@ export default function CustomerInvoiceDetailPage() {
   }, [orgId, invoiceId])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   const payWithWallet = async () => {

@@ -136,7 +136,8 @@ export default function FinanceRatesPage() {
   }, [page])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   // Rates grouped by product code; within a product, sorted by dimension.

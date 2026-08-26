@@ -70,8 +70,6 @@ export default function CustomerTopupPage() {
   const loadBalance = useCallback(
     async (showLoading = true) => {
       if (!orgId) return
-      if (showLoading) setLoading(true)
-      setError(null)
       try {
         const { data } = await apiGet<WalletBalance>("/wallet", { headers: orgHeaders(orgId) })
         setBalance(data)
@@ -85,7 +83,8 @@ export default function CustomerTopupPage() {
   )
 
   useEffect(() => {
-    void loadBalance()
+    const t = setTimeout(() => void loadBalance(), 0)
+    return () => clearTimeout(t)
   }, [loadBalance])
 
   useEffect(() => {

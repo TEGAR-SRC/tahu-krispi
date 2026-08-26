@@ -81,7 +81,6 @@ export default function AdminRegionsPoolsPage() {
 
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
     apiGet<RegionRow[]>("/admin/regions", { query: { page, per_page: PER_PAGE } })
       .then((envelope) => {
         if (cancelled) return
@@ -244,13 +243,16 @@ function RegionEditorDialog({
 
   useEffect(() => {
     if (!open) return
-    setCode(editing?.code ?? "")
-    setName(editing?.name ?? "")
-    setCountryCode(editing?.country_code ?? "")
-    setCity(editing?.city ?? "")
-    setExternalId(editing?.external_id ?? "")
-    setEnabled(editing?.enabled ?? true)
-    setValidationError(null)
+    const t = setTimeout(() => {
+      setCode(editing?.code ?? "")
+      setName(editing?.name ?? "")
+      setCountryCode(editing?.country_code ?? "")
+      setCity(editing?.city ?? "")
+      setExternalId(editing?.external_id ?? "")
+      setEnabled(editing?.enabled ?? true)
+      setValidationError(null)
+    }, 0)
+    return () => clearTimeout(t)
   }, [open, editing])
 
   const submit = async () => {
@@ -361,7 +363,7 @@ function PoolsPanel({ providers }: { providers: ProviderLite[] }) {
   const activeProvider = providerId || pveProviders[0]?.id || ""
 
   const [pools, setPools] = useState<PoolRow[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
   const [reloadTick, setReloadTick] = useState(0)
 
@@ -372,7 +374,6 @@ function PoolsPanel({ providers }: { providers: ProviderLite[] }) {
   useEffect(() => {
     if (!activeProvider) return
     let cancelled = false
-    setLoading(true)
     apiGet<PoolRow[]>(`/admin/providers/${activeProvider}/pools`)
       .then((envelope) => {
         if (!cancelled) {
@@ -554,9 +555,12 @@ function PoolEditorDialog({
 
   useEffect(() => {
     if (!open) return
-    setPoolId(editing?.poolid ?? "")
-    setComment(editing?.comment ?? "")
-    setValidationError(null)
+    const t = setTimeout(() => {
+      setPoolId(editing?.poolid ?? "")
+      setComment(editing?.comment ?? "")
+      setValidationError(null)
+    }, 0)
+    return () => clearTimeout(t)
   }, [open, editing])
 
   const submit = async () => {

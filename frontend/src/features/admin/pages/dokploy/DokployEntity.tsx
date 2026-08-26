@@ -109,7 +109,8 @@ function EntityBrowser({ entityName }: { entityName: string }) {
   }, [entityName, offset])
 
   useEffect(() => {
-    load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load, reloadTick])
 
   const runSync = async () => {

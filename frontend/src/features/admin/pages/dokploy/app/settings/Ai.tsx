@@ -111,24 +111,27 @@ function HandleAiDialog({
   const [customModelMode, setCustomModelMode] = useState(false)
 
   useEffect(() => {
-    if (open && current && aiId) {
-      setValues({
-        name: current.name ?? "",
-        apiUrl: current.apiUrl ?? "",
-        apiKey: current.apiKey ?? "",
-        model: current.model ?? "",
-        isEnabled: current.isEnabled ?? true,
-      })
-      if (current.model) setCustomModelMode(true)
-    }
-    if (!open) {
-      setValues({ name: "", apiUrl: "", apiKey: "", model: "", isEnabled: true })
-      setModels([])
-      setModelsError(null)
-      setCustomModelMode(false)
-      setSubmitError(null)
-      setFieldErrors({})
-    }
+    const t = setTimeout(() => {
+      if (open && current && aiId) {
+        setValues({
+          name: current.name ?? "",
+          apiUrl: current.apiUrl ?? "",
+          apiKey: current.apiKey ?? "",
+          model: current.model ?? "",
+          isEnabled: current.isEnabled ?? true,
+        })
+        if (current.model) setCustomModelMode(true)
+      }
+      if (!open) {
+        setValues({ name: "", apiUrl: "", apiKey: "", model: "", isEnabled: true })
+        setModels([])
+        setModelsError(null)
+        setCustomModelMode(false)
+        setSubmitError(null)
+        setFieldErrors({})
+      }
+    }, 0)
+    return () => clearTimeout(t)
   }, [open, current, aiId])
 
   const set = <K extends keyof typeof values>(key: K, value: (typeof values)[K]) =>
@@ -366,16 +369,19 @@ function CustomProvidersDialog({ onSaved }: { onSaved: () => void }) {
 
   useEffect(() => {
     if (!open || loadedOnce) return
-    setLoadedOnce(true)
-    void (async () => {
-      try {
-        const result = await dokploy<CustomProvider[]>("GET", "ai.getCustomProviders")
-        const list = Array.isArray(result) ? result : []
-        setProviders(list.map((p) => ({ name: p.name, apiUrl: p.apiUrl })))
-      } catch (cause: unknown) {
-        setError(toErrorMessage(cause))
-      }
-    })()
+    const t = setTimeout(() => {
+      setLoadedOnce(true)
+      void (async () => {
+        try {
+          const result = await dokploy<CustomProvider[]>("GET", "ai.getCustomProviders")
+          const list = Array.isArray(result) ? result : []
+          setProviders(list.map((p) => ({ name: p.name, apiUrl: p.apiUrl })))
+        } catch (cause: unknown) {
+          setError(toErrorMessage(cause))
+        }
+      })()
+    }, 0)
+    return () => clearTimeout(t)
   }, [open, loadedOnce])
 
   const save = async () => {

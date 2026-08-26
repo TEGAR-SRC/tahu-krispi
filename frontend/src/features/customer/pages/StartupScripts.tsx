@@ -70,8 +70,6 @@ export default function StartupScriptsPage() {
 
   const load = useCallback(async () => {
     if (!orgId) return
-    setLoading(true)
-    setError(null)
     try {
       const { data } = await apiGet<ScriptRow[]>("/startup-scripts", {
         headers: orgHeaders(orgId),
@@ -85,7 +83,8 @@ export default function StartupScriptsPage() {
   }, [orgId])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   const openCreate = () => {

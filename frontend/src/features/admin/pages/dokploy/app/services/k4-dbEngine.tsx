@@ -493,11 +493,13 @@ function UpdateServiceDialog({
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (open) {
+    if (!open) return
+    const t = setTimeout(() => {
       setName(str(row.name))
       setDescription(str(row.description))
       setError(null)
-    }
+    }, 0)
+    return () => clearTimeout(t)
   }, [open, row])
 
   const submit = async () => {
@@ -913,7 +915,10 @@ function ExternalCredentialsCard({
   const [errors, setErrors] = useState<FieldErrors>({})
 
   useEffect(() => {
-    setPorts(Object.fromEntries(config.ports.map((port) => [port.key, str(row[port.key])])))
+    const t = setTimeout(() => {
+      setPorts(Object.fromEntries(config.ports.map((port) => [port.key, str(row[port.key])])))
+    }, 0)
+    return () => clearTimeout(t)
   }, [config, row])
 
   const anyPortSet = Object.values(ports).some((value) => value.trim() !== "")
@@ -1000,7 +1005,10 @@ function GeneralTab({
   reload: () => void
 }) {
   const [status, setStatus] = useState(str(row.applicationStatus) || "idle")
-  useEffect(() => setStatus(str(row.applicationStatus) || "idle"), [row])
+  useEffect(() => {
+    const t = setTimeout(() => setStatus(str(row.applicationStatus) || "idle"), 0)
+    return () => clearTimeout(t)
+  }, [row])
 
   return (
     <div className="flex flex-col gap-4">
@@ -1052,7 +1060,10 @@ function GeneralTab({
 function EnvironmentTab({ config, row, reload }: { config: KindConfig; row: Row; reload: () => void }) {
   const original = str(row.env)
   const [env, setEnv] = useState(original)
-  useEffect(() => setEnv(str(row.env)), [row])
+  useEffect(() => {
+    const t = setTimeout(() => setEnv(str(row.env)), 0)
+    return () => clearTimeout(t)
+  }, [row])
   const [busy, setBusy] = useState(false)
   const dirty = env !== original
 
@@ -1123,7 +1134,11 @@ function LogsTab({ config, row }: { config: KindConfig; row: Row }) {
   useEffect(() => {
     if (requestedRef.current || !containers.data) return
     requestedRef.current = true
-    if (containers.data.length > 0) setContainerId(containers.data[0].containerId)
+    if (containers.data.length > 0) {
+      const firstId = containers.data[0].containerId
+      const t = setTimeout(() => setContainerId(firstId), 0)
+      return () => clearTimeout(t)
+    }
   }, [containers.data])
 
   const fetchLogs = async () => {
@@ -1839,9 +1854,12 @@ function CustomCommandCard({ config, row, reload }: { config: KindConfig; row: R
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   useEffect(() => {
-    setDockerImage(str(row.dockerImage))
-    setCommand(str(row.command))
-    setArgs(Array.isArray(row.args) ? (row.args as unknown[]).map(String) : [])
+    const t = setTimeout(() => {
+      setDockerImage(str(row.dockerImage))
+      setCommand(str(row.command))
+      setArgs(Array.isArray(row.args) ? (row.args as unknown[]).map(String) : [])
+    }, 0)
+    return () => clearTimeout(t)
   }, [row])
 
   const save = async () => {
@@ -1952,8 +1970,11 @@ function ResourcesCard({ config, row, reload }: { config: KindConfig; row: Row; 
   const [replicas, setReplicas] = useState(str(row.replicas) || "1")
   const [busy, setBusy] = useState(false)
   useEffect(() => {
-    setValues(Object.fromEntries(fields.map((field) => [field.key, str(row[field.key])])))
-    setReplicas(str(row.replicas) || "1")
+    const t = setTimeout(() => {
+      setValues(Object.fromEntries(fields.map((field) => [field.key, str(row[field.key])])))
+      setReplicas(str(row.replicas) || "1")
+    }, 0)
+    return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [row])
 
@@ -2038,8 +2059,11 @@ function JsonUpdateCard({ config, row, reload }: { config: KindConfig; row: Row;
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    setPayload(defaultPayload)
-    setError(null)
+    const t = setTimeout(() => {
+      setPayload(defaultPayload)
+      setError(null)
+    }, 0)
+    return () => clearTimeout(t)
   }, [defaultPayload])
 
   const save = async () => {

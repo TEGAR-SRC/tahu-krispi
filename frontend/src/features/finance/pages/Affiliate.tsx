@@ -43,8 +43,6 @@ export default function FinanceAffiliatePage() {
   const [error, setError] = useState<unknown>(null)
 
   const load = useCallback(async () => {
-    setLoading(true)
-    setError(null)
     // Settings plus three tiny paged requests whose meta.total gives real
     // ledger counts per status.
     const [settingsRes, allRes, pendingRes, paidRes] = await Promise.allSettled([
@@ -57,8 +55,12 @@ export default function FinanceAffiliatePage() {
         query: { page: 1, per_page: 1, status: "paid" },
       }),
     ])
-    if (settingsRes.status === "fulfilled") setSettings(settingsRes.value.data)
-    else setError(settingsRes.reason)
+    if (settingsRes.status === "fulfilled") {
+      setSettings(settingsRes.value.data)
+      setError(null)
+    } else {
+      setError(settingsRes.reason)
+    }
     const totalOf = (result: PromiseSettledResult<{ data: unknown[]; meta?: unknown }>) =>
       result.status === "fulfilled"
         ? ((result.value.meta as { total?: number } | undefined)?.total ?? result.value.data.length)
@@ -68,7 +70,8 @@ export default function FinanceAffiliatePage() {
   }, [])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   return (

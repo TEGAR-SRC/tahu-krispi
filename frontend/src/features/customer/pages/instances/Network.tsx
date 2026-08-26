@@ -103,7 +103,8 @@ function RdnsCard({ instanceId }: { instanceId: string | undefined }) {
   }, [instanceId, orgId])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   const addEntry = async () => {
@@ -371,7 +372,8 @@ function ReservedIpsCard({ instance }: { instance: InstanceDetail | null }) {
   }, [orgId])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   const anchorIp = instance?.primary_ipv4 || ""

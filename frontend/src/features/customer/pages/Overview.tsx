@@ -64,8 +64,6 @@ export default function CustomerOverviewPage() {
   useEffect(() => {
     if (!orgId) return
     let cancelled = false
-    setLoading(true)
-    setError(null)
     Promise.all([
       apiGet<DashboardSummary>("/dashboard/summary", { headers: orgHeaders(orgId) }),
       apiGet<ResourceLimits>("/me/resource-limits"),

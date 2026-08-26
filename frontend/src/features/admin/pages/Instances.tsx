@@ -61,7 +61,6 @@ export default function AdminInstancesPage() {
 
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
     apiGet<AdminInstanceRow[]>("/admin/instances", {
       query: {
         page,

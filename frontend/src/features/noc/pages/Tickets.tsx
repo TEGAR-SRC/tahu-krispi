@@ -157,7 +157,8 @@ export default function NocTicketsPage() {
   )
 
   useEffect(() => {
-    void load(1)
+    const t = setTimeout(() => void load(1), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE))
@@ -349,7 +350,9 @@ function ThreadDialog({
   }, [ticket.id, ticket.organization_id])
 
   useEffect(() => {
-    if (open) void loadMessages()
+    if (!open) return
+    const t = setTimeout(() => void loadMessages(), 0)
+    return () => clearTimeout(t)
   }, [open, loadMessages])
 
   const sendReply = useCallback(async () => {

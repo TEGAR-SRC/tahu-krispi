@@ -130,7 +130,10 @@ export default function NocTicketThreadPage() {
   }, [ticket])
 
   useEffect(() => {
-    if (ticket) void loadMessages()
+    const t = setTimeout(() => {
+      if (ticket) void loadMessages()
+    }, 0)
+    return () => clearTimeout(t)
   }, [ticket, loadMessages])
 
   const pickFiles = useCallback(

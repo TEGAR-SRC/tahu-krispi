@@ -23,15 +23,13 @@ export function useTyped<T>(
   const queryKey = JSON.stringify(opts?.query ?? {})
   const enabled = opts?.enabled ?? true
   const [data, setData] = useState<T | null>(null)
-  const [loading, setLoading] = useState(enabled)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
   const [nonce, setNonce] = useState(0)
 
   useEffect(() => {
     if (!enabled) return
     let cancelled = false
-    setLoading(true)
-    setError(null)
     apiGet<T>(path, {
       query: JSON.parse(queryKey) as Record<string, string | number | boolean>,
     })
@@ -79,8 +77,6 @@ export function useNocProvider(providerId: string | undefined): {
   useEffect(() => {
     if (!providerId) return
     let cancelled = false
-    setLoading(true)
-    setError(null)
     apiGet<NocProvider[]>("/admin/providers")
       .then((envelope) => {
         if (cancelled) return

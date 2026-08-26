@@ -109,8 +109,6 @@ function OsInfoCard({ instanceId }: { instanceId: string | undefined }) {
   useEffect(() => {
     if (!instanceId || !orgId) return
     let cancelled = false
-    setLoading(true)
-    setError(null)
     apiGet<AgentOsInfo>(`/instances/${instanceId}/agent/osinfo`, {
       headers: orgHeaders(orgId),
     })
@@ -159,8 +157,6 @@ function AgentInfoCard({ instanceId }: { instanceId: string | undefined }) {
   useEffect(() => {
     if (!instanceId || !orgId) return
     let cancelled = false
-    setLoading(true)
-    setError(null)
     apiGet<AgentInfo>(`/instances/${instanceId}/agent/info`, {
       headers: orgHeaders(orgId),
     })
@@ -220,8 +216,6 @@ function FilesystemsCard({ instanceId }: { instanceId: string | undefined }) {
   useEffect(() => {
     if (!instanceId || !orgId) return
     let cancelled = false
-    setLoading(true)
-    setError(null)
     apiGet<AgentFsInfo[]>(`/instances/${instanceId}/agent/fsinfo`, {
       headers: orgHeaders(orgId),
     })

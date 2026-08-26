@@ -73,7 +73,8 @@ export default function AdminJobDetailPage() {
   }, [jobId])
 
   useEffect(() => {
-    load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load, reloadTick])
 
   const postAction = async (action: "retry" | "cancel", success: string) => {

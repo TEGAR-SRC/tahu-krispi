@@ -97,21 +97,23 @@ function HandleDnsProviderDialog({
   const [testing, setTesting] = useState(false)
 
   useEffect(() => {
-    if (!open) return
-    setSubmitError(null)
-    setFieldErrors({})
-    if (current) {
-      const config = current.config
-      setValues({
-        name: current.name ?? "",
-        providerType: config?.providerType ?? "cloudflare",
-        apiToken: config?.apiToken ?? "",
-        accessKeyId: config?.accessKeyId ?? "",
-        secretAccessKey: config?.secretAccessKey ?? "",
-      })
-    } else if (!dnsProviderId) {
-      setValues({ name: "", providerType: "cloudflare", apiToken: "", accessKeyId: "", secretAccessKey: "" })
-    }
+    const t = setTimeout(() => {
+      if (!open) return
+      setFieldErrors({})
+      if (current) {
+        const config = current.config
+        setValues({
+          name: current.name ?? "",
+          providerType: config?.providerType ?? "cloudflare",
+          apiToken: config?.apiToken ?? "",
+          accessKeyId: config?.accessKeyId ?? "",
+          secretAccessKey: config?.secretAccessKey ?? "",
+        })
+      } else if (!dnsProviderId) {
+        setValues({ name: "", providerType: "cloudflare", apiToken: "", accessKeyId: "", secretAccessKey: "" })
+      }
+    }, 0)
+    return () => clearTimeout(t)
   }, [open, current, dnsProviderId])
 
   const set = <K extends keyof typeof values>(key: K, value: (typeof values)[K]) =>
@@ -286,15 +288,17 @@ function RecordDialog({
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
-    if (!open) return
-    setSubmitError(null)
-    setFieldErrors({})
-    setValues({
-      type: record?.type === "CNAME" ? "CNAME" : "A",
-      name: record?.name ?? "",
-      content: record?.content ?? "",
-      ttl: record?.ttl && record.ttl !== 1 ? String(record.ttl) : "",
-    })
+    const t = setTimeout(() => {
+      if (!open) return
+      setFieldErrors({})
+      setValues({
+        type: record?.type === "CNAME" ? "CNAME" : "A",
+        name: record?.name ?? "",
+        content: record?.content ?? "",
+        ttl: record?.ttl && record.ttl !== 1 ? String(record.ttl) : "",
+      })
+    }, 0)
+    return () => clearTimeout(t)
   }, [open, record])
 
   const set = <K extends keyof typeof values>(key: K, value: (typeof values)[K]) =>

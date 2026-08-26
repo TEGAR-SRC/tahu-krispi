@@ -976,7 +976,8 @@ export function DokployEngine({ spec }: { spec: DokployConsoleSpec }) {
   }, [spec, queryValues])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load, reloadTick])
 
   // Client-side search filter.
@@ -994,7 +995,8 @@ export function DokployEngine({ spec }: { spec: DokployConsoleSpec }) {
   const pageRows = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
 
   useEffect(() => {
-    setPage(1)
+    const t = setTimeout(() => setPage(1), 0)
+    return () => clearTimeout(t)
   }, [search, filtered.length])
 
   // ---- op execution -----------------------------------------------------------------

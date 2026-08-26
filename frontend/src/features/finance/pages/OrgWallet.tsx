@@ -147,7 +147,8 @@ export default function FinanceOrgWalletPage() {
   }, [orgId, txPage])
 
   useEffect(() => {
-    void loadTransactions()
+    const t = setTimeout(() => void loadTransactions(), 0)
+    return () => clearTimeout(t)
   }, [loadTransactions])
 
   const submitAdjust = useCallback(async () => {

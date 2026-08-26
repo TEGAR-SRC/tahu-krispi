@@ -45,8 +45,6 @@ export default function CustomerWalletPage() {
   const load = useCallback(
     async (showLoading = true) => {
       if (!orgId) return
-      if (showLoading) setLoading(true)
-      setError(null)
       try {
         const [balanceRes, txRes] = await Promise.all([
           apiGet<WalletBalance>("/wallet", { headers: orgHeaders(orgId) }),
@@ -68,7 +66,8 @@ export default function CustomerWalletPage() {
   )
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   const columns: Array<SimpleColumn<WalletTransaction>> = [

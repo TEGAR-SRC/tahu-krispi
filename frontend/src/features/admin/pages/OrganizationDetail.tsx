@@ -38,8 +38,6 @@ export default function OrganizationDetailPage() {
   useEffect(() => {
     if (!orgId) return
     let cancelled = false
-    setLoading(true)
-    setError(null)
     findAdminOrg(orgId)
       .then((row) => {
         if (cancelled) return

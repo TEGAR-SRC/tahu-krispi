@@ -81,8 +81,8 @@ export default function CustomerIsoDetailPage() {
 
   useEffect(() => {
     if (!orgId || !isoId) return
-    setLoading(true)
-    void load().finally(() => setLoading(false))
+    const t = setTimeout(() => void load().finally(() => setLoading(false)), 0)
+    return () => clearTimeout(t)
   }, [load, orgId, isoId])
 
   const processing =

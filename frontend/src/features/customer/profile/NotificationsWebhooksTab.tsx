@@ -155,8 +155,6 @@ function WebhooksCard() {
 
   const load = useCallback(async () => {
     if (!orgId) return
-    setLoading(true)
-    setError(null)
     try {
       const [hooksRes, deliveriesRes] = await Promise.all([
         apiGet<Webhook[]>("/webhooks", { headers: orgHeaders(orgId) }),
@@ -164,6 +162,7 @@ function WebhooksCard() {
       ])
       setWebhooks(hooksRes.data ?? [])
       setDeliveries(deliveriesRes.data ?? [])
+      setError(null)
     } catch (cause) {
       setError(cause)
     } finally {
@@ -172,7 +171,8 @@ function WebhooksCard() {
   }, [orgId])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   const runDelete = async () => {

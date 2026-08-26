@@ -23,7 +23,6 @@ export default function OrganizationsPage() {
 
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
     apiGet<AdminOrgRow[]>("/admin/organizations", { query: { page, per_page: PER_PAGE } })
       .then((envelope) => {
         if (cancelled) return

@@ -84,7 +84,6 @@ export default function AdminTicketsPage() {
 
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
     apiGet<AdminTicketRow[]>("/admin/tickets", {
       query: {
         page,
@@ -253,7 +252,8 @@ function TicketDetailSheet({
   }, [snapshot.id, snapshot.organization_id])
 
   useEffect(() => {
-    loadMessages()
+    const t = setTimeout(() => loadMessages(), 0)
+    return () => clearTimeout(t)
   }, [loadMessages])
 
   // Staff pickers come from the admin users endpoint; assignment takes a uuid.

@@ -54,7 +54,6 @@ export function AccountTab() {
   const [docBusy, setDocBusy] = useState(false)
 
   useEffect(() => {
-    setLoading(true)
     apiGet<MeProfile>("/me")
       .then(({ data }) => {
         setProfile(data)

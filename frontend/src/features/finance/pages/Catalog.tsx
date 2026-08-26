@@ -172,7 +172,8 @@ export default function FinanceCatalogPage() {
   }, [])
 
   useEffect(() => {
-    void loadCatalog()
+    const t = setTimeout(() => void loadCatalog(), 0)
+    return () => clearTimeout(t)
   }, [loadCatalog])
 
   return (

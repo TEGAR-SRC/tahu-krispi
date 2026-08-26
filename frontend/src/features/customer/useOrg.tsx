@@ -57,12 +57,11 @@ export function OrgProvider({ children }: { children: ReactNode }) {
 
   const load = useCallback(async () => {
     if (!token) return
-    setLoading(true)
-    setError(null)
     try {
       const { data } = await apiGet<Organization[]>("/organizations")
       const orgs = data ?? []
       setOrganizations(orgs)
+      setError(null)
       const stored = readStoredOrgId()
       const active = orgs.some((org) => org.id === stored) ? stored : (orgs[0]?.id ?? "")
       setOrgId(active)
@@ -86,7 +85,8 @@ export function OrgProvider({ children }: { children: ReactNode }) {
   }, [token, logout])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   const selectOrg = useCallback((id: string) => {

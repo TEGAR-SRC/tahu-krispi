@@ -136,7 +136,8 @@ export default function CustomerBackupsPage() {
   }, [orgId, instanceId])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   const instanceName = useMemo(() => {
@@ -472,10 +473,11 @@ function CreateSnapshotDialog({
 
   useEffect(() => {
     if (!open) return
-    setInstanceId(defaultInstanceId)
+    const t = setTimeout(() => setInstanceId(defaultInstanceId), 0)
     apiGet<CustomerInstance[]>("/instances", { headers: orgHeaders(orgId) })
       .then(({ data }) => setInstances(data ?? []))
       .catch(() => undefined)
+    return () => clearTimeout(t)
   }, [open, defaultInstanceId, orgId])
 
   const submit = async () => {

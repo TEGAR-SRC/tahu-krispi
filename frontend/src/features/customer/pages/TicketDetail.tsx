@@ -90,8 +90,6 @@ export default function CustomerTicketThreadPage() {
 
   const load = useCallback(async () => {
     if (!orgId || !ticketId) return
-    setLoading(true)
-    setError(null)
     try {
       // No single-ticket endpoint: find it inside the org's ticket list.
       const [ticketsRes, messagesRes] = await Promise.all([
@@ -114,7 +112,8 @@ export default function CustomerTicketThreadPage() {
   }, [orgId, ticketId])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   const send = async () => {

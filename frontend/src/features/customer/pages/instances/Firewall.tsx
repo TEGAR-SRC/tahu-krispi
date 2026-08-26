@@ -142,7 +142,8 @@ export default function InstanceFirewallPage() {
   }, [instanceId, orgId])
 
   useEffect(() => {
-    void loadAll()
+    const t = setTimeout(() => void loadAll(), 0)
+    return () => clearTimeout(t)
   }, [loadAll])
 
   return (
@@ -561,8 +562,11 @@ function OptionsTab({
   const [dirty, setDirty] = useState(false)
 
   useEffect(() => {
-    setRows(Object.entries(options).map(([key, value]) => ({ key, value })))
-    setDirty(false)
+    const t = setTimeout(() => {
+      setRows(Object.entries(options).map(([key, value]) => ({ key, value })))
+      setDirty(false)
+    }, 0)
+    return () => clearTimeout(t)
   }, [options])
 
   const invalidKeys = rows.filter((row) => RULE_LEVEL_KEYS.has(row.key)).map((row) => row.key)
@@ -731,10 +735,13 @@ function IPSetsTab({
   const [selected, setSelected] = useState<string | null>(null)
   useEffect(() => {
     // Keep a valid selection when the list reloads.
-    if (selected && !ipsets.some((set) => ipsetName(set) === selected)) {
-      setSelected(ipsets[0] ? ipsetName(ipsets[0]) : null)
-    }
-    if (!selected && ipsets.length > 0) setSelected(ipsetName(ipsets[0]))
+    const t = setTimeout(() => {
+      if (selected && !ipsets.some((set) => ipsetName(set) === selected)) {
+        setSelected(ipsets[0] ? ipsetName(ipsets[0]) : null)
+      }
+      if (!selected && ipsets.length > 0) setSelected(ipsetName(ipsets[0]))
+    }, 0)
+    return () => clearTimeout(t)
   }, [ipsets, selected])
 
   return (
@@ -1004,7 +1011,8 @@ function EntriesPanel({
   }, [instanceId, orgId, setName])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   const addEntry = async () => {
@@ -1187,8 +1195,11 @@ function EditEntryDialog({
 
   // Re-sync local state when a different entry is opened.
   useEffect(() => {
-    setNewCidr(entry ? String(first(entry.CIDR, entry.cidr ?? "")) : "")
-    setComment(entry ? String(first(entry.Comment, entry.comment ?? "")) : "")
+    const t = setTimeout(() => {
+      setNewCidr(entry ? String(first(entry.CIDR, entry.cidr ?? "")) : "")
+      setComment(entry ? String(first(entry.Comment, entry.comment ?? "")) : "")
+    }, 0)
+    return () => clearTimeout(t)
   }, [entry])
 
   const save = async () => {

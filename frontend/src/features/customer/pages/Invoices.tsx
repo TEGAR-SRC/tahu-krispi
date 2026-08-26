@@ -80,7 +80,8 @@ export default function CustomerInvoicesPage() {
   }, [orgId, page, statusFilter])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   const columns: Array<SimpleColumn<Invoice>> = [

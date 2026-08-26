@@ -183,7 +183,8 @@ function SnapshotListCard({ instanceId }: { instanceId: string | undefined }) {
   }, [orgId])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   useEffect(() => {
@@ -452,7 +453,8 @@ function BackupsCard({ instanceId }: { instanceId: string | undefined }) {
   }, [instanceId, orgId])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   const restoreBackup = async () => {

@@ -132,7 +132,8 @@ export default function FinanceOrderDetailPage() {
   }, [orderId])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   const voidOrder = useCallback(async () => {

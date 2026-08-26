@@ -75,7 +75,6 @@ export default function AdminUsersPage() {
 
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
     apiGet<AdminUserRow[]>("/admin/users", {
       query: {
         page,

@@ -97,7 +97,8 @@ function SshKeysCard() {
   }, [orgId])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   const add = async () => {
@@ -229,7 +230,8 @@ function StartupScriptsCard() {
   }, [orgId])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   const add = async () => {
@@ -373,7 +375,8 @@ function ApiKeysCard() {
   }, [])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   const revoke = async () => {

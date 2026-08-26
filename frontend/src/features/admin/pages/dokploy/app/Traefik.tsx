@@ -25,11 +25,14 @@ export default function DokployTraefikPage() {
   const [selectedPath, setSelectedPath] = useState("")
 
   useEffect(() => {
-    if (!paths.length) {
-      if (selectedPath) setSelectedPath("")
-      return
-    }
-    if (!selectedPath || !paths.includes(selectedPath)) setSelectedPath(paths[0])
+    const t = setTimeout(() => {
+      if (!paths.length) {
+        if (selectedPath) setSelectedPath("")
+        return
+      }
+      if (!selectedPath || !paths.includes(selectedPath)) setSelectedPath(paths[0])
+    }, 0)
+    return () => clearTimeout(t)
   }, [paths, selectedPath])
 
   return (
@@ -86,16 +89,19 @@ function EditorCard({ serverId, path }: { serverId: string; path: string }) {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    if (typeof file.data === "string") {
-      setContent(file.data)
-      return
-    }
-    if (file.data && typeof file.data === "object") {
-      const row = file.data as Row
-      setContent(textValue(row, ["traefikConfig", "content", "file", "data"], JSON.stringify(file.data, null, 2)))
-      return
-    }
-    setContent("")
+    const t = setTimeout(() => {
+      if (typeof file.data === "string") {
+        setContent(file.data)
+        return
+      }
+      if (file.data && typeof file.data === "object") {
+        const row = file.data as Row
+        setContent(textValue(row, ["traefikConfig", "content", "file", "data"], JSON.stringify(file.data, null, 2)))
+        return
+      }
+      setContent("")
+    }, 0)
+    return () => clearTimeout(t)
   }, [file.data])
 
   const save = async () => {

@@ -392,10 +392,14 @@ function DnsTab({ base }: { base: string }) {
 
   useEffect(() => {
     if (!dns.data) return
-    setSearch(String(dns.data.search ?? ""))
-    setDns1(String(dns.data.dns1 ?? ""))
-    setDns2(String(dns.data.dns2 ?? ""))
-    setDns3(String(dns.data.dns3 ?? ""))
+    const data = dns.data
+    const t = setTimeout(() => {
+      setSearch(String(data.search ?? ""))
+      setDns1(String(data.dns1 ?? ""))
+      setDns2(String(data.dns2 ?? ""))
+      setDns3(String(data.dns3 ?? ""))
+    }, 0)
+    return () => clearTimeout(t)
   }, [dns.data])
 
   const save = async () => {

@@ -90,14 +90,17 @@ export default function InstanceResizePage() {
   // Seed currency/period/spec from the loaded instance exactly once.
   useEffect(() => {
     if (!instance) return
-    setCpu(instance.vcpu)
-    setRam(instance.ram_mb)
-    setDisk(instance.disk_gb)
-    if (instance.currency && instance.currency.length === 3) setCurrency(instance.currency)
-    const period = instance.billing_period as BillingPeriod | undefined
-    if (period && (BILLING_PERIODS as readonly string[]).includes(period)) {
-      setBillingPeriod(period)
-    }
+    const t = setTimeout(() => {
+      setCpu(instance.vcpu)
+      setRam(instance.ram_mb)
+      setDisk(instance.disk_gb)
+      if (instance.currency && instance.currency.length === 3) setCurrency(instance.currency)
+      const period = instance.billing_period as BillingPeriod | undefined
+      if (period && (BILLING_PERIODS as readonly string[]).includes(period)) {
+        setBillingPeriod(period)
+      }
+    }, 0)
+    return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- seed only when a different instance loads
   }, [instance?.id])
 
@@ -120,8 +123,8 @@ export default function InstanceResizePage() {
               nvme_gb: disk,
             },
           }
-    setQuoteLoading(true)
     const timer = setTimeout(() => {
+      setQuoteLoading(true)
       apiPost<PriceQuote>("/pricing/quote", body, { headers: orgHeaders(orgId) })
         .then(({ data }) => {
           if (!cancelled) {

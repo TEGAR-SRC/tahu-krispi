@@ -98,8 +98,11 @@ export default function StaffNotificationsPage() {
   }, [])
 
   useEffect(() => {
-    void load()
-    void loadPreferences()
+    const t = setTimeout(() => {
+      void load()
+      void loadPreferences()
+    }, 0)
+    return () => clearTimeout(t)
   }, [load, loadPreferences])
 
   const unreadCount = useMemo(

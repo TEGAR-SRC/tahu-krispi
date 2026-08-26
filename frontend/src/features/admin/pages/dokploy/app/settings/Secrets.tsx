@@ -278,45 +278,48 @@ function HandleVaultDialog({
 
   useEffect(() => {
     if (!open) return
-    setSubmitError(null)
-    setFieldErrors({})
-    if (current) {
-      const config = current.config
-      const base: VaultFormValues = { ...DEFAULT_VALUES, name: current.name ?? "" }
-      if (config?.providerType) base.providerType = config.providerType
-      if (config?.providerType === "hashicorp") Object.assign(base, {
-        url: config.url ?? "", token: config.token ?? "",
-        namespace: config.namespace ?? "", mount: config.mount ?? "secret",
-      })
-      else if (config?.providerType === "infisical") Object.assign(base, {
-        siteUrl: config.siteUrl ?? "https://app.infisical.com",
-        clientId: config.clientId ?? "", clientSecret: config.clientSecret ?? "",
-        infisicalProjectId: config.projectId ?? "", environmentSlug: config.environmentSlug ?? "",
-        secretPath: config.secretPath ?? "/",
-      })
-      else if (config?.providerType === "aws") Object.assign(base, {
-        region: config.region ?? "", accessKeyId: config.accessKeyId ?? "",
-        secretAccessKey: config.secretAccessKey ?? "", awsEndpoint: config.endpoint ?? "",
-      })
-      else if (config?.providerType === "doppler") Object.assign(base, {
-        serviceToken: config.serviceToken ?? "",
-        dopplerProject: config.project ?? "", dopplerConfig: config.config ?? "",
-      })
-      else if (config?.providerType === "azure") Object.assign(base, {
-        vaultUri: config.vaultUri ?? "", tenantId: config.tenantId ?? "",
-        azureClientId: config.clientId ?? "", azureClientSecret: config.clientSecret ?? "",
-      })
-      else if (config?.providerType === "scaleway") Object.assign(base, {
-        scalewayRegion: config.region ?? "fr-par", scalewayProjectId: config.projectId ?? "",
-        scalewaySecretKey: config.secretKey ?? "",
-        scalewayApiUrl: config.apiUrl ?? "https://api.scaleway.com",
-      })
-      setValues(base)
-      setAssignments(current.assignments ?? [])
-    } else if (!vaultProviderId) {
-      setValues(DEFAULT_VALUES)
-      setAssignments([])
-    }
+    const t = setTimeout(() => {
+      setSubmitError(null)
+      setFieldErrors({})
+      if (current) {
+        const config = current.config
+        const base: VaultFormValues = { ...DEFAULT_VALUES, name: current.name ?? "" }
+        if (config?.providerType) base.providerType = config.providerType
+        if (config?.providerType === "hashicorp") Object.assign(base, {
+          url: config.url ?? "", token: config.token ?? "",
+          namespace: config.namespace ?? "", mount: config.mount ?? "secret",
+        })
+        else if (config?.providerType === "infisical") Object.assign(base, {
+          siteUrl: config.siteUrl ?? "https://app.infisical.com",
+          clientId: config.clientId ?? "", clientSecret: config.clientSecret ?? "",
+          infisicalProjectId: config.projectId ?? "", environmentSlug: config.environmentSlug ?? "",
+          secretPath: config.secretPath ?? "/",
+        })
+        else if (config?.providerType === "aws") Object.assign(base, {
+          region: config.region ?? "", accessKeyId: config.accessKeyId ?? "",
+          secretAccessKey: config.secretAccessKey ?? "", awsEndpoint: config.endpoint ?? "",
+        })
+        else if (config?.providerType === "doppler") Object.assign(base, {
+          serviceToken: config.serviceToken ?? "",
+          dopplerProject: config.project ?? "", dopplerConfig: config.config ?? "",
+        })
+        else if (config?.providerType === "azure") Object.assign(base, {
+          vaultUri: config.vaultUri ?? "", tenantId: config.tenantId ?? "",
+          azureClientId: config.clientId ?? "", azureClientSecret: config.clientSecret ?? "",
+        })
+        else if (config?.providerType === "scaleway") Object.assign(base, {
+          scalewayRegion: config.region ?? "fr-par", scalewayProjectId: config.projectId ?? "",
+          scalewaySecretKey: config.secretKey ?? "",
+          scalewayApiUrl: config.apiUrl ?? "https://api.scaleway.com",
+        })
+        setValues(base)
+        setAssignments(current.assignments ?? [])
+      } else if (!vaultProviderId) {
+        setValues(DEFAULT_VALUES)
+        setAssignments([])
+      }
+    }, 0)
+    return () => clearTimeout(t)
   }, [open, current, vaultProviderId])
 
   const set = <K extends keyof VaultFormValues>(key: K, value: VaultFormValues[K]) =>
@@ -655,10 +658,13 @@ function SecretNamesBrowser({ provider }: { provider: VaultProviderRow }) {
   const currentProject = projectRows.find((p) => p.projectId === selectedProject)
 
   useEffect(() => {
-    setSelectedProject("")
-    setSelectedEnv("")
-    setNames(null)
-    setError(null)
+    const t = setTimeout(() => {
+      setSelectedProject("")
+      setSelectedEnv("")
+      setNames(null)
+      setError(null)
+    }, 0)
+    return () => clearTimeout(t)
   }, [open])
 
   const browse = async () => {

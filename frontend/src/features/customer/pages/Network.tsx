@@ -134,7 +134,8 @@ function VpcSection() {
   }, [orgId])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   const runDelete = async () => {
@@ -250,7 +251,10 @@ function CreateVpcDialog({
   }, [open])
 
   useEffect(() => {
-    if (regions.length > 0 && !regionId) setRegionId(regions[0].id)
+    if (regions.length > 0 && !regionId) {
+      const t = setTimeout(() => setRegionId(regions[0].id), 0)
+      return () => clearTimeout(t)
+    }
   }, [regions, regionId])
 
   const submit = async () => {
@@ -363,7 +367,8 @@ function FirewallSection() {
   }, [orgId])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   const runDelete = async () => {
@@ -548,7 +553,8 @@ function IpListSection() {
   }, [orgId])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   const runDelete = async () => {
@@ -743,7 +749,8 @@ function ReservedIpSection() {
   }, [orgId])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   const instanceName = (id: string | null | undefined) => {
@@ -1001,8 +1008,11 @@ function ConvertIpDialog({
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
-    if (open && instances.length > 0 && !instanceId) setInstanceId(instances[0].id)
-    if (!open) setInstanceId("")
+    const t = setTimeout(() => {
+      if (open && instances.length > 0 && !instanceId) setInstanceId(instances[0].id)
+      if (!open) setInstanceId("")
+    }, 0)
+    return () => clearTimeout(t)
   }, [open, instances, instanceId])
 
   const selected = instances.find((instance) => instance.id === instanceId)

@@ -96,7 +96,8 @@ export default function FirewallGroupDetailPage() {
   }, [orgId, firewallId])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   return (
@@ -176,7 +177,8 @@ function GroupEditor({ group, onSaved }: { group: FirewallGroup; onSaved: () => 
 
   // Re-seed when the group identity changes (navigation between groups).
   useEffect(() => {
-    setDescription(group.description)
+    const t = setTimeout(() => setDescription(group.description), 0)
+    return () => clearTimeout(t)
   }, [group.id, group.description])
 
   const save = async () => {
@@ -269,7 +271,8 @@ function RulesSection({ group, onChanged }: { group: FirewallGroup; onChanged: (
   }, [group.id, orgId])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   const addRule = async () => {

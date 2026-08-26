@@ -172,7 +172,8 @@ export default function AccountProfilePage() {
   }, [])
 
   useEffect(() => {
-    void loadProfile()
+    const t = setTimeout(() => void loadProfile(), 0)
+    return () => clearTimeout(t)
   }, [loadProfile])
 
   const save = async () => {

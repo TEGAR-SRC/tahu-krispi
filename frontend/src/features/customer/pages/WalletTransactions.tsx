@@ -78,7 +78,8 @@ export default function WalletTransactionsPage() {
   }, [orgId, page])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   /** Fetches every page (up to MAX_ROWS) and downloads them as CSV. */

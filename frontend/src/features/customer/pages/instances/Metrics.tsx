@@ -71,8 +71,6 @@ export default function InstanceMetricsPage() {
   useEffect(() => {
     if (!instanceId || !orgId) return
     let cancelled = false
-    setLoading(true)
-    setError(null)
     apiGet<unknown>(`/instances/${instanceId}/metrics`, {
       headers: orgHeaders(orgId),
       query: { timeframe },

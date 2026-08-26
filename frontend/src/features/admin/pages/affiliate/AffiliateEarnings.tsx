@@ -80,7 +80,8 @@ export default function AffiliateEarningsPage() {
   }, [page, statusFilter])
 
   useEffect(() => {
-    load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load, reloadTick])
 
   const changeStatus = (value: string) => {

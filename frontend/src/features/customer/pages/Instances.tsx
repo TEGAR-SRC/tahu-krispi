@@ -82,7 +82,8 @@ export default function CustomerInstancesPage() {
   }, [orgId])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   const filtered = useMemo(() => {

@@ -92,9 +92,11 @@ export function useApiDetail<T>(
 
   useEffect(() => {
     if (!path) {
-      setLoading(false)
-      setError(new Error("No identifier in route."))
-      return
+      const t = setTimeout(() => {
+        setLoading(false)
+        setError(new Error("No identifier in route."))
+      }, 0)
+      return () => clearTimeout(t)
     }
     let cancelled = false
     queueMicrotask(() => {

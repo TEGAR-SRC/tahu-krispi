@@ -74,11 +74,10 @@ export function AddressesTab() {
   const [busy, setBusy] = useState(false)
 
   const load = useCallback(async () => {
-    setLoading(true)
-    setError(null)
     try {
       const { data } = await apiGet<Address[]>("/me/addresses")
       setList(data ?? [])
+      setError(null)
     } catch (cause) {
       setError(cause)
     } finally {
@@ -87,7 +86,8 @@ export function AddressesTab() {
   }, [])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   const setDefault = async (address: Address) => {

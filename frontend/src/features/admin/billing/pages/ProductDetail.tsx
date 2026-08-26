@@ -105,14 +105,17 @@ export default function BillingProductDetailPage() {
   // a refetch.
   useEffect(() => {
     if (!product || formLoadedFor === product.id) return
-    setForm({
-      name: product.name ?? "",
-      description: product.description ?? "",
-      sort_order: String(product.sort_order ?? 0),
-      default_monthly_amount: String(product.default_monthly_amount ?? 0),
-      enabled: product.enabled,
-    })
-    setFormLoadedFor(product.id)
+    const t = setTimeout(() => {
+      setForm({
+        name: product.name ?? "",
+        description: product.description ?? "",
+        sort_order: String(product.sort_order ?? 0),
+        default_monthly_amount: String(product.default_monthly_amount ?? 0),
+        enabled: product.enabled,
+      })
+      setFormLoadedFor(product.id)
+    }, 0)
+    return () => clearTimeout(t)
   }, [product, formLoadedFor])
 
   // ---- Plans of this product ---------------------------------------------------

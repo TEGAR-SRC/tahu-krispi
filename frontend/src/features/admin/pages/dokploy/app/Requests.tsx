@@ -22,9 +22,12 @@ export default function DokployRequestsPage() {
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
-    const data = active.data
-    if (typeof data === "boolean") setEnabled(data)
-    else if (isRow(data)) setEnabled(Boolean(data.enabled ?? data.enable ?? data.active ?? data.haveActivateRequests))
+    const t = setTimeout(() => {
+      const data = active.data
+      if (typeof data === "boolean") setEnabled(data)
+      else if (isRow(data)) setEnabled(Boolean(data.enabled ?? data.enable ?? data.active ?? data.haveActivateRequests))
+    }, 0)
+    return () => clearTimeout(t)
   }, [active.data])
 
   const toggle = async (next: boolean) => {
@@ -63,13 +66,16 @@ function CleanupCard({ data, loading, error, reload }: { data: unknown; loading:
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    if (typeof data === "string") {
-      setCronExpression(data)
-      return
-    }
-    if (!isRow(data)) return
-    const value = textValue(data, ["cronExpression", "cron", "schedule", "value"], "")
-    setCronExpression(value === "—" ? "" : value)
+    const t = setTimeout(() => {
+      if (typeof data === "string") {
+        setCronExpression(data)
+        return
+      }
+      if (!isRow(data)) return
+      const value = textValue(data, ["cronExpression", "cron", "schedule", "value"], "")
+      setCronExpression(value === "—" ? "" : value)
+    }, 0)
+    return () => clearTimeout(t)
   }, [data])
 
   const save = async () => {

@@ -82,7 +82,8 @@ export default function IpListDetailPage() {
   }, [orgId, listId])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   return (
@@ -153,8 +154,11 @@ function MetaEditor({ meta, onSaved }: { meta: IpListMeta; onSaved: () => void }
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    setName(meta.name)
-    setDescription(meta.description)
+    const t = setTimeout(() => {
+      setName(meta.name)
+      setDescription(meta.description)
+    }, 0)
+    return () => clearTimeout(t)
   }, [meta.id, meta.name, meta.description])
 
   const save = async () => {

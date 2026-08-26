@@ -67,7 +67,6 @@ export default function BlockedNetworksPage() {
 
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
     apiGet<BlockedNetworkRow[]>("/admin/blocked-networks", {
       query: { page, per_page: PER_PAGE },
     })

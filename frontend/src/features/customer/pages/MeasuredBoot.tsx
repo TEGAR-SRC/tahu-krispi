@@ -107,7 +107,8 @@ export default function MeasuredBootPage() {
   }, [orgId])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   const startUpload = async () => {

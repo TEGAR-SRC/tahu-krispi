@@ -98,7 +98,8 @@ export default function CustomerOrderDetailPage() {
   }, [orgId, orderId])
 
   useEffect(() => {
-    void load()
+    const t = setTimeout(() => void load(), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   const cancelOrder = async () => {

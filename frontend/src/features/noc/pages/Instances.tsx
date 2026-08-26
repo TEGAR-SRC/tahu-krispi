@@ -138,7 +138,8 @@ export default function NocInstancesPage() {
   )
 
   useEffect(() => {
-    void load(1)
+    const t = setTimeout(() => void load(1), 0)
+    return () => clearTimeout(t)
   }, [load])
 
   const openDetail = useCallback(async (id: string) => {

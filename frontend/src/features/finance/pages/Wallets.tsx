@@ -176,7 +176,8 @@ export default function FinanceWalletsPage() {
   }, [])
 
   useEffect(() => {
-    void loadWallets()
+    const t = setTimeout(() => void loadWallets(), 0)
+    return () => clearTimeout(t)
   }, [loadWallets])
 
   const loadTransactions = useCallback(async () => {
@@ -197,7 +198,9 @@ export default function FinanceWalletsPage() {
   }, [txOrg, txPage])
 
   useEffect(() => {
-    if (txOrg) void loadTransactions()
+    if (!txOrg) return
+    const t = setTimeout(() => void loadTransactions(), 0)
+    return () => clearTimeout(t)
   }, [txOrg, loadTransactions])
 
   const submitAdjust = useCallback(async () => {

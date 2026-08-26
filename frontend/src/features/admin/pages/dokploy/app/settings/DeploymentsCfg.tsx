@@ -30,16 +30,22 @@ export default function DokploySettingsDeploymentsPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (settings.data) setGlobalConcurrency(numberFrom(settings.data.buildsConcurrency, 1))
+    const t = setTimeout(() => {
+      if (settings.data) setGlobalConcurrency(numberFrom(settings.data.buildsConcurrency, 1))
+    }, 0)
+    return () => clearTimeout(t)
   }, [settings.data])
 
   useEffect(() => {
-    const drafts: Record<string, string> = {}
-    for (const row of servers.data ?? []) {
-      const id = String(row.serverId ?? "")
-      if (id) drafts[id] = numberFrom(row.buildsConcurrency, 1)
-    }
-    setServerDrafts(drafts)
+    const t = setTimeout(() => {
+      const drafts: Record<string, string> = {}
+      for (const row of servers.data ?? []) {
+        const id = String(row.serverId ?? "")
+        if (id) drafts[id] = numberFrom(row.buildsConcurrency, 1)
+      }
+      setServerDrafts(drafts)
+    }, 0)
+    return () => clearTimeout(t)
   }, [servers.data])
 
   const parse = (value: string): number | null => {

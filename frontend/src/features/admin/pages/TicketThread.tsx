@@ -69,8 +69,6 @@ export default function TicketThreadPage() {
   useEffect(() => {
     if (!ticketId) return
     let cancelled = false
-    setLoading(true)
-    setError(null)
     findAdminTicket(ticketId)
       .then((row) => {
         if (cancelled) return
@@ -167,7 +165,8 @@ function Conversation({
   }, [ticket.id, ticket.organization_id])
 
   useEffect(() => {
-    loadMessages()
+    const t = setTimeout(() => loadMessages(), 0)
+    return () => clearTimeout(t)
   }, [loadMessages])
 
   // Assignee picker comes from the admin users endpoint.

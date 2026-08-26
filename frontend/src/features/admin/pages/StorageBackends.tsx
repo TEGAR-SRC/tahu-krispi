@@ -64,7 +64,6 @@ export default function AdminStorageBackendsPage() {
 
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
     apiGet<StorageBackendRow[]>("/admin/storage-backends")
       .then(({ data }) => {
         if (!cancelled) {

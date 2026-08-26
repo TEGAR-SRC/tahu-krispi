@@ -77,8 +77,6 @@ export default function CreateInstancePage() {
 
   useEffect(() => {
     let cancelled = false
-    setCatalogLoading(true)
-    setCatalogError(null)
     Promise.all([
       apiGet<Region[]>("/regions"),
       apiGet<OsTemplate[]>("/os-templates"),
@@ -119,8 +117,8 @@ export default function CreateInstancePage() {
               nvme_gb: disk,
             },
           }
-    setQuoteLoading(true)
     const timer = setTimeout(() => {
+      setQuoteLoading(true)
       apiPost<PriceQuote>("/pricing/quote", body, { headers: orgHeaders(orgId) })
         .then(({ data }) => {
           if (!cancelled) {

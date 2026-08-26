@@ -22,7 +22,6 @@ export default function VerifyEmailPage() {
   useEffect(() => {
     let cancelled = false
     if (!emailToken) return
-    setVerifying(true)
     apiPost("/auth/email/verify", { token: emailToken })
       .then(() => {
         if (!cancelled) setVerified(true)

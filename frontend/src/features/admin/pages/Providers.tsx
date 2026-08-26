@@ -82,7 +82,8 @@ export default function AdminProvidersPage() {
   }, [page])
 
   useEffect(() => {
-    load()
+    const t = setTimeout(() => load(), 0)
+    return () => clearTimeout(t)
   }, [load, reloadTick])
 
   const runProviderAction = async (
@@ -306,14 +307,17 @@ function ProviderEditorDialog({
   // Reset the form whenever the dialog opens for a different provider.
   useEffect(() => {
     if (!open) return
-    setCode(editing?.code ?? "")
-    setName(editing?.name ?? "")
-    setKind(editing?.kind ?? "onidel")
-    setApiBaseUrl(editing?.api_base_url ?? "")
-    setTokenUser("")
-    setApiKey("")
-    setEnabled(editing ? editing.enabled : true)
-    setValidationError(null)
+    const t = setTimeout(() => {
+      setCode(editing?.code ?? "")
+      setName(editing?.name ?? "")
+      setKind(editing?.kind ?? "onidel")
+      setApiBaseUrl(editing?.api_base_url ?? "")
+      setTokenUser("")
+      setApiKey("")
+      setEnabled(editing ? editing.enabled : true)
+      setValidationError(null)
+    }, 0)
+    return () => clearTimeout(t)
   }, [open, editing])
 
   const needsTokenUser = kind === "proxmox" || kind === "vmware"

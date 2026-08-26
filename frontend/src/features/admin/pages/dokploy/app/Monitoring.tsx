@@ -37,7 +37,8 @@ export default function DokployMonitoringPage() {
     if (!selectedServer) return
     const host = textValue(selectedServer, ["ipAddress", "host", "url"], "")
     if (!host) return
-    setMetricsUrl(`http://${host}:4500/metrics`)
+    const t = setTimeout(() => setMetricsUrl(`http://${host}:4500/metrics`), 0)
+    return () => clearTimeout(t)
   }, [selectedServer])
 
   const appMonitoring = useUpstream<unknown>(
