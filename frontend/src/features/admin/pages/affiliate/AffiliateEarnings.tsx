@@ -108,12 +108,32 @@ export default function AffiliateEarningsPage() {
   }
 
   const columns: Array<SimpleColumn<EarningRow>> = [
-    { key: "referrer_email", header: "Referrer" },
-    { key: "referee_email", header: "Referred user" },
+    {
+      key: "referrer_email",
+      header: "Referrer",
+      render: (row) => (
+        <span className="block max-w-40 truncate" title={row.referrer_email}>
+          {row.referrer_email}
+        </span>
+      ),
+    },
+    {
+      key: "referee_email",
+      header: "Referred user",
+      render: (row) => (
+        <span className="block max-w-40 truncate" title={row.referee_email}>
+          {row.referee_email}
+        </span>
+      ),
+    },
     {
       key: "invoice_number",
       header: "Invoice",
-      render: (row) => row.invoice_number || "—",
+      render: (row) => (
+        <span className="block max-w-40 break-all font-mono text-xs">
+          {row.invoice_number || "—"}
+        </span>
+      ),
     },
     {
       key: "base_amount",
