@@ -166,7 +166,7 @@ export default function SshKeysPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {keys.map((key) => (
-            <Card key={key.id}>
+            <Card key={key.id} className="min-w-0">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <TerminalSquareIcon className="size-4 text-muted-foreground" />
