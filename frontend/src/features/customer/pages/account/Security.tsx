@@ -496,8 +496,8 @@ async function runWebAuthnCeremony(
     id: credential.id,
     rawId: bytesToBase64Url(credential.rawId),
     type: credential.type,
-    clientDataJSON: bytesToBase64Url(response.clientDataJSON),
     response: {
+      clientDataJSON: bytesToBase64Url(response.clientDataJSON),
       attestationObject: bytesToBase64Url(response.attestationObject),
     },
   }

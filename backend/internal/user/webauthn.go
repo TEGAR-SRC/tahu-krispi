@@ -253,21 +253,27 @@ func (m *PasskeyManager) FinishAuthentication(ctx context.Context, handle string
 		return uuid.Nil, apperrors.New(apperrors.CodeValidation, "invalid assertion response: "+perr.Error())
 	}
 
-	// The discoverable login handler receives the raw user ID from the
-	// authenticator; we look it up to load the stored credential.
+	// ValidatePasskeyLogin (not ValidateLogin) because BeginDiscoverableLogin
+	// creates a session with empty UserID — the user is resolved via the handler.
+	user, cred, err := m.w.ValidatePasskeyLogin(
+		func(rawID, userHandle []byte) (webauthn.User, error) {
+			uid, uerr := uuid.FromBytes(userHandle)
+			if uerr != nil {
+				return nil, apperrors.New(apperrors.CodeValidation, "invalid user handle in passkey response")
+			}
+			return m.loadWebauthnUser(ctx, uid)
+		},
+		session,
+		parsedResponse,
+	)
+	if err != nil {
+		return uuid.Nil, apperrors.New(apperrors.CodeValidation, "passkey verification failed: "+err.Error())
+	}
+	_ = user
+
 	userID, err := uuid.FromBytes(parsedResponse.Response.UserHandle)
 	if err != nil {
 		return uuid.Nil, apperrors.New(apperrors.CodeValidation, "invalid user handle in passkey response")
-	}
-
-	u, err := m.loadWebauthnUser(ctx, userID)
-	if err != nil {
-		return uuid.Nil, err
-	}
-
-	cred, err := m.w.ValidateLogin(u, session, parsedResponse)
-	if err != nil {
-		return uuid.Nil, apperrors.New(apperrors.CodeValidation, "passkey verification failed: "+err.Error())
 	}
 
 	// Update the sign count to prevent cloning.
@@ -299,7 +305,8 @@ func (m *PasskeyManager) loadWebauthnUser(ctx context.Context, userID uuid.UUID)
 	}
 	u := &webauthnUser{id: userID, name: email}
 	rows, err := m.db.Query(ctx, `
-SELECT credential_id, credential_public_key, sign_count, COALESCE(transports,'{}')
+SELECT credential_id, credential_public_key, sign_count, COALESCE(transports,'{}'),
+       secret_ciphertext
 FROM user_mfa_methods
 WHERE user_id=$1 AND method='webauthn'`, userID)
 	if err != nil {
@@ -309,11 +316,23 @@ WHERE user_id=$1 AND method='webauthn'`, userID)
 	for rows.Next() {
 		var c webauthn.Credential
 		var transports []string
-		if err := rows.Scan(&c.ID, &c.PublicKey, &c.Authenticator.SignCount, &transports); err != nil {
+		var ciphertext []byte
+		if err := rows.Scan(&c.ID, &c.PublicKey, &c.Authenticator.SignCount, &transports, &ciphertext); err != nil {
 			return nil, err
 		}
 		for _, t := range transports {
 			c.Transport = append(c.Transport, protocol.AuthenticatorTransport(t))
+		}
+		// Restore the full credential (including Flags.BackupEligible) from
+		// the encrypted blob so login validation has the correct BE flag.
+		if len(ciphertext) > 0 {
+			plain, derr := crypto.Decrypt(m.encKey, ciphertext)
+			if derr == nil {
+				var full webauthn.Credential
+				if json.Unmarshal(plain, &full) == nil && len(full.ID) > 0 {
+					c.Flags = full.Flags
+				}
+			}
 		}
 		u.credentials = append(u.credentials, c)
 	}

@@ -20,7 +20,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { ErrorBanner } from "@/components/shared/ErrorBanner"
 import { Spinner } from "@/components/ui/spinner"
-import { apiPost } from "@/lib/api"
+import { apiPost, setToken } from "@/lib/api"
 import { homePathFor, useAuth } from "@/lib/auth"
 
 // ---- WebAuthn helpers --------------------------------------------------------
@@ -80,8 +80,8 @@ async function passkeyLogin(): Promise<{ access_token: string; refresh_token: st
         id: cred.id,
         rawId: bytesToB64url(cred.rawId),
         type: cred.type,
-        clientDataJSON: bytesToB64url(response.clientDataJSON),
         response: {
+          clientDataJSON: bytesToB64url(response.clientDataJSON),
           authenticatorData: bytesToB64url(response.authenticatorData),
           signature: bytesToB64url(response.signature),
           userHandle: response.userHandle ? bytesToB64url(response.userHandle) : undefined,
@@ -128,9 +128,11 @@ export default function LoginPage() {
     setPasskeyBusy(true)
     try {
       const { access_token, refresh_token } = await passkeyLogin()
-      // Store tokens directly and reload — same flow as normal login.
-      localStorage.setItem("kc_access_token", access_token)
+      // Use the same storage keys as the rest of the app so AuthProvider
+      // can pick up the session on page reload.
+      setToken(access_token)
       localStorage.setItem("kc_refresh_token", refresh_token)
+      // Full reload so AuthProvider re-initialises with the new token.
       window.location.href = "/app"
     } catch (cause) {
       toast.error(cause instanceof Error ? cause.message : "Passkey login failed")
