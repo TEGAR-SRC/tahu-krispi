@@ -80,9 +80,9 @@ async function passkeyLogin(): Promise<{ access_token: string; refresh_token: st
         id: cred.id,
         rawId: bytesToB64url(cred.rawId),
         type: cred.type,
+        clientDataJSON: bytesToB64url(response.clientDataJSON),
         response: {
           authenticatorData: bytesToB64url(response.authenticatorData),
-          clientDataJSON: bytesToB64url(response.clientDataJSON),
           signature: bytesToB64url(response.signature),
           userHandle: response.userHandle ? bytesToB64url(response.userHandle) : undefined,
         },
