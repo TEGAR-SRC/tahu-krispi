@@ -2,6 +2,7 @@
 package payment
 
 import (
+	"bytes"
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
@@ -9,6 +10,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -24,10 +29,31 @@ type Service struct {
 	db            *pgxpool.Pool
 	webhookSecret string
 	provider      string
+
+	// SumoPod config (only used when provider == "sumopod")
+	sumopodAPIKey        string
+	sumopodBaseURL       string
+	sumopodWebhookSecret string
+	sumopodWebhookToken  string
+	consoleBaseURL       string
 }
 
 func NewService(db *pgxpool.Pool, provider, webhookSecret string) *Service {
 	return &Service{db: db, provider: provider, webhookSecret: webhookSecret}
+}
+
+// NewServiceWithSumopod is the SumoPod-aware constructor. Pass the full config
+// so the service can call the SumoPod API and verify its webhooks.
+func NewServiceWithSumopod(db *pgxpool.Pool, provider, webhookSecret, sumopodAPIKey, sumopodBaseURL, sumopodWebhookSecret, sumopodWebhookToken, consoleBaseURL string) *Service {
+	if sumopodBaseURL == "" {
+		sumopodBaseURL = "https://api-pay.sumopod.com"
+	}
+	return &Service{
+		db: db, provider: provider, webhookSecret: webhookSecret,
+		sumopodAPIKey: sumopodAPIKey, sumopodBaseURL: sumopodBaseURL,
+		sumopodWebhookSecret: sumopodWebhookSecret, sumopodWebhookToken: sumopodWebhookToken,
+		consoleBaseURL: consoleBaseURL,
+	}
 }
 
 type CreatePaymentInput struct {
@@ -45,13 +71,19 @@ type Payment struct {
 	CheckoutURL string    `json:"checkout_url"`
 }
 
-// CreatePayment creates a pending payment and returns a signed checkout URL.
+// CreatePayment creates a pending payment and returns a checkout URL.
+// When provider == "sumopod" it calls the SumoPod API to create a live
+// payment link and stores the external payment_id / fee / link.
 func (s *Service) CreatePayment(ctx context.Context, in CreatePaymentInput) (*Payment, error) {
 	if in.Amount <= 0 {
 		return nil, apperrors.New(apperrors.CodeValidation, "amount must be > 0")
 	}
 	if in.Currency == "" {
 		in.Currency = "IDR"
+	}
+	// SumoPod path — call external API and persist the returned link.
+	if s.provider == "sumopod" {
+		return s.createSumopodPayment(ctx, in)
 	}
 	checkoutURL := s.buildCheckoutURL(in)
 	urlCipher, err := encryptString(s.webhookSecret+":checkout", checkoutURL)
@@ -69,6 +101,106 @@ RETURNING id, public_id, status::text`,
 		return nil, fmt.Errorf("insert payment: %w", err)
 	}
 	p.CheckoutURL = checkoutURL
+	return &p, nil
+}
+
+func (s *Service) createSumopodPayment(ctx context.Context, in CreatePaymentInput) (*Payment, error) {
+	if s.sumopodAPIKey == "" {
+		return nil, apperrors.New(apperrors.CodeInternal, "SumoPod API key not configured — set SUMOPOD_API_KEY")
+	}
+	// Insert a pending row first so we have a public_id to use as order_id.
+	// The checkout_url will be overwritten with SumoPod's payment_link_url.
+	placeholderURL := s.buildCheckoutURL(in)
+	urlCipher, err := encryptString(s.webhookSecret+":checkout", placeholderURL)
+	if err != nil {
+		return nil, err
+	}
+	row := s.db.QueryRow(ctx, `
+INSERT INTO payments(organization_id, invoice_id, provider, method, currency, amount,
+                     checkout_url_ciphertext, status, expires_at)
+VALUES ($1,$2,$3,NULLIF($4,''),$5,$6,$7,'pending', now()+interval '24 hours')
+RETURNING id, public_id, status::text`,
+		in.OrganizationID, in.InvoiceID, s.provider, in.Method, in.Currency, in.Amount, urlCipher)
+	var p Payment
+	if err := row.Scan(&p.ID, &p.PublicID, &p.Status); err != nil {
+		return nil, fmt.Errorf("insert payment: %w", err)
+	}
+
+	// Build SumoPod request. Use payment public_id as order_id for idempotency
+	// and easy webhook correlation. success/cancel URLs are optional — only
+	// send them when the console URL is a valid https URL (SumoPod's
+	// redirecturl validator rejects http://localhost). Otherwise let the
+	// project-level defaults (configured in SumoPod dashboard) apply.
+	reqBody := map[string]any{
+		"order_id":         p.PublicID,
+		"amount":           int(in.Amount),
+		"currency":         in.Currency,
+		"expires_in_hours": 24,
+	}
+	// Only attach return URLs when they are https (SumoPod rejects localhost http).
+	if strings.HasPrefix(s.consoleBaseURL, "https://") {
+		reqBody["success_return_url"] = strings.TrimRight(s.consoleBaseURL, "/") + "/app/invoices/" + in.InvoiceID.String() + "?payment=success"
+		reqBody["cancel_return_url"] = strings.TrimRight(s.consoleBaseURL, "/") + "/app/invoices/" + in.InvoiceID.String() + "?payment=cancel"
+	}
+	if in.Method != "" {
+		reqBody["payment_method_type_code"] = strings.ToUpper(in.Method)
+	}
+	bodyJSON, _ := json.Marshal(reqBody)
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", strings.TrimRight(s.sumopodBaseURL, "/")+"/api/v1/payments", bytes.NewReader(bodyJSON))
+	if err != nil {
+		return nil, err
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("X-Api-Key", s.sumopodAPIKey)
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(httpReq)
+	if err != nil {
+		return nil, apperrors.New(apperrors.CodeProviderUnavailable, "SumoPod API unreachable: "+err.Error())
+	}
+	defer resp.Body.Close()
+	respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 32*1024))
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, apperrors.New(apperrors.CodeProviderUnavailable, fmt.Sprintf("SumoPod create payment failed %d: %s", resp.StatusCode, string(respBody)))
+	}
+	var sp struct {
+		PaymentID      string  `json:"payment_id"`
+		OrderID        string  `json:"order_id"`
+		Amount         float64 `json:"amount"`
+		Fee            float64 `json:"fee"`
+		NetAmount      float64 `json:"net_amount"`
+		PaymentLinkURL string  `json:"payment_link_url"`
+		Status         string  `json:"status"`
+		ExpiresAt      string  `json:"expires_at"`
+	}
+	if err := json.Unmarshal(respBody, &sp); err != nil {
+		return nil, fmt.Errorf("decode SumoPod response: %w", err)
+	}
+	// Persist SumoPod's external ids and the real checkout link.
+	linkCipher, _ := encryptString(s.webhookSecret+":checkout", sp.PaymentLinkURL)
+	providerPayload, _ := json.Marshal(map[string]any{
+		"sumopod_payment_id": sp.PaymentID,
+		"sumopod_order_id":   sp.OrderID,
+		"sumopod_fee":        sp.Fee,
+		"sumopod_net_amount": sp.NetAmount,
+		"sumopod_expires_at": sp.ExpiresAt,
+		"raw_response":       json.RawMessage(respBody),
+	})
+	var expiresAt *time.Time
+	if sp.ExpiresAt != "" {
+		if t, err := time.Parse(time.RFC3339, sp.ExpiresAt); err == nil {
+			expiresAt = &t
+		}
+	}
+	_, err = s.db.Exec(ctx, `
+UPDATE payments SET external_payment_id=$1, fee=$2, checkout_url_ciphertext=$3,
+                   provider_payload=$4::jsonb, expires_at=COALESCE($5, expires_at)
+WHERE id=$6`,
+		sp.PaymentID, sp.Fee, linkCipher, providerPayload, expiresAt, p.ID)
+	if err != nil {
+		return nil, fmt.Errorf("update SumoPod payment: %w", err)
+	}
+	p.CheckoutURL = sp.PaymentLinkURL
 	return &p, nil
 }
 
@@ -94,10 +226,67 @@ func (s *Service) buildCheckoutURL(in CreatePaymentInput) string {
 		in.InvoiceID, token, in.Amount, in.Currency)
 }
 
-// VerifyWebhook validates the HMAC signature on a raw payload.
+// VerifyWebhook validates the HMAC signature on a raw payload (legacy Midtrans-style).
 func (s *Service) VerifyWebhook(rawPayload []byte, signature string) bool {
 	expected := signPayload(string(rawPayload), s.webhookSecret)
 	return hmac.Equal([]byte(expected), []byte(signature))
+}
+
+// VerifySumopodWebhook checks SumoPod's webhook authenticity via either
+// X-Webhook-Token (simple) or the svix triple-header (whsec_ secret).
+// At least one must be configured; if both are empty it returns false.
+func (s *Service) VerifySumopodWebhook(rawBody []byte, svixID, svixTimestamp, svixSignature, webhookToken string) bool {
+	// Simple token path — no crypto, just constant-time compare.
+	if s.sumopodWebhookToken != "" && webhookToken != "" {
+		return hmac.Equal([]byte(s.sumopodWebhookToken), []byte(webhookToken))
+	}
+	if s.sumopodWebhookSecret == "" || svixID == "" || svixTimestamp == "" || svixSignature == "" {
+		return false
+	}
+	secretB64 := strings.TrimPrefix(s.sumopodWebhookSecret, "whsec_")
+	secret, err := base64.StdEncoding.DecodeString(secretB64)
+	if err != nil {
+		// Some SumoPod secrets are provided as raw base64 without whsec_ prefix; try raw as well.
+		secret = []byte(s.sumopodWebhookSecret)
+	}
+	signedContent := svixID + "." + svixTimestamp + "." + string(rawBody)
+	mac := hmac.New(sha256.New, secret)
+	mac.Write([]byte(signedContent))
+	expected := base64.StdEncoding.EncodeToString(mac.Sum(nil))
+	for _, part := range strings.Fields(svixSignature) {
+		sig := strings.TrimPrefix(part, "v1,")
+		if hmac.Equal([]byte(sig), []byte(expected)) {
+			return true
+		}
+	}
+	return false
+}
+
+// FindPaymentIDBySumoPodOrderID resolves our internal payment id from SumoPod's order_id
+// (which is our payment public_id) or from the external payment_id.
+func (s *Service) FindPaymentIDBySumoPodOrderID(ctx context.Context, orderID, externalPaymentID string) (uuid.UUID, error) {
+	// Prefer lookup by public_id (order_id == our public_id) — most reliable.
+	if orderID != "" {
+		var id uuid.UUID
+		err := s.db.QueryRow(ctx, `SELECT id FROM payments WHERE public_id=$1 AND provider='sumopod'`, orderID).Scan(&id)
+		if err == nil {
+			return id, nil
+		}
+		if err != pgx.ErrNoRows {
+			return uuid.Nil, err
+		}
+	}
+	if externalPaymentID != "" {
+		var id uuid.UUID
+		err := s.db.QueryRow(ctx, `SELECT id FROM payments WHERE external_payment_id=$1 AND provider='sumopod'`, externalPaymentID).Scan(&id)
+		if err == nil {
+			return id, nil
+		}
+		if err != pgx.ErrNoRows {
+			return uuid.Nil, err
+		}
+	}
+	return uuid.Nil, apperrors.New(apperrors.CodeNotFound, "SumoPod payment not found for order_id / payment_id")
 }
 
 type WebhookEvent struct {

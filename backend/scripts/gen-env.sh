@@ -23,6 +23,13 @@ PUBLIC_API_BASE_URL=https://api.kilat-cloud.com
 CONSOLE_BASE_URL=https://console.kilat-cloud.com
 DOWNLOAD_BASE_URL=https://dl.kilat-cloud.com
 
+# OAuth — Google / GitHub (empty = provider disabled, login will redirect with ?error=oauth_not_configured)
+# For local dev, add http://localhost:8080/v1/auth/oauth/<provider>/callback to each app's Allowed Redirect URIs.
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+
 # Local dev services (docker compose -f docker-compose.dev.yml up -d)
 DATABASE_URL=postgres://kilat:kilat@localhost:54329/kilat_cloud?sslmode=disable
 REDIS_URL=redis://localhost:54389/0
@@ -60,6 +67,11 @@ SMTP_FROM=noreply@kilat-cloud.com
 
 PAYMENT_PROVIDER=midtrans
 PAYMENT_WEBHOOK_SECRET=${PAY}
+# SumoPod (https://api-pay.sumopod.com) — set PAYMENT_PROVIDER=sumopod to use it.
+SUMOPOD_API_KEY=
+SUMOPOD_BASE_URL=https://api-pay.sumopod.com
+SUMOPOD_WEBHOOK_SECRET=
+SUMOPOD_WEBHOOK_TOKEN=
 
 RATE_LIMIT_LOGIN_PER_MINUTE=10
 RATE_LIMIT_REGISTER_PER_HOUR=20
