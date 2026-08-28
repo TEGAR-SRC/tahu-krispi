@@ -77,3 +77,51 @@ func (s *Server) handleRemovePasskey(c fiber.Ctx) error {
 	})
 	return mw.JSON(c, 200, fiber.Map{"status": "removed", "id": methodID}, nil)
 }
+
+// ---- Passkey login (unauthenticated) ------------------------------------------
+
+func (s *Server) handleBeginPasskeyLogin(c fiber.Ctx) error {
+	assertion, handle, err := s.passkeyMgr.BeginAuthentication(c.Context())
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, fiber.Map{"options": assertion, "handle": handle}, nil)
+}
+
+type passkeyLoginInput struct {
+	Credential json.RawMessage `json:"credential"`
+	Handle     string          `json:"handle"`
+}
+
+func (s *Server) handlePasskeyLogin(c fiber.Ctx) error {
+	var in passkeyLoginInput
+	if err := c.Bind().Body(&in); err != nil || len(in.Credential) == 0 || in.Handle == "" {
+		return mw.WriteError(c, vErrField("credential and handle", "required"))
+	}
+	userID, err := s.passkeyMgr.FinishAuthentication(c.Context(), in.Handle, in.Credential)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+
+	// Issue tokens like normal login.
+	sessionID, rawRefresh, err := s.authSvc.CreateSession(c.Context(), userID, "", c.IP(), c.Get("User-Agent"))
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	at, err := s.authSvc.IssueAccessToken(userID, uuid.Nil, sessionID, 0, []string{"profile.read"})
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+
+	s.auditSvc.Log(c.Context(), audit.Entry{
+		ActorUserID: &userID, Action: "auth.passkey_login", ResourceType: "user",
+		ResourceID: &userID,
+		IP: c.IP(), UserAgent: c.Get("User-Agent"),
+		RequestID: auditRequestID(c),
+	})
+
+	return mw.JSON(c, 200, fiber.Map{
+		"access_token":  at,
+		"refresh_token": rawRefresh,
+	}, nil)
+}

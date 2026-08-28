@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff, FingerprintIcon, Loader2Icon } from "lucide-react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -19,7 +20,73 @@ import {
 import { Input } from "@/components/ui/input"
 import { ErrorBanner } from "@/components/shared/ErrorBanner"
 import { Spinner } from "@/components/ui/spinner"
+import { apiPost } from "@/lib/api"
 import { homePathFor, useAuth } from "@/lib/auth"
+
+// ---- WebAuthn helpers --------------------------------------------------------
+
+function b64urlToBytes(value: string): Uint8Array<ArrayBuffer> {
+  const padded = value
+    .replace(/-/g, "+")
+    .replace(/_/g, "/")
+    .padEnd(value.length + ((4 - (value.length % 4)) % 4), "=")
+  const binary = atob(padded)
+  const buffer = new ArrayBuffer(binary.length)
+  const bytes = new Uint8Array(buffer)
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i)
+  return bytes
+}
+
+function bytesToB64url(bytes: ArrayBuffer | Uint8Array): string {
+  const view = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes)
+  let binary = ""
+  for (const byte of view) binary += String.fromCharCode(byte)
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "")
+}
+
+async function passkeyLogin(): Promise<{ access_token: string; refresh_token: string }> {
+  if (typeof window.PublicKeyCredential === "undefined") {
+    throw new Error("Browser Anda tidak mendukung passkey")
+  }
+
+  // 1. Begin
+  const { options, handle } = await apiPost<{
+    options: Record<string, unknown>
+    handle: string
+  }>("/auth/passkey/begin-login")
+
+  const opts = (options.publicKey ?? options) as Record<string, unknown>
+  const assertionOptions: PublicKeyCredentialRequestOptions = {
+    challenge: b64urlToBytes(String(opts.challenge)),
+    timeout: typeof opts.timeout === "number" ? opts.timeout : 60000,
+    rpId: String(opts.rpId ?? opts.rpID ?? undefined),
+    userVerification: "preferred",
+  }
+
+  // 2. Ceremony
+  const cred = (await navigator.credentials.get({
+    publicKey: assertionOptions,
+  })) as PublicKeyCredential | null
+  if (!cred) throw new Error("Passkey login dibatalkan")
+
+  const response = cred.response as AuthenticatorAssertionResponse
+
+  // 3. Complete
+  return apiPost("/auth/passkey/login", {
+    handle,
+    credential: {
+      id: cred.id,
+      rawId: bytesToB64url(cred.rawId),
+      type: cred.type,
+      response: {
+        authenticatorData: bytesToB64url(response.authenticatorData),
+        clientDataJSON: bytesToB64url(response.clientDataJSON),
+        signature: bytesToB64url(response.signature),
+        userHandle: response.userHandle ? bytesToB64url(response.userHandle) : undefined,
+      },
+    },
+  })
+}
 
 export default function LoginPage() {
   const { token, role, loading, login } = useAuth()
@@ -29,6 +96,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<unknown>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [passkeyBusy, setPasskeyBusy] = useState(false)
 
   // Already signed in: send the user to their role's home.
   useEffect(() => {
@@ -48,6 +116,22 @@ export default function LoginPage() {
       setError(cause)
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handlePasskeyLogin = async () => {
+    setError(null)
+    setPasskeyBusy(true)
+    try {
+      const { access_token, refresh_token } = await passkeyLogin()
+      // Store tokens directly and reload — same flow as normal login.
+      localStorage.setItem("kc_access_token", access_token)
+      localStorage.setItem("kc_refresh_token", refresh_token)
+      window.location.href = "/app"
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : "Passkey login failed")
+    } finally {
+      setPasskeyBusy(false)
     }
   }
 
@@ -106,6 +190,21 @@ export default function LoginPage() {
                   GitHub
                 </Button>
               </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                disabled={passkeyBusy}
+                onClick={handlePasskeyLogin}
+              >
+                {passkeyBusy ? (
+                  <Loader2Icon className="size-4 animate-spin" />
+                ) : (
+                  <FingerprintIcon className="size-4" />
+                )}
+                Login dengan passkey
+              </Button>
 
               <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
                 atau lanjutkan dengan email

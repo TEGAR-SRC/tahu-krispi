@@ -22,9 +22,10 @@ import (
 )
 
 const (
-	passkeySessionTTL    = 5 * time.Minute
-	passkeySessionPrefix = "kc:webauthn:reg:"
-	passkeyRPDisplayName = "Kilat Cloud"
+	passkeySessionTTL     = 5 * time.Minute
+	passkeySessionPrefix  = "kc:webauthn:reg:"
+	passkeyAuthnPrefix    = "kc:webauthn:authn:"
+	passkeyRPDisplayName  = "Kilat Cloud"
 )
 
 // PasskeyManager manages WebAuthn/passkey enrolment. Registration is a
@@ -208,6 +209,82 @@ DELETE FROM user_mfa_methods WHERE id=$1 AND user_id=$2 AND method='webauthn'`, 
 	}
 	return nil
 }
+
+// BeginAuthentication starts a passkey login ceremony. The browser calls
+// navigator.credentials.get() with the returned options. The pending
+// SessionData is stored in Redis keyed by a random handle so it survives the
+// round-trip without requiring an authenticated session.
+func (m *PasskeyManager) BeginAuthentication(ctx context.Context) (*protocol.CredentialAssertion, string, error) {
+	assertion, session, err := m.w.BeginDiscoverableLogin()
+	if err != nil {
+		return nil, "", fmt.Errorf("begin passkey authn: %w", err)
+	}
+	blob, err := json.Marshal(session)
+	if err != nil {
+		return nil, "", fmt.Errorf("encode webauthn session: %w", err)
+	}
+	handle := uuid.New().String()
+	if err := m.rdb.Set(ctx, passkeyAuthnKey(handle), blob, passkeySessionTTL).Err(); err != nil {
+		return nil, "", fmt.Errorf("store webauthn session: %w", err)
+	}
+	return assertion, handle, nil
+}
+
+// FinishAuthentication validates the assertion response against the pending
+// session, looks up the user by credential, and returns the user ID on success.
+func (m *PasskeyManager) FinishAuthentication(ctx context.Context, handle string, assertionResponse json.RawMessage) (uuid.UUID, error) {
+	if handle == "" {
+		return uuid.Nil, apperrors.New(apperrors.CodeValidation, "session handle is required")
+	}
+	raw, err := m.rdb.GetDel(ctx, passkeyAuthnKey(handle)).Bytes()
+	switch {
+	case errors.Is(err, goredis.Nil):
+		return uuid.Nil, apperrors.New(apperrors.CodeValidation, "no pending passkey authn; call begin-authentication first")
+	case err != nil:
+		return uuid.Nil, fmt.Errorf("load webauthn session: %w", err)
+	}
+	var session webauthn.SessionData
+	if err := json.Unmarshal(raw, &session); err != nil {
+		return uuid.Nil, fmt.Errorf("decode webauthn session: %w", err)
+	}
+
+	parsedResponse, perr := protocol.ParseCredentialRequestResponseBody(bytes.NewReader(assertionResponse))
+	if perr != nil {
+		return uuid.Nil, apperrors.New(apperrors.CodeValidation, "invalid assertion response: "+perr.Error())
+	}
+
+	// The discoverable login handler receives the raw user ID from the
+	// authenticator; we look it up to load the stored credential.
+	userID, err := uuid.FromBytes(parsedResponse.Response.UserHandle)
+	if err != nil {
+		return uuid.Nil, apperrors.New(apperrors.CodeValidation, "invalid user handle in passkey response")
+	}
+
+	u, err := m.loadWebauthnUser(ctx, userID)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	cred, err := m.w.ValidateLogin(u, session, parsedResponse)
+	if err != nil {
+		return uuid.Nil, apperrors.New(apperrors.CodeValidation, "passkey verification failed: "+err.Error())
+	}
+
+	// Update the sign count to prevent cloning.
+	_, err = m.db.Exec(ctx, `
+UPDATE user_mfa_methods
+SET sign_count=$1, last_used_at=now()
+WHERE method='webauthn' AND credential_id=$2 AND user_id=$3`,
+		cred.Authenticator.SignCount, cred.ID, userID)
+	if err != nil {
+		// Non-fatal: login still succeeds but sign count won't be tracked.
+		_ = err
+	}
+
+	return userID, nil
+}
+
+func passkeyAuthnKey(handle string) string { return passkeyAuthnPrefix + handle }
 
 // loadWebauthnUser resolves the account email plus every existing passkey so
 // BeginRegistration can exclude already-registered authenticators.

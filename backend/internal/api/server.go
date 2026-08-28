@@ -186,6 +186,8 @@ func (s *Server) registerRoutes() {
 	// ---- Auth & identity ----
 	v1.Post("/auth/register", regLimiter, s.handleRegister)
 	v1.Post("/auth/login", authLimiter, s.handleLogin)
+	v1.Post("/auth/passkey/begin-login", authLimiter, s.handleBeginPasskeyLogin)
+	v1.Post("/auth/passkey/login", authLimiter, s.handlePasskeyLogin)
 	v1.Post("/auth/refresh", s.handleRefresh)
 	v1.Post("/auth/logout", s.authAny(), s.handleLogout)
 	v1.Post("/auth/logout-all", s.authAny(), s.handleLogoutAll)
