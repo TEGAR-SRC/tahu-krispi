@@ -220,3 +220,7 @@ func randomHex(n int) (string, error) {
 	}
 	return hexEncode(b), nil
 }
+
+// RandomHexString returns 32 random bytes hex-encoded for use as an opaque,
+// unguessable token.
+func RandomHexString() (string, error) { return randomHex(32) }

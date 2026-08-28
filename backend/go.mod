@@ -14,9 +14,11 @@ require (
 	github.com/valyala/fasthttp v1.73.0
 	github.com/vmware/govmomi v0.56.0
 	golang.org/x/crypto v0.55.0
+	golang.org/x/oauth2 v0.36.0
 )
 
 require (
+	cloud.google.com/go/compute/metadata v0.3.0 // indirect
 	github.com/andybalholm/brotli v1.2.2 // indirect
 	github.com/buger/goterm v1.0.4 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect

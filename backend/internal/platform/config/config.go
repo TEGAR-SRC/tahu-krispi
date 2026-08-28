@@ -49,8 +49,22 @@ type Config struct {
 	SMTPPassword string
 	SMTPFrom     string
 
+	// OAuth (Google / GitHub). Empty means the provider is disabled — the
+	// login button will still render but the backend will answer 503 with a
+	// clear message instead of redirecting.
+	GoogleClientID     string
+	GoogleClientSecret string
+	GithubClientID     string
+	GithubClientSecret string
+
 	PaymentProvider      string
 	PaymentWebhookSecret string
+
+	// SumoPod payment gateway (https://api-pay.sumopod.com)
+	SumopodAPIKey        string
+	SumopodBaseURL       string
+	SumopodWebhookSecret string // whsec_... for svix signature
+	SumopodWebhookToken  string // whtok_... for X-Webhook-Token
 
 	RateLimitLoginPerMinute  int
 	RateLimitRegisterPerHour int
@@ -95,8 +109,16 @@ func Load() (*Config, error) {
 		SMTPUser:                 getEnv("SMTP_USER", ""),
 		SMTPPassword:             getEnv("SMTP_PASSWORD", ""),
 		SMTPFrom:                 getEnv("SMTP_FROM", "noreply@kilat-cloud.com"),
+		GoogleClientID:           getEnv("GOOGLE_CLIENT_ID", ""),
+		GoogleClientSecret:       getEnv("GOOGLE_CLIENT_SECRET", ""),
+		GithubClientID:           getEnv("GITHUB_CLIENT_ID", ""),
+		GithubClientSecret:       getEnv("GITHUB_CLIENT_SECRET", ""),
 		PaymentProvider:          getEnv("PAYMENT_PROVIDER", "midtrans"),
 		PaymentWebhookSecret:     getEnvRequired("PAYMENT_WEBHOOK_SECRET"),
+		SumopodAPIKey:           getEnv("SUMOPOD_API_KEY", ""),
+		SumopodBaseURL:          getEnv("SUMOPOD_BASE_URL", "https://api-pay.sumopod.com"),
+		SumopodWebhookSecret:    getEnv("SUMOPOD_WEBHOOK_SECRET", ""),
+		SumopodWebhookToken:     getEnv("SUMOPOD_WEBHOOK_TOKEN", ""),
 		RateLimitLoginPerMinute:  getEnvInt("RATE_LIMIT_LOGIN_PER_MINUTE", 10),
 		RateLimitRegisterPerHour: getEnvInt("RATE_LIMIT_REGISTER_PER_HOUR", 20),
 		OTPDebugEcho:             getEnv("OTP_DEBUG_ECHO", "false") == "true",

@@ -23,15 +23,17 @@ type Service struct {
 	db           *pgxpool.Pool
 	rdb          *goredis.Client
 	authSvc      *auth.Service
+	mfaMgr       *MFAManager
 	argon2Params crypto.Argon2Params
 	cfg          *config.Config
 }
 
-func NewService(db *pgxpool.Pool, rdb *goredis.Client, authSvc *auth.Service, cfg *config.Config) *Service {
+func NewService(db *pgxpool.Pool, rdb *goredis.Client, authSvc *auth.Service, mfaMgr *MFAManager, cfg *config.Config) *Service {
 	return &Service{
 		db:      db,
 		rdb:     rdb,
 		authSvc: authSvc,
+		mfaMgr:  mfaMgr,
 		argon2Params: crypto.Argon2Params{
 			Memory: cfg.Argon2Memory, Iterations: cfg.Argon2Iterations,
 			Parallelism: cfg.Argon2Parallelism, KeyLength: cfg.Argon2KeyLength,
@@ -64,7 +66,17 @@ type LoginOutput struct {
 	AccessToken        string    `json:"access_token"`
 	RefreshToken       string    `json:"refresh_token"`
 	MustChangePassword bool      `json:"must_change_password"`
+	// MFARequired is true when the account has a confirmed TOTP method and the
+	// caller must complete the second-factor step before tokens are issued.
+	MFARequired bool `json:"mfa_required"`
+	// PreauthToken is a short-lived, single-purpose token needed to complete
+	// the MFA login step. Only present when MFARequired is true.
+	PreauthToken string `json:"preauth_token,omitempty"`
 }
+
+// preauthTTL bounds how long a half-finished password+MFA login may remain
+// pending before the code must be supplied.
+const preauthTTL = 5 * time.Minute
 
 func (s *Service) Register(ctx context.Context, in RegisterInput) (*LoginOutput, error) {
 	if !in.TermsAccepted || !in.PrivacyAccepted {
@@ -243,12 +255,41 @@ UPDATE users SET failed_login_count=0, locked_until=NULL, last_login_at=now(),
 WHERE id=$1`, userID, in.IP, in.UserAgent)
 	s.recordAuthEvent(ctx, userID, "login", true, in.IP, in.UserAgent)
 
+	// Step 1 of a two-step login: when the account has a confirmed TOTP method,
+	// do NOT issue tokens yet. Instead hand back a short-lived preauth token so
+	// the caller can prove the second factor on a dedicated endpoint.
+	mfaEnabled, err := s.mfaMgr.HasMFA(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if mfaEnabled {
+		preauth, err := s.newPreauthToken(ctx, userID)
+		if err != nil {
+			return nil, err
+		}
+		return &LoginOutput{UserID: userID, MFARequired: true, PreauthToken: preauth}, nil
+	}
+
+	return s.completeLogin(ctx, userID, emailStatus, phoneStatus, forceChange, in)
+}
+
+func defaultScopesFor(emailStatus, phoneStatus string) []string {
+	scopes := []string{"profile.read"}
+	if emailStatus == "verified" {
+		scopes = append(scopes, "instances.read", "instances.create")
+	}
+	return scopes
+}
+
+// completeLogin issues the session and tokens for an account that either has
+// no MFA or has just satisfied the second-factor step.
+func (s *Service) completeLogin(ctx context.Context, userID uuid.UUID, emailStatus, phoneStatus string, forceChange bool, in LoginInput) (*LoginOutput, error) {
 	sessionID, refresh, err := s.authSvc.CreateSession(ctx, userID, "", in.IP, in.UserAgent)
 	if err != nil {
 		return nil, err
 	}
 	scopes := defaultScopesFor(emailStatus, phoneStatus)
-	at, err := s.authSvc.IssueAccessToken(userID, uuid.Nil, sessionID, pwVersion, scopes)
+	at, err := s.authSvc.IssueAccessToken(userID, uuid.Nil, sessionID, 0, scopes)
 	if err != nil {
 		return nil, err
 	}
@@ -258,12 +299,67 @@ WHERE id=$1`, userID, in.IP, in.UserAgent)
 	}, nil
 }
 
-func defaultScopesFor(emailStatus, phoneStatus string) []string {
-	scopes := []string{"profile.read"}
-	if emailStatus == "verified" {
-		scopes = append(scopes, "instances.read", "instances.create")
+// CreatePreauthToken creates a short-lived, single-use token that authorises
+// the holder to complete a pending MFA login (password or passkey) by
+// supplying the TOTP code. The token is bound to the user in Redis and
+// deleted once consumed.
+func (s *Service) CreatePreauthToken(ctx context.Context, userID uuid.UUID) (string, error) {
+	return s.newPreauthToken(ctx, userID)
+}
+
+// newPreauthToken creates a short-lived, single-use token that authorises the
+// holder to complete a pending password login by supplying the TOTP code. The
+// token is bound to the user in Redis and deleted once consumed.
+func (s *Service) newPreauthToken(ctx context.Context, userID uuid.UUID) (string, error) {
+	raw, err := auth.RandomHexString()
+	if err != nil {
+		return "", err
 	}
-	return scopes
+	key := "kc:preauth:" + raw
+	if err := s.rdb.Set(ctx, key, userID.String(), preauthTTL).Err(); err != nil {
+		return "", fmt.Errorf("store preauth token: %w", err)
+	}
+	return raw, nil
+}
+
+// CompleteLoginWithTOTP finishes a pending MFA login by verifying the supplied
+// TOTP code against the preauth token and, on success, issuing the session and
+// tokens. The preauth token is consumed regardless of outcome.
+func (s *Service) CompleteLoginWithTOTP(ctx context.Context, preauthToken, code string, ip, ua string) (*LoginOutput, error) {
+	if preauthToken == "" || code == "" {
+		return nil, apperrors.New(apperrors.CodeValidation, "preauth_token and code are required")
+	}
+	key := "kc:preauth:" + preauthToken
+	userIDStr, err := s.rdb.Get(ctx, key).Result()
+	if err == goredis.Nil {
+		return nil, apperrors.New(apperrors.CodeInvalidCredentials, "preauth token invalid or expired; please log in again")
+	}
+	if err != nil {
+		return nil, err
+	}
+	// Consume the token so it cannot be replayed or brute-forced repeatedly.
+	_ = s.rdb.Del(ctx, key)
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return nil, apperrors.New(apperrors.CodeInvalidCredentials, "preauth token invalid or expired; please log in again")
+	}
+	ok, err := s.mfaMgr.VerifySecondFactor(ctx, userID, code)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		s.recordAuthEvent(ctx, userID, "login_mfa_failed", false, ip, ua)
+		return nil, apperrors.New(apperrors.CodeInvalidCredentials, "invalid TOTP code")
+	}
+	s.recordAuthEvent(ctx, userID, "login_mfa_ok", true, ip, ua)
+
+	var emailStatus, phoneStatus string
+	if err := s.db.QueryRow(ctx, `
+SELECT email_status::text, phone_status::text FROM users WHERE id=$1 AND deleted_at IS NULL`, userID).
+		Scan(&emailStatus, &phoneStatus); err != nil {
+		return nil, err
+	}
+	return s.completeLogin(ctx, userID, emailStatus, phoneStatus, false, LoginInput{IP: ip, UserAgent: ua})
 }
 
 func (s *Service) recordAuthEvent(ctx context.Context, userID uuid.UUID, eventType string, success bool, ip, ua string) error {

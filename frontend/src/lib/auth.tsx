@@ -21,6 +21,13 @@ export const API_ORIGIN = "" // same origin; Vite proxies /api -> backend in dev
 
 export type AppRole = "admin" | "noc" | "finance" | "customer"
 
+// LoginResult discriminates the two outcomes of a password login: either the
+// session is ready (role resolved) or a second factor is required and a
+// preauth token must be completed with a TOTP code on /auth/login/mfa.
+export type LoginResult =
+  | { mfaRequired: false; role: AppRole }
+  | { mfaRequired: true; preauthToken: string; role: null }
+
 export interface MeProfile {
   user_id: string
   email: string
@@ -65,8 +72,9 @@ interface SessionState {
 
 export interface AuthContextValue extends SessionState {
   loading: boolean
-  login: (email: string, password: string) => Promise<AppRole>
-  register: (payload: RegisterPayload) => Promise<AppRole>
+  login: (email: string, password: string) => Promise<LoginResult>
+  loginMFA: (preauthToken: string, code: string) => Promise<AppRole>
+  register: (payload: RegisterPayload) => Promise<LoginResult>
   logout: () => void
 }
 
@@ -184,6 +192,8 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
 interface LoginResponse {
   access_token: string
+  mfa_required?: boolean
+  preauth_token?: string
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -251,10 +261,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = useCallback(
-    async (email: string, password: string): Promise<AppRole> => {
+    async (email: string, password: string): Promise<LoginResult> => {
       setLoading(true)
       try {
         const { data } = await apiPost<LoginResponse>("/auth/login", { email, password })
+        if (data.mfa_required && data.preauth_token) {
+          return { mfaRequired: true, preauthToken: data.preauth_token, role: null }
+        }
+        const role = await adoptSession(data.access_token)
+        return { mfaRequired: false, role }
+      } finally {
+        setLoading(false)
+      }
+    },
+    [adoptSession],
+  )
+
+  const loginMFA = useCallback(
+    async (preauthToken: string, code: string): Promise<AppRole> => {
+      setLoading(true)
+      try {
+        const { data } = await apiPost<LoginResponse>("/auth/login/mfa", {
+          preauth_token: preauthToken,
+          code,
+        })
         return await adoptSession(data.access_token)
       } finally {
         setLoading(false)
@@ -264,7 +294,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   const register = useCallback(
-    async (payload: RegisterPayload): Promise<AppRole> => {
+    async (payload: RegisterPayload): Promise<LoginResult> => {
       setLoading(true)
       try {
         await apiPost<unknown>("/auth/register", payload)
@@ -286,8 +316,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo<AuthContextValue>(
-    () => ({ token, claims, role, profile, loading, login, register, logout }),
-    [token, claims, role, profile, loading, login, register, logout],
+    () => ({ token, claims, role, profile, loading, login, loginMFA, register, logout }),
+    [token, claims, role, profile, loading, login, loginMFA, register, logout],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -68,7 +68,7 @@ export default function VerifyEmailPage() {
             <FieldGroup>
               {error ? <ErrorBanner error={error} /> : null}
               {verifying ? (
-                <FieldDescription className="flex items-center justify-center gap-2 rounded-md border bg-muted/40 p-3">
+                <FieldDescription className="flex min-w-0 items-center justify-center gap-2 rounded-md border bg-muted/40 p-3">
                   <Spinner className="size-4" /> Verifying email…
                 </FieldDescription>
               ) : verified ? (

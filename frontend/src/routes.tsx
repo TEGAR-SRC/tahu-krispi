@@ -495,6 +495,9 @@ const ResetPasswordPage = lazy(() =>
 const VerifyEmailPage = lazy(() =>
   import("@/features/auth/VerifyEmailPage"),
 )
+const OAuthCallbackPage = lazy(() =>
+  import("@/features/auth/OAuthCallbackPage"),
+)
 const TermsPage = lazy(() => import("@/features/auth/TermsPage"))
 const PrivacyPage = lazy(() => import("@/features/auth/PrivacyPage"))
 
@@ -575,6 +578,7 @@ export default function AppRoutes() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
 

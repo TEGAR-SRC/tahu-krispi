@@ -60,6 +60,26 @@ func (s *Server) handleLogin(c fiber.Ctx) error {
 	return mw.JSON(c, 200, out, nil)
 }
 
+type loginMFAInput struct {
+	PreauthToken string `json:"preauth_token"`
+	Code         string `json:"code"`
+}
+
+// handleLoginMFA completes the second factor of a login that returned
+// mfa_required=true: verifies the TOTP code bound to the preauth token and,
+// on success, issues the real session and tokens.
+func (s *Server) handleLoginMFA(c fiber.Ctx) error {
+	var in loginMFAInput
+	if err := c.Bind().Body(&in); err != nil {
+		return mw.WriteError(c, errValidation("invalid json body"))
+	}
+	out, err := s.userSvc.CompleteLoginWithTOTP(c.Context(), in.PreauthToken, in.Code, c.IP(), c.Get("User-Agent"))
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, out, nil)
+}
+
 type refreshInput struct {
 	RefreshToken string `json:"refresh_token"`
 }

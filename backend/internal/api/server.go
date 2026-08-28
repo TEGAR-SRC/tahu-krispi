@@ -93,7 +93,7 @@ func NewServer(cfg *config.Config, log *logger.Logger, db *pgxpool.Pool, rdb *go
 		cfg: cfg, log: log, db: db, rdb: rdb,
 		encKey:       encKey,
 		authSvc:      authSvc,
-		userSvc:      user.NewService(db, rdb, authSvc, cfg),
+		userSvc:      user.NewService(db, rdb, authSvc, user.NewMFAManager(db, encKey), cfg),
 		userRepo:     user.NewRepository(db),
 		mfaMgr:       user.NewMFAManager(db, encKey),
 		passkeyMgr:   passkeyMgr,
@@ -103,7 +103,7 @@ func NewServer(cfg *config.Config, log *logger.Logger, db *pgxpool.Pool, rdb *go
 		orgSvc:       organization.NewService(db),
 		pricingSvc:   pricing.NewService(db),
 		billingSvc:   billing.NewService(db, wallet.NewService(db)),
-		paymentSvc:   payment.NewService(db, cfg.PaymentProvider, cfg.PaymentWebhookSecret),
+		paymentSvc:   payment.NewServiceWithSumopod(db, cfg.PaymentProvider, cfg.PaymentWebhookSecret, cfg.SumopodAPIKey, cfg.SumopodBaseURL, cfg.SumopodWebhookSecret, cfg.SumopodWebhookToken, cfg.ConsoleBaseURL),
 		networkSvc:   network.NewService(db),
 		storageSvc:   storage.NewService(db),
 		subSvc:       subscription.NewService(db, cfg.SubscriptionGraceDays),
@@ -186,8 +186,11 @@ func (s *Server) registerRoutes() {
 	// ---- Auth & identity ----
 	v1.Post("/auth/register", regLimiter, s.handleRegister)
 	v1.Post("/auth/login", authLimiter, s.handleLogin)
+	v1.Post("/auth/login/mfa", authLimiter, s.handleLoginMFA)
 	v1.Post("/auth/passkey/begin-login", authLimiter, s.handleBeginPasskeyLogin)
 	v1.Post("/auth/passkey/login", authLimiter, s.handlePasskeyLogin)
+	v1.Get("/auth/oauth/:provider", s.handleOAuthLogin)
+	v1.Get("/auth/oauth/:provider/callback", s.handleOAuthCallback)
 	v1.Post("/auth/refresh", s.handleRefresh)
 	v1.Post("/auth/logout", s.authAny(), s.handleLogout)
 	v1.Post("/auth/logout-all", s.authAny(), s.handleLogoutAll)

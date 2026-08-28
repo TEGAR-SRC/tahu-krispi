@@ -66,7 +66,7 @@ export function LoginForm({
                 />
               </Field>
               <Field>
-                <div className="flex items-center">
+                <div className="flex min-w-0 items-center">
                   <FieldLabel htmlFor="password">Password</FieldLabel>
                   <a
                     href="#"

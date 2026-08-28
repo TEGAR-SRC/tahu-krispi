@@ -118,8 +118,15 @@ export default function SignupPage() {
       if (locale) payload.locale = locale
       if (timezone) payload.timezone = timezone
 
-      const nextRole = await register(payload)
-      navigate(homePathFor(nextRole), { replace: true })
+      const result = await register(payload)
+      // A freshly registered account cannot yet have MFA enabled, so it will
+      // never require a second factor here; treat any MFA result as a plain
+      // successful login.
+      if (result.mfaRequired) {
+        navigate("/login", { replace: true })
+      } else {
+        navigate(homePathFor(result.role), { replace: true })
+      }
     } catch (cause) {
       setError(cause)
     } finally {
@@ -140,7 +147,7 @@ export default function SignupPage() {
           <CardContent>
             <FieldGroup>
               {/* OAuth buttons */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-3">
                 <Button
                   type="button"
                   variant="outline"
@@ -256,7 +263,7 @@ export default function SignupPage() {
                   </Field>
 
                   {/* Row 5: Locale & Timezone */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-4">
                     <Field>
                       <FieldLabel htmlFor="signup-locale">Bahasa</FieldLabel>
                       <Select value={locale} onValueChange={setLocale}>

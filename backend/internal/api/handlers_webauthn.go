@@ -103,6 +103,31 @@ func (s *Server) handlePasskeyLogin(c fiber.Ctx) error {
 		return mw.WriteError(c, err)
 	}
 
+	// No bypass: if TOTP MFA is enabled the passkey ceremony is only the
+	// first factor. Hand back a preauth token so the caller must still
+	// supply the TOTP code on /auth/login/mfa, same as the password flow.
+	hasMFA, err := s.mfaMgr.HasMFA(c.Context(), userID)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	if hasMFA {
+		preauth, err := s.userSvc.CreatePreauthToken(c.Context(), userID)
+		if err != nil {
+			return mw.WriteError(c, err)
+		}
+		s.auditSvc.Log(c.Context(), audit.Entry{
+			ActorUserID: &userID, Action: "auth.passkey_login_mfa_required", ResourceType: "user",
+			ResourceID: &userID,
+			IP: c.IP(), UserAgent: c.Get("User-Agent"),
+			RequestID: auditRequestID(c),
+		})
+		return mw.JSON(c, 200, fiber.Map{
+			"user_id":       userID,
+			"mfa_required":  true,
+			"preauth_token": preauth,
+		}, nil)
+	}
+
 	// Issue tokens like normal login.
 	sessionID, rawRefresh, err := s.authSvc.CreateSession(c.Context(), userID, "", c.IP(), c.Get("User-Agent"))
 	if err != nil {
