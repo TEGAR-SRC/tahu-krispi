@@ -67,7 +67,7 @@ export default function CustomerOrganizationsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Organizations"
         description="Shared workspaces for instances, billing and members."
@@ -84,16 +84,16 @@ export default function CustomerOrganizationsPage() {
           description="Create one or accept an invitation."
         />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid w-full max-w-full min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {organizations.map((org) => (
             <Card key={org.id} className={org.id === orgId ? "border-primary/60" : ""}>
               <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
+                <CardTitle className="flex min-w-0 items-center gap-2 text-base">
                   <UsersIcon className="size-4 text-muted-foreground" />
-                  <span className="truncate">{org.name}</span>
+                  <span className="min-w-0 flex-1 truncate">{org.name}</span>
                   {org.id === orgId ? <Badge>active</Badge> : null}
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="w-full max-w-full min-w-0 overflow-hidden break-all [overflow-wrap:anywhere]">
                   {org.slug ? `slug: ${org.slug}` : org.public_id ?? org.id}
                 </CardDescription>
               </CardHeader>
@@ -234,7 +234,7 @@ function CreateOrgDialog({
               placeholder="acme-cloud"
             />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="og-country">Country code</Label>
               <Input

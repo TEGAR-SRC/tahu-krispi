@@ -70,7 +70,7 @@ export default function InstanceSnapshotsPage() {
   const { instance } = useInstance(instanceId)
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <InstanceBreadcrumb instanceName={instance?.name} section="Snapshots & backups" />
       <CreateSnapshotCard instanceId={instanceId} />
       <SnapshotListCard instanceId={instanceId} />
@@ -114,7 +114,7 @@ function CreateSnapshotCard({ instanceId }: { instanceId: string | undefined }) 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex min-w-0 items-center gap-2">
           <CameraIcon className="size-4" /> Take a snapshot
         </CardTitle>
         <CardDescription>
@@ -244,9 +244,9 @@ function SnapshotListCard({ instanceId }: { instanceId: string | undefined }) {
       header: "Name",
       render: (row) => (
         <div className="min-w-0">
-          <p className="truncate font-medium">{row.name || row.id}</p>
+          <p className="min-w-0 truncate font-medium">{row.name || row.id}</p>
           {row.public_id ? (
-            <p className="truncate text-xs text-muted-foreground">{row.public_id}</p>
+            <p className="min-w-0 truncate text-xs text-muted-foreground">{row.public_id}</p>
           ) : null}
         </div>
       ),
@@ -397,7 +397,7 @@ function SnapshotListCard({ instanceId }: { instanceId: string | undefined }) {
             </DialogHeader>
             {downloadUrl ? (
               <div className="space-y-3">
-                <div className="flex items-center gap-1 rounded-md border bg-muted/30 px-3 py-2">
+                <div className="flex min-w-0 items-center gap-1 rounded-md border bg-muted/30 px-3 py-2">
                   <a
                     href={downloadUrl.url}
                     target="_blank"

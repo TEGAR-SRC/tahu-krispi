@@ -235,7 +235,7 @@ export default function DokployApplicationServicePage() {
   const title = text(app.data?.name) || applicationId || "Application"
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-4">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -320,12 +320,12 @@ function OperationConsole({
   onApplicationChanged: () => void
 }) {
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-      <div className="flex flex-col gap-4">
+    <div className="grid w-full max-w-full min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="flex w-full max-w-full min-w-0 flex-col gap-4">
         {tab.load ? (
           <ReadCard operation={tab.load} applicationId={applicationId} appName={appName} />
         ) : null}
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid w-full max-w-full min-w-0 gap-4 md:grid-cols-2">
           {tab.operations.map((operation) => (
             <OperationCard
               key={operation.op}
@@ -474,7 +474,7 @@ function OperationCard({
 
 function JsonTextarea({ label, value, onChange, disabled }: { label: string; value: string; onChange: (value: string) => void; disabled: boolean }) {
   return (
-    <div className="grid gap-1.5">
+    <div className="grid w-full max-w-full min-w-0 gap-1.5">
       <Label>{label}</Label>
       <Textarea
         className="min-h-28 font-mono text-xs"

@@ -78,7 +78,7 @@ export default function DokployEnvironmentBoardPage() {
   const serviceRows = collectServices(environment)
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title={firstString(environment, ["name", "environmentName"]) || "Environment services"}
         description="Live Dokploy environment board with generic service operations."
@@ -127,13 +127,13 @@ export default function DokployEnvironmentBoardPage() {
 
       {upstream.data ? (
         <>
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="grid w-full max-w-full min-w-0 gap-4 lg:grid-cols-3">
             <Card>
               <CardHeader>
                 <CardTitle>Project environments</CardTitle>
                 <CardDescription>Fetched with environment.byProjectId.</CardDescription>
               </CardHeader>
-              <CardContent className="flex flex-col gap-2 text-sm">
+              <CardContent className="flex w-full max-w-full min-w-0 flex-col gap-2 text-sm">
                 {envRows.length ? envRows.map((env, index) => {
                   const envId = firstString(env, ["environmentId", "id"])
                   return (
@@ -172,7 +172,7 @@ export default function DokployEnvironmentBoardPage() {
           </Card>
 
           {serviceRows.length ? (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid w-full max-w-full min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-3">
               {serviceRows.map((service) => (
                 <ServiceCard
                   key={`${service.kind}-${service.id}`}

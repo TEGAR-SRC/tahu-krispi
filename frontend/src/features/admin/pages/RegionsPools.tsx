@@ -106,7 +106,7 @@ export default function AdminRegionsPoolsPage() {
   }, [])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Regions & Pools"
         description="Region catalog and hypervisor resource pools."
@@ -118,7 +118,7 @@ export default function AdminRegionsPoolsPage() {
           <TabsTrigger value="pools">Provider pools</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="regions" className="flex flex-col gap-4 pt-2">
+        <TabsContent value="regions" className="flex w-full max-w-full min-w-0 flex-col gap-4 pt-2">
           <div className="flex justify-end">
             <Button
               onClick={() => {
@@ -288,7 +288,7 @@ function RegionEditorDialog({
             the first configured). The API has no region delete — disable instead.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="region-code">Code</Label>
             <Input
@@ -335,7 +335,7 @@ function RegionEditorDialog({
               onChange={(event) => setExternalId(event.target.value)}
             />
           </div>
-          <label className="flex items-center gap-2 text-sm sm:col-span-2">
+          <label className="flex min-w-0 items-center gap-2 text-sm sm:col-span-2">
             <Checkbox checked={enabled} onCheckedChange={(checked) => setEnabled(checked === true)} />
             Enabled
           </label>
@@ -402,7 +402,7 @@ function PoolsPanel({ providers }: { providers: ProviderLite[] }) {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
         <Select value={activeProvider} onValueChange={setProviderId}>
           <SelectTrigger className="w-64">

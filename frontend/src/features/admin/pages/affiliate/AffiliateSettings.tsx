@@ -104,7 +104,7 @@ export default function AffiliateSettingsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -138,8 +138,8 @@ export default function AffiliateSettingsPage() {
             <Skeleton className="h-56 w-full rounded-xl" />
           ) : (
             <>
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div className="grid gap-2">
+              <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-3">
+                <div className="grid w-full max-w-full min-w-0 gap-2">
                   <Label htmlFor="affiliate-commission">Commission %</Label>
                   <Input
                     id="affiliate-commission"
@@ -151,7 +151,7 @@ export default function AffiliateSettingsPage() {
                     onChange={(event) => setCommissionPercent(event.target.value)}
                   />
                 </div>
-                <div className="grid gap-2">
+                <div className="grid w-full max-w-full min-w-0 gap-2">
                   <Label htmlFor="affiliate-referee-bonus">Referee bonus %</Label>
                   <Input
                     id="affiliate-referee-bonus"
@@ -163,7 +163,7 @@ export default function AffiliateSettingsPage() {
                     onChange={(event) => setRefereeBonusPercent(event.target.value)}
                   />
                 </div>
-                <div className="grid gap-2">
+                <div className="grid w-full max-w-full min-w-0 gap-2">
                   <Label htmlFor="affiliate-min-invoice">Min invoice total</Label>
                   <Input
                     id="affiliate-min-invoice"
@@ -176,7 +176,7 @@ export default function AffiliateSettingsPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between rounded-md border px-3 py-2.5">
+              <div className="flex min-w-0 items-center justify-between rounded-md border px-3 py-2.5">
                 <div className="space-y-0.5">
                   <Label htmlFor="affiliate-enabled">Program enabled</Label>
                   <p className="text-xs text-muted-foreground">

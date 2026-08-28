@@ -355,7 +355,7 @@ function MembersDialog({
         <MemberList heading="Guests in this pool" rows={guests} />
         <MemberList heading="Storages in this pool" rows={poolStorages} />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label htmlFor="pool-vms">VMIDs</Label>
             <Input
@@ -375,7 +375,7 @@ function MembersDialog({
             />
           </div>
         </div>
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex min-w-0 items-center gap-2 text-sm">
           <input
             type="checkbox"
             className="size-4 accent-primary"

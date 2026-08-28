@@ -238,8 +238,8 @@ export default function CustomerBackupsPage() {
       header: "Snapshot",
       render: (row) => (
         <div className="min-w-0">
-          <p className="truncate font-medium">{row.name}</p>
-          <p className="truncate text-xs text-muted-foreground">{row.public_id ?? row.id}</p>
+          <p className="min-w-0 truncate font-medium">{row.name}</p>
+          <p className="min-w-0 truncate text-xs text-muted-foreground">{row.public_id ?? row.id}</p>
         </div>
       ),
     },
@@ -283,8 +283,8 @@ export default function CustomerBackupsPage() {
       header: "Backup",
       render: (row) => (
         <div className="min-w-0">
-          <p className="truncate font-medium">{row.name}</p>
-          <p className="truncate text-xs text-muted-foreground">
+          <p className="min-w-0 truncate font-medium">{row.name}</p>
+          <p className="min-w-0 truncate text-xs text-muted-foreground">
             Instance: {instanceName(row.instance_id)}
           </p>
         </div>
@@ -322,7 +322,7 @@ export default function CustomerBackupsPage() {
   ]
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Backups & snapshots"
         description="Restore points for your instances. Downloads are short-lived links."
@@ -358,7 +358,7 @@ export default function CustomerBackupsPage() {
           </SelectContent>
         </Select>
         {!loading ? (
-          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
             <ClockIcon className="size-3.5" />
             {snapshots.length} snapshots · {backups.length} backups
           </span>

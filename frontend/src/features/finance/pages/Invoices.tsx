@@ -166,13 +166,13 @@ export default function FinanceInvoicesPage() {
     detail.status !== "partially_refunded"
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Invoices"
         description="Invoice ledger with line items, settlements and payment events."
       />
 
-      <div className="flex flex-col gap-3">
+      <div className="flex w-full max-w-full min-w-0 flex-col gap-3">
         <FilterChips
           options={INVOICE_STATUSES}
           value={status}
@@ -276,7 +276,7 @@ export default function FinanceInvoicesPage() {
             <InlineError error={detailError} />
           ) : detail ? (
             <div className="space-y-4">
-              <div className="grid gap-x-8 sm:grid-cols-2">
+              <div className="grid w-full max-w-full min-w-0 gap-x-8 sm:grid-cols-2">
                 <div>
                   <DetailRow label="Status">
                     <StatusBadge status={detail.status} />
@@ -361,7 +361,7 @@ export default function FinanceInvoicesPage() {
                 <div className="space-y-2">
                   {detail.payment_events.map((event, index) => (
                     <div key={event.id ?? index} className="rounded-md border p-3 text-sm">
-                      <div className="flex items-center justify-between gap-2">
+                      <div className="flex min-w-0 items-center justify-between gap-2">
                         <StatusBadge status={String(event.status ?? "")} />
                         <span className="text-xs text-muted-foreground">
                           {formatDateTime(String(event.created_at ?? ""))}

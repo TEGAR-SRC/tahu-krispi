@@ -157,12 +157,12 @@ export default function StartupScriptsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Startup scripts"
         description="Scripts executed when instances of the active organization boot."
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <Button variant="outline" asChild>
               <Link to="/app/profile">Back to settings</Link>
             </Button>
@@ -183,15 +183,15 @@ export default function StartupScriptsPage() {
           description="Create a script and pick it when provisioning an instance."
         />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid w-full max-w-full min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {scripts.map((script) => (
             <Card key={script.id}>
               <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
+                <CardTitle className="flex min-w-0 items-center gap-2 text-base">
                   <FileCodeIcon className="size-4 text-muted-foreground" />
-                  <span className="truncate">{script.name}</span>
+                  <span className="min-w-0 flex-1 truncate">{script.name}</span>
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="w-full max-w-full min-w-0 overflow-hidden break-all [overflow-wrap:anywhere]">
                   {formatDateTime(script.created_at)} · {byteLength(script.content)} bytes
                 </CardDescription>
               </CardHeader>

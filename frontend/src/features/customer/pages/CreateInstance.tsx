@@ -214,7 +214,7 @@ export default function CreateInstancePage() {
       : `${cpu} vCPU · ${ram} MB RAM · ${disk} GB disk`
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Create instance"
         description="Pick a region, an image and a size. Pricing comes from a live quote."
@@ -223,7 +223,7 @@ export default function CreateInstancePage() {
       {/* Stepper */}
       <ol className="flex flex-wrap items-center gap-2 text-sm">
         {STEPS.map((label, index) => (
-          <li key={label} className="flex items-center gap-2">
+          <li key={label} className="flex min-w-0 items-center gap-2">
             <button
               type="button"
               disabled={index > step}
@@ -253,7 +253,7 @@ export default function CreateInstancePage() {
       <ErrorBanner error={catalogError} />
 
       {catalogLoading ? (
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid w-full max-w-full min-w-0 gap-3 sm:grid-cols-3">
           {Array.from({ length: 6 }).map((_, index) => (
             <Skeleton key={index} className="h-24 w-full" />
           ))}
@@ -395,7 +395,7 @@ function StepRegion({
     return <EmptyState message="No enabled regions available." />
   }
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid w-full max-w-full min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {regions.map((region) => (
         <button
           key={region.id}
@@ -406,7 +406,7 @@ function StepRegion({
             selected === region.id ? "border-primary bg-primary/5 ring-1 ring-primary" : ""
           }`}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <MapPinIcon className="size-4 text-muted-foreground" />
             <span className="font-medium">{region.name}</span>
           </div>
@@ -450,7 +450,7 @@ function StepImage({
       {families.map(([family, list]) => (
         <div key={family} className="space-y-2">
           <h3 className="text-sm font-semibold">{family}</h3>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid w-full max-w-full min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {list.map((template) => (
               <button
                 key={template.id}
@@ -463,9 +463,9 @@ function StepImage({
                     : ""
                 }`}
               >
-                <div className="flex items-center gap-2">
+                <div className="flex min-w-0 items-center gap-2">
                   <MonitorIcon className="size-4 shrink-0 text-muted-foreground" />
-                  <span className="truncate font-medium">{template.name}</span>
+                  <span className="min-w-0 truncate font-medium">{template.name}</span>
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {typeof template.min_disk_gb === "number" && template.min_disk_gb > 0
@@ -508,7 +508,7 @@ function StepSize({
 }) {
   return (
     <div className="space-y-5">
-      <div className="grid w-fit grid-cols-1 sm:grid-cols-2 gap-2">
+      <div className="grid w-full max-w-full min-w-0 w-fit grid-cols-1 sm:grid-cols-2 gap-2">
         <Button
           type="button"
           variant={mode === "plan" ? "default" : "outline"}
@@ -532,7 +532,7 @@ function StepSize({
             description="Switch to a custom spec to define vCPU, RAM and disk yourself."
           />
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid w-full max-w-full min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {plans.map((plan) => (
               <button
                 key={plan.id}
@@ -543,18 +543,18 @@ function StepSize({
                   planId === plan.id ? "border-primary bg-primary/5 ring-1 ring-primary" : ""
                 }`}
               >
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center justify-between gap-2">
                   <span className="font-medium">{plan.name}</span>
                   {plan.featured ? <Badge>featured</Badge> : null}
                 </div>
                 <div className="mt-2 space-y-1 text-xs tabular-nums text-muted-foreground">
-                  <p className="flex items-center gap-1.5">
+                  <p className="flex min-w-0 items-center gap-1.5">
                     <CpuIcon className="size-3.5" /> {plan.vcpu} vCPU
                   </p>
-                  <p className="flex items-center gap-1.5">
+                  <p className="flex min-w-0 items-center gap-1.5">
                     <MemoryStickIcon className="size-3.5" /> {plan.ram_mb} MB RAM
                   </p>
-                  <p className="flex items-center gap-1.5">
+                  <p className="flex min-w-0 items-center gap-1.5">
                     <HardDriveIcon className="size-3.5" /> {plan.disk_gb} GB NVMe
                     {plan.bandwidth_gb ? ` · ${plan.bandwidth_gb} GB transfer` : ""}
                   </p>
@@ -564,7 +564,7 @@ function StepSize({
           </div>
         )
       ) : (
-        <div className="grid max-w-md grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid w-full max-w-full min-w-0 max-w-md grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="space-y-1.5">
             <Label htmlFor="ci-cpu">vCPU</Label>
             <Input
@@ -626,7 +626,7 @@ function StepBilling({
   return (
     <Card>
       <CardContent className="space-y-4">
-        <div className="flex flex-col gap-3 sm:max-w-md sm:grid sm:grid-cols-2">
+        <div className="flex w-full max-w-full min-w-0 flex-col gap-3 sm:max-w-md sm:grid sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label>Currency</Label>
             <div className="flex gap-2">

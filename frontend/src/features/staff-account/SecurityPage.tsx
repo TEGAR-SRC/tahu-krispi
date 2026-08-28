@@ -77,7 +77,7 @@ function useMountLoad(load: () => Promise<void>) {
 
 export default function StaffSecurityPage() {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="My security"
         description="Password, active sessions and account activity."
@@ -138,7 +138,7 @@ function PasswordCard() {
           Use at least {MIN_LENGTH} characters; a passphrase works best.
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid max-w-xl gap-3">
+      <CardContent className="grid w-full max-w-full min-w-0 max-w-xl gap-3">
         <div className="space-y-1.5">
           <Label htmlFor="spw-current">Current password *</Label>
           <Input
@@ -149,7 +149,7 @@ function PasswordCard() {
             onChange={(event) => setCurrent(event.target.value)}
           />
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid w-full max-w-full min-w-0 gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="spw-new">New password *</Label>
             <Input
@@ -232,8 +232,8 @@ function SessionsCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MonitorSmartphoneIcon className="size-5" /> Active sessions
+        <CardTitle className="flex min-w-0 items-center gap-2">
+          <MonitorSmartphoneIcon className="size-5 shrink-0" /> <span className="min-w-0 flex-1 truncate">Active sessions</span>
         </CardTitle>
         <CardDescription>
           Devices holding a valid session token. Revoking one signs that device out.
@@ -253,7 +253,7 @@ function SessionsCard() {
                   header: "Device",
                   render: (row) => (
                     <span
-                      className="block max-w-70 truncate"
+                      className="min-w-0 block max-w-70 truncate"
                       title={row.user_agent}
                     >
                       {row.device_name || row.user_agent || "Unknown device"}
@@ -396,7 +396,7 @@ function SecurityEventsCard() {
                   key: "user_agent",
                   header: "Client",
                   render: (row) => (
-                    <span className="block max-w-60 truncate" title={row.user_agent}>
+                    <span className="min-w-0 block max-w-60 truncate" title={row.user_agent}>
                       {row.user_agent || "—"}
                     </span>
                   ),
@@ -413,7 +413,7 @@ function SecurityEventsCard() {
               emptyMessage="No security events recorded."
             />
             {pageCount > 1 ? (
-              <div className="flex items-center justify-end gap-2">
+              <div className="flex min-w-0 items-center justify-end gap-2">
                 <Button
                   size="sm"
                   variant="outline"

@@ -119,9 +119,9 @@ export function Pager({ page, meta, onPage, disabled = false }: PagerProps) {
         : `Page ${page}`
 
   return (
-    <div className="flex items-center justify-between gap-3">
+    <div className="flex min-w-0 items-center justify-between gap-3">
       <p className="text-sm text-muted-foreground">{rangeLabel}</p>
-      <div className="flex items-center gap-2">
+      <div className="flex min-w-0 items-center gap-2">
         <Button
           variant="outline"
           size="sm"

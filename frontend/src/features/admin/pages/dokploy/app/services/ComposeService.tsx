@@ -256,7 +256,7 @@ export default function DokployComposeServicePage() {
   const serviceName = text(compose.data?.serviceName) || ""
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-4">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -284,7 +284,7 @@ export default function DokployComposeServicePage() {
       </Breadcrumb>
 
       {compose.loading ? (
-        <div className="flex flex-col gap-2">
+        <div className="flex w-full max-w-full min-w-0 flex-col gap-2">
           <Skeleton className="h-8 w-64" />
           <Skeleton className="h-5 w-40" />
         </div>
@@ -333,8 +333,8 @@ function OperationConsole({
   onComposeChanged: () => void
 }) {
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-      <div className="flex flex-col gap-4">
+    <div className="grid w-full max-w-full min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="flex w-full max-w-full min-w-0 flex-col gap-4">
         {tab.load ? (
           <ReadCard operation={tab.load} composeId={composeId} appName={appName} serviceName={serviceName} />
         ) : null}
@@ -346,7 +346,7 @@ function OperationConsole({
             </EmptyHeader>
           </Empty>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid w-full max-w-full min-w-0 gap-4 md:grid-cols-2">
             {tab.operations.map((operation) => (
               <OperationCard
                 key={operation.op}
@@ -365,7 +365,7 @@ function OperationConsole({
           <CardTitle>Operation console</CardTitle>
           <CardDescription>Payloads are sent directly to /api/v1/dokploy/{`{tag.op}`}.</CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-3 text-sm text-muted-foreground">
+        <CardContent className="flex w-full max-w-full min-w-0 flex-col gap-3 text-sm text-muted-foreground">
           <p>List/read cards fetch real upstream JSON. Copy IDs from those responses before running mutations.</p>
           <p>Update the JSON forms to match the target Dokploy operation. Responses and errors are shown verbatim from upstream.</p>
           <p>Destructive operations use AlertDialog confirmation. Missing v0.30.2 operations render as disabled cards instead of fake actions.</p>
@@ -400,7 +400,7 @@ function ReadCard({ operation, composeId, appName, serviceName }: { operation: O
       </CardHeader>
       <CardContent>
         {result.loading ? (
-          <div className="flex flex-col gap-2">
+          <div className="flex w-full max-w-full min-w-0 flex-col gap-2">
             <Skeleton className="h-5 w-full" />
             <Skeleton className="h-5 w-2/3" />
           </div>
@@ -475,7 +475,7 @@ function OperationCard({
           {operation.method} {operation.op}
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-3">
+      <CardContent className="flex w-full max-w-full min-w-0 flex-col gap-3">
         <p className="text-sm text-muted-foreground">{operation.disabled ?? operation.description}</p>
         {operation.defaultQuery ? (
           <JsonTextarea label="Query JSON" value={queryText} onChange={setQueryText} disabled={busy || !!operation.disabled} />

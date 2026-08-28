@@ -144,12 +144,12 @@ export default function WebhooksPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Webhooks"
         description="HTTP endpoints receiving HMAC-signed events for the active organization."
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <Button variant="outline" asChild>
               <Link to="/app/profile">Back to settings</Link>
             </Button>
@@ -168,15 +168,15 @@ export default function WebhooksPage() {
       ) : webhooks.length === 0 && !error ? (
         <EmptyState message="No webhooks yet." description="Register an HTTPS endpoint to start receiving events." />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid w-full max-w-full min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {webhooks.map((webhook) => (
             <Card key={webhook.id}>
               <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <WebhookIcon className="size-4 text-muted-foreground" />
-                  <span className="truncate">{webhook.name || "Untitled webhook"}</span>
+                <CardTitle className="flex min-w-0 items-center gap-2 text-base">
+                  <WebhookIcon className="size-4 shrink-0 text-muted-foreground" />
+                  <span className="min-w-0 flex-1 truncate">{webhook.name || "Untitled webhook"}</span>
                 </CardTitle>
-                <CardDescription className="break-all">{webhook.url}</CardDescription>
+                <CardDescription className="w-full max-w-full min-w-0 overflow-hidden break-all [overflow-wrap:anywhere]">{webhook.url}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex flex-wrap gap-1">
@@ -249,7 +249,11 @@ export default function WebhooksPage() {
                   {
                     key: "webhook_name",
                     header: "Webhook",
-                    render: (row) => row.webhook_name || "—",
+                    render: (row) => (
+                      <span className="min-w-0 block max-w-40 truncate" title={row.webhook_name}>
+                        {row.webhook_name || "—"}
+                      </span>
+                    ),
                   },
                   {
                     key: "event_id",
@@ -277,7 +281,7 @@ export default function WebhooksPage() {
                     header: "Last error",
                     render: (row) => (
                       <span
-                        className="block max-w-55 truncate text-xs"
+                        className="min-w-0 block max-w-55 truncate text-xs"
                         title={row.last_error}
                       >
                         {row.last_error || "—"}

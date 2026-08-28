@@ -147,7 +147,7 @@ export default function InstanceFirewallPage() {
   }, [loadAll])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <InstanceBreadcrumb instanceName={instance?.name} section="Firewall" />
       <div className="flex flex-wrap items-center justify-between gap-4">
         <PageHeader
@@ -427,7 +427,7 @@ function CreateRuleDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid w-full max-w-full min-w-0 gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label>Direction *</Label>
             <Select
@@ -707,7 +707,7 @@ function OptionsTab({
           </Button>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <Button onClick={() => void saveOptions()} disabled={saving || (!dirty && rows.length === 0)}>
             {saving ? <Loader2Icon className="animate-spin" /> : null} Save options
           </Button>
@@ -745,7 +745,7 @@ function IPSetsTab({
   }, [ipsets, selected])
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
+    <div className="grid w-full max-w-full min-w-0 gap-4 lg:grid-cols-[320px_1fr]">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
@@ -774,7 +774,7 @@ function IPSetsTab({
                 >
                   <span className="block font-mono text-sm font-medium">{name}</span>
                   {ipsetComment(set) ? (
-                    <span className="block truncate text-xs text-muted-foreground">
+                    <span className="min-w-0 block truncate text-xs text-muted-foreground">
                       {ipsetComment(set)}
                     </span>
                   ) : null}
@@ -948,7 +948,7 @@ function DeleteIPSetButton({
               still contains entries the provider refuses the delete unless you force it.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <label className="flex items-center gap-2 text-sm">
+          <label className="flex min-w-0 items-center gap-2 text-sm">
             <Checkbox checked={force} onCheckedChange={(checked) => setForce(checked === true)} />
             Force delete even when entries remain (?force=1)
           </label>

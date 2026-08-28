@@ -202,7 +202,7 @@ export default function CustomerTicketThreadPage() {
   const closed = ticket?.status === "closed"
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -238,7 +238,7 @@ export default function CustomerTicketThreadPage() {
           {/* Header */}
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="min-w-0">
-              <h1 className="truncate text-xl font-semibold tracking-tight sm:text-2xl">
+              <h1 className="min-w-0 truncate text-xl font-semibold tracking-tight sm:text-2xl">
                 {ticket?.subject}
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -307,7 +307,7 @@ export default function CustomerTicketThreadPage() {
                               <li key={attachment.id}>
                                 <button
                                   type="button"
-                                  className="flex items-center gap-1.5 text-xs text-primary hover:underline"
+                                  className="flex min-w-0 items-center gap-1.5 text-xs text-primary hover:underline"
                                   onClick={() =>
                                     void downloadAttachment(message.id, attachment)
                                   }
@@ -343,7 +343,7 @@ export default function CustomerTicketThreadPage() {
                       {files.map((file, index) => (
                         <li
                           key={`${file.name}-${index}`}
-                          className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs"
+                          className="flex min-w-0 items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs"
                         >
                           <PaperclipIcon className="size-3" />
                           {file.name} ({formatBytes(file.size)})
@@ -364,7 +364,7 @@ export default function CustomerTicketThreadPage() {
                       Uploading… {percent}%
                     </p>
                   ) : null}
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center justify-between gap-2">
                     <div>
                       <Input
                         ref={fileInputRef}

@@ -101,7 +101,7 @@ export default function FirewallGroupDetailPage() {
   }, [load])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -390,7 +390,7 @@ function RulesSection({ group, onChanged }: { group: FirewallGroup; onChanged: (
         />
 
         {/* Add-rule form */}
-        <div className="grid grid-cols-2 gap-2 rounded-md border p-3 sm:grid-cols-5">
+        <div className="grid w-full max-w-full min-w-0 grid-cols-2 gap-2 rounded-md border p-3 sm:grid-cols-5">
           <div className="space-y-1">
             <Label>Protocol</Label>
             <Select value={protocol} onValueChange={setProtocol}>
@@ -529,7 +529,7 @@ function RuleDescEditor({
 
   if (editing) {
     return (
-      <div className="flex items-center gap-1">
+      <div className="flex min-w-0 items-center gap-1">
         <Input
           value={value}
           autoFocus
@@ -573,7 +573,7 @@ function RuleDescEditor({
       onClick={startEdit}
       title="Edit note"
     >
-      <span className="truncate text-muted-foreground group-hover:underline">
+      <span className="min-w-0 truncate text-muted-foreground group-hover:underline">
         {rule.desc || "—"}
       </span>
       <PencilIcon className="size-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />

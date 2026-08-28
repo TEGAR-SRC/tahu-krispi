@@ -167,7 +167,7 @@ export default function BillingInvoicesPage() {
       key: "invoice_number",
       header: "Invoice",
       render: (row) => (
-        <div className="flex flex-col">
+        <div className="flex min-w-0 flex-col">
           <Link
             to={`/admin/billing/invoices/${row.id}`}
             className="font-medium underline-offset-4 hover:underline"
@@ -250,7 +250,7 @@ export default function BillingInvoicesPage() {
   ]
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Invoices"
         description="Issued invoices and their settlement status."
@@ -313,43 +313,43 @@ export default function BillingInvoicesPage() {
           {detailError ? <ErrorBanner error={detailError} /> : null}
 
           {detail ? (
-            <div className="flex flex-col gap-5">
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <div className="flex flex-col gap-0.5 text-sm">
+            <div className="flex w-full max-w-full min-w-0 flex-col gap-5">
+              <div className="grid w-full max-w-full min-w-0 grid-cols-2 gap-4 sm:grid-cols-4">
+                <div className="flex w-full max-w-full min-w-0 flex-col gap-0.5 text-sm">
                   <span className="text-muted-foreground">Status</span>
                   <StatusBadge status={detail.status} />
                 </div>
-                <div className="flex flex-col gap-0.5 text-sm">
+                <div className="flex w-full max-w-full min-w-0 flex-col gap-0.5 text-sm">
                   <span className="text-muted-foreground">Total</span>
                   <span className="font-medium tabular-nums">
                     {formatMoney(detail.total, detail.currency)}
                   </span>
                 </div>
-                <div className="flex flex-col gap-0.5 text-sm">
+                <div className="flex w-full max-w-full min-w-0 flex-col gap-0.5 text-sm">
                   <span className="text-muted-foreground">Amount paid</span>
                   <span className="font-medium tabular-nums">
                     {formatMoney(detail.amount_paid, detail.currency)}
                   </span>
                 </div>
-                <div className="flex flex-col gap-0.5 text-sm">
+                <div className="flex w-full max-w-full min-w-0 flex-col gap-0.5 text-sm">
                   <span className="text-muted-foreground">Amount due</span>
                   <span className="font-medium tabular-nums">
                     {formatMoney(detail.amount_due, detail.currency)}
                   </span>
                 </div>
-                <div className="flex flex-col gap-0.5 text-sm">
+                <div className="flex w-full max-w-full min-w-0 flex-col gap-0.5 text-sm">
                   <span className="text-muted-foreground">Issued</span>
                   <span>{formatDateTime(detail.issued_at)}</span>
                 </div>
-                <div className="flex flex-col gap-0.5 text-sm">
+                <div className="flex w-full max-w-full min-w-0 flex-col gap-0.5 text-sm">
                   <span className="text-muted-foreground">Due</span>
                   <span>{formatDateTime(detail.due_at)}</span>
                 </div>
-                <div className="flex flex-col gap-0.5 text-sm">
+                <div className="flex w-full max-w-full min-w-0 flex-col gap-0.5 text-sm">
                   <span className="text-muted-foreground">Paid at</span>
                   <span>{formatDateTime(detail.paid_at)}</span>
                 </div>
-                <div className="flex flex-col gap-0.5 text-sm">
+                <div className="flex w-full max-w-full min-w-0 flex-col gap-0.5 text-sm">
                   <span className="text-muted-foreground">Voided</span>
                   <span>{formatDateTime(detail.voided_at)}</span>
                 </div>

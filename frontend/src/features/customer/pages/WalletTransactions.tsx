@@ -202,9 +202,9 @@ export default function WalletTransactionsPage() {
       header: "Description",
       render: (row) => (
         <div className="min-w-0">
-          <p className="truncate">{row.description || "—"}</p>
+          <p className="min-w-0 truncate">{row.description || "—"}</p>
           {row.reference_type ? (
-            <p className="truncate text-xs text-muted-foreground">{row.reference_type}</p>
+            <p className="min-w-0 truncate text-xs text-muted-foreground">{row.reference_type}</p>
           ) : null}
         </div>
       ),
@@ -212,7 +212,7 @@ export default function WalletTransactionsPage() {
   ]
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Wallet transactions"
         description="Every credit and debit against this organization's prepaid balance."

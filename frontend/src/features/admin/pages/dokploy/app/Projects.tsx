@@ -44,7 +44,7 @@ export default function DokployProjectsPage() {
   const tags = rows(upstream.data?.tags)
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Projects"
         description="Real upstream Dokploy projects with project CRUD and tag bulk-assignment."
@@ -87,7 +87,7 @@ export default function DokployProjectsPage() {
           ) : null}
 
           {projects.length ? (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid w-full max-w-full min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-3">
               {projects.map((project, index) => {
                 const projectId = firstString(project, ["projectId", "id"])
                 const firstEnvironment = getFirstEnvironment(project)

@@ -113,7 +113,7 @@ function DetailField({ label, children }: { label: string; children?: React.Reac
   return (
     <div className="min-w-0 space-y-0.5">
       <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
-      <dd className="truncate text-sm">{children ?? "—"}</dd>
+      <dd className="min-w-0 truncate text-sm">{children ?? "—"}</dd>
     </div>
   )
 }
@@ -205,7 +205,7 @@ export default function AdminInstanceDetailPage() {
             }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -277,14 +277,14 @@ export default function AdminInstanceDetailPage() {
             </div>
           </div>
 
-          <div className="grid gap-4 xl:grid-cols-2">
+          <div className="grid w-full max-w-full min-w-0 gap-4 xl:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Compute</CardTitle>
                 <CardDescription>Provisioned shape and network addresses.</CardDescription>
               </CardHeader>
               <CardContent>
-                <dl className="grid grid-cols-2 gap-4 md:grid-cols-3">
+                <dl className="grid w-full max-w-full min-w-0 grid-cols-2 gap-4 md:grid-cols-3">
                   <DetailField label="Specs">
                     {detail.vcpu} vCPU · {detail.ram_mb} MB RAM · {detail.disk_gb} GB
                     {detail.additional_hdd_gb > 0 ? ` +${detail.additional_hdd_gb} GB HDD` : ""}
@@ -311,7 +311,7 @@ export default function AdminInstanceDetailPage() {
                 <CardDescription>Organization, plan pricing and subscription state.</CardDescription>
               </CardHeader>
               <CardContent>
-                <dl className="grid grid-cols-2 gap-4 md:grid-cols-3">
+                <dl className="grid w-full max-w-full min-w-0 grid-cols-2 gap-4 md:grid-cols-3">
                   <DetailField label="Organization">
                     {detail.organization ? (
                       <Link
@@ -358,7 +358,7 @@ export default function AdminInstanceDetailPage() {
               <CardTitle className="text-base">Lifecycle timeline</CardTitle>
             </CardHeader>
             <CardContent>
-              <dl className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+              <dl className="grid w-full max-w-full min-w-0 grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
                 <DetailField label="Created">{formatDateTime(detail.created_at)}</DetailField>
                 <DetailField label="Provisioned">{formatDateTime(detail.provisioned_at)}</DetailField>
                 <DetailField label="Sync">{detail.sync_status}</DetailField>
@@ -551,7 +551,7 @@ export default function AdminInstanceDetailPage() {
               local-lvm:vm-100-disk-0) to another cluster storage.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-3">
+          <div className="grid w-full max-w-full min-w-0 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="mv-volume">Volume *</Label>
               <Input

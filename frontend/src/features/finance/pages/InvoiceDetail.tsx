@@ -164,7 +164,7 @@ export default function FinanceInvoiceDetailPage() {
     detail.status !== "partially_refunded"
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -214,8 +214,8 @@ export default function FinanceInvoiceDetailPage() {
           <Skeleton className="h-64 w-full" />
         </div>
       ) : detail ? (
-        <div className="flex flex-col gap-6">
-          <div className="grid gap-4 lg:grid-cols-2">
+        <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
+          <div className="grid w-full max-w-full min-w-0 gap-4 lg:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle>Summary</CardTitle>
@@ -291,7 +291,7 @@ export default function FinanceInvoiceDetailPage() {
               <ol className="relative space-y-3 border-l pl-4">
                 {detail.payment_events.map((event, index) => (
                   <li key={event.id ?? index} className="rounded-md border p-3 text-sm">
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-center justify-between gap-2">
                       <StatusBadge status={String(event.status ?? "")} />
                       <span className="text-xs text-muted-foreground">
                         {formatDateTime(String(event.created_at ?? ""))}

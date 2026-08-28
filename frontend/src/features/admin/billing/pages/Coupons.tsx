@@ -275,7 +275,7 @@ export default function BillingCouponsPage() {
       key: "code",
       header: "Code",
       render: (coupon) => (
-        <div className="flex flex-col">
+        <div className="flex min-w-0 flex-col">
           <Link
             to={`/admin/billing/coupons/${coupon.id}`}
             title="Open coupon detail page"
@@ -357,7 +357,7 @@ export default function BillingCouponsPage() {
   ) => setForm((current) => ({ ...current, [key]: value }))
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Coupons"
         description="Discount coupons applied at checkout. Saving with an existing code updates it."
@@ -400,9 +400,9 @@ export default function BillingCouponsPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="grid gap-2">
+          <div className="grid w-full max-w-full min-w-0 gap-4">
+            <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="coupon-code">Code *</Label>
                 <Input
                   id="coupon-code"
@@ -411,7 +411,7 @@ export default function BillingCouponsPage() {
                   onChange={(event) => setField("code", event.target.value)}
                 />
               </div>
-              <div className="grid gap-2">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="coupon-enabled">Enabled</Label>
                 <Switch
                   id="coupon-enabled"
@@ -421,7 +421,7 @@ export default function BillingCouponsPage() {
               </div>
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid w-full max-w-full min-w-0 gap-2">
               <Label htmlFor="coupon-description">Description</Label>
               <Textarea
                 id="coupon-description"
@@ -431,8 +431,8 @@ export default function BillingCouponsPage() {
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="grid gap-2">
+            <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="coupon-type">Discount type *</Label>
                 <Select
                   value={form.discount_type}
@@ -449,7 +449,7 @@ export default function BillingCouponsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid gap-2">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="coupon-value">
                   {form.discount_type === "percent" ? "Percent *" : "Amount *"}
                 </Label>
@@ -464,8 +464,8 @@ export default function BillingCouponsPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="grid gap-2">
+            <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="coupon-currency">Currency</Label>
                 <Input
                   id="coupon-currency"
@@ -475,7 +475,7 @@ export default function BillingCouponsPage() {
                   onChange={(event) => setField("currency", event.target.value)}
                 />
               </div>
-              <div className="grid gap-2">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="coupon-max-discount">Max discount</Label>
                 <Input
                   id="coupon-max-discount"
@@ -489,7 +489,7 @@ export default function BillingCouponsPage() {
               </div>
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid w-full max-w-full min-w-0 gap-2">
               <Label htmlFor="coupon-min-order">Minimum order amount</Label>
               <Input
                 id="coupon-min-order"
@@ -501,8 +501,8 @@ export default function BillingCouponsPage() {
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="grid gap-2">
+            <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="coupon-max-redemptions">Max redemptions total</Label>
                 <Input
                   id="coupon-max-redemptions"
@@ -514,7 +514,7 @@ export default function BillingCouponsPage() {
                   onChange={(event) => setField("max_redemptions", event.target.value)}
                 />
               </div>
-              <div className="grid gap-2">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="coupon-per-user">Per-user limit</Label>
                 <Input
                   id="coupon-per-user"
@@ -528,8 +528,8 @@ export default function BillingCouponsPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="grid gap-2">
+            <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="coupon-starts">Valid from</Label>
                 <Input
                   id="coupon-starts"
@@ -538,7 +538,7 @@ export default function BillingCouponsPage() {
                   onChange={(event) => setField("starts_at", event.target.value)}
                 />
               </div>
-              <div className="grid gap-2">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="coupon-ends">Valid until</Label>
                 <Input
                   id="coupon-ends"
@@ -551,7 +551,7 @@ export default function BillingCouponsPage() {
             </div>
 
             <div className="rounded-md border p-3">
-              <label className="flex items-center gap-2 text-sm font-medium">
+              <label className="flex min-w-0 items-center gap-2 text-sm font-medium">
                 <Switch
                   checked={form.use_duration}
                   onCheckedChange={(checked) => setField("use_duration", checked)}
@@ -565,7 +565,7 @@ export default function BillingCouponsPage() {
               ) : null}
               {form.use_duration ? (
                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="grid gap-2">
+                  <div className="grid w-full max-w-full min-w-0 gap-2">
                     <Label htmlFor="coupon-duration-value">Duration *</Label>
                     <Input
                       id="coupon-duration-value"
@@ -576,7 +576,7 @@ export default function BillingCouponsPage() {
                       onChange={(event) => setField("duration_value", event.target.value)}
                     />
                   </div>
-                  <div className="grid gap-2">
+                  <div className="grid w-full max-w-full min-w-0 gap-2">
                     <Label htmlFor="coupon-duration-unit">Unit</Label>
                     <Select
                       value={form.duration_unit}
@@ -633,7 +633,7 @@ export default function BillingCouponsPage() {
           {detailError ? <ErrorBanner error={detailError} /> : null}
 
           {!detailError && detailCoupon ? (
-            <div className="flex flex-col gap-4 text-sm">
+            <div className="flex w-full max-w-full min-w-0 flex-col gap-4 text-sm">
               <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
                 <span>
                   Discount:{" "}

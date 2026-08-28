@@ -459,7 +459,7 @@ function AddRuleDialog({
           <DialogTitle>Add firewall rule</DialogTitle>
           <DialogDescription>PVE rule syntax — source/dest accept CIDRs, IP sets or +setname refs.</DialogDescription>
         </DialogHeader>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label htmlFor="fr-type">Direction *</Label>
             <Select value={type} onValueChange={setType}>
@@ -519,7 +519,7 @@ function AddRuleDialog({
             <Label htmlFor="fr-comment">Comment</Label>
             <Input id="fr-comment" value={comment} onChange={(event) => setComment(event.target.value)} />
           </div>
-          <label className="flex items-center gap-2 text-sm sm:col-span-2">
+          <label className="flex min-w-0 items-center gap-2 text-sm sm:col-span-2">
             <input
               type="checkbox"
               className="size-4 accent-primary"

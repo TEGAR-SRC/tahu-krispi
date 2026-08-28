@@ -46,13 +46,13 @@ export default function DokployTraefikPage() {
           }}
         />
       </FieldCard>
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+      <div className="grid w-full max-w-full min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
         <Card>
           <CardHeader>
             <CardTitle>Available files</CardTitle>
             <CardDescription>Real settings.readDirectories response, flattened into selectable paths.</CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col gap-3">
+          <CardContent className="flex w-full max-w-full min-w-0 flex-col gap-3">
             {dirs.error ? <ErrorCard error={dirs.error} /> : null}
             {dirs.loading ? <p className="text-sm text-muted-foreground">Loading files…</p> : null}
             {paths.length ? (
@@ -60,7 +60,7 @@ export default function DokployTraefikPage() {
                 {paths.map((path) => (
                   <Button key={path} variant={path === selectedPath ? "default" : "outline"} className="justify-start" onClick={() => setSelectedPath(path)}>
                     <FileTextIcon data-icon="inline-start" />
-                    <span className="truncate">{path}</span>
+                    <span className="min-w-0 truncate">{path}</span>
                   </Button>
                 ))}
               </div>
@@ -120,7 +120,7 @@ function EditorCard({ serverId, path }: { serverId: string; path: string }) {
         <CardTitle>{path || "Select a file"}</CardTitle>
         <CardDescription>settings.readTraefikFile + settings.updateTraefikFile.</CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">
+      <CardContent className="flex w-full max-w-full min-w-0 flex-col gap-4">
         {!path ? (
           <Alert>
             <AlertTitle>No file selected</AlertTitle>

@@ -326,7 +326,7 @@ export default function ObjectStoragePage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Object storage"
         description="S3-compatible storage services. The service is the billable unit; buckets are free."
@@ -351,7 +351,7 @@ export default function ObjectStoragePage() {
           description="Create one to get S3 credentials and start storing objects."
         />
       ) : (
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid w-full max-w-full min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {services.map((svc) => (
             <Card
               key={svc.id}
@@ -361,11 +361,11 @@ export default function ObjectStoragePage() {
               onClick={() => selectService(svc.id)}
             >
               <CardContent className="space-y-2 px-4">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="truncate font-medium">{svc.name}</p>
+                <div className="flex min-w-0 items-center justify-between gap-2">
+                  <p className="min-w-0 truncate font-medium">{svc.name}</p>
                   <StatusBadge status={svc.status} />
                 </div>
-                <p className="truncate font-mono text-xs text-muted-foreground">{svc.endpoint || "—"}</p>
+                <p className="min-w-0 truncate font-mono text-xs text-muted-foreground">{svc.endpoint || "—"}</p>
                 <p className="text-xs text-muted-foreground">Created {formatDateTime(svc.created_at)}</p>
               </CardContent>
             </Card>
@@ -379,7 +379,7 @@ export default function ObjectStoragePage() {
           <CardContent className="space-y-4 px-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-lg font-semibold">Service details</h2>
-              <div className="flex items-center gap-2">
+              <div className="flex min-w-0 items-center gap-2">
                 <Button size="sm" variant="outline" onClick={() => void loadSelected(selectedId)}>
                   <RefreshCwIcon /> Refresh
                 </Button>
@@ -404,9 +404,9 @@ export default function ObjectStoragePage() {
               <ErrorBanner error={bucketsError} />
             ) : detail ? (
               <>
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                   <DetailCell label="Endpoint" mono>
-                    <span className="block max-w-56 truncate">{detail.service.endpoint || "—"}</span>
+                    <span className="min-w-0 block max-w-56 truncate">{detail.service.endpoint || "—"}</span>
                     <button
                       type="button"
                       className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
@@ -437,7 +437,7 @@ export default function ObjectStoragePage() {
 
                 {/* Buckets */}
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
+                  <div className="flex min-w-0 items-center justify-between">
                     <h3 className="font-semibold">Buckets</h3>
                     <Button size="sm" variant="outline" onClick={() => setBucketOpen(true)}>
                       <PlusIcon /> New bucket
@@ -489,15 +489,15 @@ export default function ObjectStoragePage() {
                                 <TableRow>
                                   <TableCell colSpan={5} className="bg-muted/40">
                                     {keysLoading ? (
-                                      <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
+                                      <div className="flex min-w-0 items-center gap-2 py-2 text-sm text-muted-foreground">
                                         <Loader2Icon className="size-4 animate-spin" /> Loading access keys…
                                       </div>
                                     ) : keys && keys.length > 0 ? (
                                       <div className="space-y-2 py-2">
                                         {keys.map((key) => (
-                                          <div key={key.access_key} className="flex items-center justify-between gap-3 text-sm">
+                                          <div key={key.access_key} className="flex min-w-0 items-center justify-between gap-3 text-sm">
                                             <div className="min-w-0">
-                                              <p className="flex items-center gap-1.5 font-mono text-xs break-all">
+                                              <p className="flex min-w-0 items-center gap-1.5 font-mono text-xs break-all">
                                                 <KeyRoundIcon className="size-3 shrink-0" />
                                                 {key.access_key}
                                               </p>
@@ -611,14 +611,14 @@ export default function ObjectStoragePage() {
                 placeholder="my-app-assets"
               />
             </div>
-            <label className="flex items-center justify-between rounded-md border p-3">
+            <label className="flex min-w-0 items-center justify-between rounded-md border p-3">
               <span>
                 <span className="text-sm font-medium">Versioning</span>
                 <span className="block text-xs text-muted-foreground">Keep every object version.</span>
               </span>
               <Switch checked={versioning} onCheckedChange={setVersioning} />
             </label>
-            <label className="flex items-center justify-between rounded-md border p-3">
+            <label className="flex min-w-0 items-center justify-between rounded-md border p-3">
               <span>
                 <span className="text-sm font-medium">Object lock</span>
                 <span className="block text-xs text-muted-foreground">Write-once, retention protected.</span>

@@ -127,7 +127,7 @@ export default function NocInstanceDetailPage() {
 
   if (error) {
     return (
-      <div className="flex flex-col gap-6">
+      <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
         <InstanceBreadcrumb name={null} />
         <ErrorBanner error={error} />
       </div>
@@ -135,14 +135,14 @@ export default function NocInstanceDetailPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <InstanceBreadcrumb name={detail?.name ?? null} />
 
       {loading && !detail ? (
         <div className="space-y-3">
           <Skeleton className="h-8 w-64" />
           <Skeleton className="h-4 w-96" />
-          <div className="grid gap-4 sm:grid-cols-4">
+          <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-4">
             {[0, 1, 2, 3].map((i) => (
               <Skeleton key={i} className="h-24" />
             ))}
@@ -155,7 +155,7 @@ export default function NocInstanceDetailPage() {
             description={`${detail.public_id} · ${detail.organization?.name ?? detail.org_slug ?? "—"} · created ${fmtDateTime(detail.created_at)}${detail.deleted_at ? " · DELETED" : ""}`}
           />
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard label="Status" value={<StatusBadge status={detail.status} />} hint={detail.power_status ? `power: ${detail.power_status}` : "power not reported"} />
             <StatCard label="Resources" value={`${detail.vcpu} vCPU · ${detail.ram_mb} MB`} hint={`${detail.disk_gb} GB disk${detail.additional_hdd_gb ? ` + ${detail.additional_hdd_gb} GB extra` : ""}`} />
             <StatCard label="Billing" value={formatMoney(detail.recurring_amount, detail.currency)} hint={`${detail.pricing_mode} · ${detail.billing_period}`} />
@@ -178,7 +178,7 @@ export default function NocInstanceDetailPage() {
               </Button>
             </div>
             <Separator />
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid w-full max-w-full min-w-0 gap-4 md:grid-cols-3">
               <form
                 className="space-y-2 rounded-md border p-3"
                 onSubmit={(event) => {
@@ -236,7 +236,7 @@ export default function NocInstanceDetailPage() {
           </section>
 
           {/* ---- Facts ---- */}
-          <section className="grid gap-x-6 gap-y-2 text-sm md:grid-cols-2">
+          <section className="grid w-full max-w-full min-w-0 gap-x-6 gap-y-2 text-sm md:grid-cols-2">
             <FactLine label="Hostname" value={detail.hostname || "—"} />
             <FactLine label="Organization" value={detail.organization ? `${detail.organization.name} (${detail.organization.slug})` : "—"} />
             <FactLine label="Provider" value={
@@ -264,7 +264,7 @@ export default function NocInstanceDetailPage() {
                 { key: "status", header: "Status", render: (row) => <StatusBadge status={row.status} /> },
                 { key: "attempt_count", header: "Attempts", render: (row) => row.attempt_count },
                 { key: "response_status_code", header: "HTTP", render: (row) => row.response_status_code || "—" },
-                { key: "last_error", header: "Last error", render: (row) => <span className="block max-w-md truncate text-xs text-destructive">{row.last_error || "—"}</span> },
+                { key: "last_error", header: "Last error", render: (row) => <span className="min-w-0 block max-w-md truncate text-xs text-destructive">{row.last_error || "—"}</span> },
                 { key: "created_at", header: "Created", render: (row) => fmtDateTime(row.created_at), className: "whitespace-nowrap" },
               ]}
               rows={(detail.provider_actions ?? []) as unknown as ProviderActionRow[]}

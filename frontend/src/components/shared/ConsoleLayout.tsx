@@ -93,10 +93,10 @@ export function ConsoleLayout({ brand, brandTagline, navSections }: ConsoleLayou
                   <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                     <TerminalIcon className="size-4" aria-hidden="true" />
                   </div>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-medium">{brand}</span>
+                  <div className="grid w-full max-w-full min-w-0 flex-1 text-left text-sm leading-tight">
+                    <span className="min-w-0 truncate font-medium">{brand}</span>
                     {brandTagline ? (
-                      <span className="truncate text-xs text-muted-foreground">
+                      <span className="min-w-0 truncate text-xs text-muted-foreground">
                         {brandTagline}
                       </span>
                     ) : null}
@@ -143,9 +143,9 @@ export function ConsoleLayout({ brand, brandTagline, navSections }: ConsoleLayou
                         {initialsFor(email)}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-medium">{email || "Signed in"}</span>
-                      <span className="truncate text-xs text-muted-foreground">{roleLabel}</span>
+                    <div className="grid w-full max-w-full min-w-0 flex-1 text-left text-sm leading-tight">
+                      <span className="min-w-0 truncate font-medium">{email || "Signed in"}</span>
+                      <span className="min-w-0 truncate text-xs text-muted-foreground">{roleLabel}</span>
                     </div>
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>

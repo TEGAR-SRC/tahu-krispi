@@ -95,7 +95,7 @@ export default function NocProviderDetailPage() {
 
   if (error) {
     return (
-      <div className="flex flex-col gap-6">
+      <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
         <ProviderBreadcrumb name={null} />
         <ErrorBanner error={error} />
       </div>
@@ -103,7 +103,7 @@ export default function NocProviderDetailPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <ProviderBreadcrumb name={provider?.name ?? null} />
 
       {loading ? (
@@ -124,7 +124,7 @@ export default function NocProviderDetailPage() {
             </p>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard label="Health" value={<HealthBadge status={provider.health_status} />} hint="as reported by the last probe" icon={<ActivityIcon />} />
             <StatCard label="Enabled" value={<StatusBadge status={provider.enabled ? "enabled" : "disabled"} />} hint="create/delete stays platform-admin only" icon={<MonitorCheckIcon />} />
             <StatCard label="Credentials" value={provider.has_credentials ? "configured" : "not set"} hint={provider.has_credentials ? undefined : "cluster endpoints answer 503 until set"} icon={<KeyRoundIcon />} />
@@ -145,15 +145,15 @@ export default function NocProviderDetailPage() {
                 every sub-page will surface the backend's PROVIDER_UNAVAILABLE error until they are set.
               </AdminOnlyHint>
             ) : null}
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid w-full max-w-full min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {SUBPAGES.map((sub) => (
                 <Link
                   key={sub.to}
                   to={`/noc/providers/${provider.id}/${sub.to}`}
                   className="group rounded-md border p-4 transition-colors hover:border-primary/50 hover:bg-muted/40"
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="flex items-center gap-2 font-medium">
+                  <div className="flex min-w-0 items-center justify-between gap-3">
+                    <span className="flex min-w-0 items-center gap-2 font-medium">
                       <sub.icon className="size-4 text-muted-foreground" />
                       {sub.title}
                     </span>

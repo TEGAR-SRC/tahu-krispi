@@ -137,7 +137,7 @@ export default function BlockedNetworksPage() {
   }, [deleting])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Blocked networks"
         description="CIDR ranges denied at the edge (e.g. repeated abuse sources)."
@@ -146,7 +146,7 @@ export default function BlockedNetworksPage() {
       {/* Add form */}
       <section className="space-y-3 rounded-md border p-4">
         <h2 className="text-sm font-semibold">Block a network</h2>
-        <div className="grid gap-3 sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)_auto] sm:items-start">
+        <div className="grid w-full max-w-full min-w-0 gap-3 sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)_auto] sm:items-start">
           <div className="space-y-1.5">
             <Label htmlFor="blocked-cidr">CIDR network</Label>
             <Input

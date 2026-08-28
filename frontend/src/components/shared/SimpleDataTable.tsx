@@ -48,12 +48,12 @@ export function SimpleDataTable<T>({
   if (loading) {
     return (
       <div className="space-y-2" data-loading="true">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
           <Spinner className="size-4" />
           <span>Loading…</span>
         </div>
         {Array.from({ length: Math.max(skeletonRows, 1) }).map((_, rowIndex) => (
-          <div key={rowIndex} className="flex items-center gap-4">
+          <div key={rowIndex} className="flex min-w-0 items-center gap-4">
             {columns.map((column) => (
               <Skeleton key={column.key} className={cn("h-6 flex-1", column.className)} />
             ))}

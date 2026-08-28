@@ -118,7 +118,7 @@ export default function DokploySettingsSessionsPage() {
       className: "hidden lg:table-cell",
       render: (row) =>
         row.userAgent ? (
-          <span className="text-muted-foreground max-w-55 truncate text-sm">
+          <span className="min-w-0 text-muted-foreground max-w-55 truncate text-sm">
             {parseUserAgent(row.userAgent)}
           </span>
         ) : (
@@ -164,7 +164,7 @@ export default function DokploySettingsSessionsPage() {
   const total = data?.length ?? 0
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <K6Breadcrumbs current="Sessions" />
       <PageHeader
         title="Sessions"
@@ -177,7 +177,7 @@ export default function DokploySettingsSessionsPage() {
       />
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex min-w-0 items-center gap-2">
             <SmartphoneIcon className="text-muted-foreground size-5" />
             Active Sessions ({total})
           </CardTitle>

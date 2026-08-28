@@ -155,11 +155,11 @@ export default function CustomerInstancesPage() {
         <div className="min-w-0">
           <Link
             to={`/app/instances/${row.id}`}
-            className="block max-w-56 truncate font-medium underline-offset-4 hover:underline"
+            className="min-w-0 block max-w-56 truncate font-medium underline-offset-4 hover:underline"
           >
             {row.name}
           </Link>
-          <p className="truncate text-xs text-muted-foreground">{row.public_id ?? row.id}</p>
+          <p className="min-w-0 truncate text-xs text-muted-foreground">{row.public_id ?? row.id}</p>
         </div>
       ),
     },
@@ -240,7 +240,7 @@ export default function CustomerInstancesPage() {
   ]
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Instances"
         description="Provision, control and inspect your virtual machines."

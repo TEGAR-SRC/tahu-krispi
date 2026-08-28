@@ -100,14 +100,14 @@ export default function InstanceConsolePage() {
   const isContainer = instance?.service_kind === "container"
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <InstanceBreadcrumb instanceName={instance?.name} section="Console" />
       <PageHeader
         title="Console"
         description="Open short-lived encrypted sessions to this instance's display or serial port."
       />
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid w-full max-w-full min-w-0 gap-4 lg:grid-cols-2">
         {/* VNC — VM only */}
         <Card>
           <CardHeader>
@@ -186,7 +186,7 @@ function SessionDetails({ session }: { session: ConsoleSession }) {
       {session.urls.map(({ label, url }) => (
         <div
           key={label}
-          className="flex items-center gap-1 rounded-md border bg-muted/30 px-3 py-2"
+          className="flex min-w-0 items-center gap-1 rounded-md border bg-muted/30 px-3 py-2"
         >
           <div className="min-w-0 flex-1 space-y-0.5">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
@@ -194,7 +194,7 @@ function SessionDetails({ session }: { session: ConsoleSession }) {
               href={url}
               target="_blank"
               rel="noopener noreferrer"
-              className="block truncate font-mono text-sm underline-offset-4 hover:underline"
+              className="min-w-0 block truncate font-mono text-sm underline-offset-4 hover:underline"
             >
               {url}
             </a>

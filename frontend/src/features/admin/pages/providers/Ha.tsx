@@ -88,7 +88,7 @@ export default function ProviderHaPage() {
         </>
       }
     >
-      <div className="flex items-center gap-2">
+      <div className="flex min-w-0 items-center gap-2">
         <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value)}>
           <SelectTrigger className="w-44">
             <SelectValue placeholder="Type" />
@@ -191,7 +191,7 @@ export default function ProviderHaPage() {
           )
         }}
       >
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex min-w-0 items-center gap-2 text-sm">
           <Checkbox
             checked={deleteTarget?.purge ?? false}
             onCheckedChange={(checked) =>
@@ -254,7 +254,7 @@ function AddResourceDialog({ open, busy, onOpenChange, onSubmit }: AddResourcePr
           <DialogTitle>Add HA resource</DialogTitle>
           <DialogDescription>SID format is vm:&lt;vmid&gt; or ct:&lt;ctid&gt;.</DialogDescription>
         </DialogHeader>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1.5 sm:col-span-2">
             <Label htmlFor="ha-sid">SID *</Label>
             <Input id="ha-sid" value={sid} onChange={(event) => setSid(event.target.value)} placeholder="vm:100" />

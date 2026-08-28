@@ -141,7 +141,7 @@ export default function CustomerTopupPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -160,7 +160,7 @@ export default function CustomerTopupPage() {
 
       <ErrorBanner error={error} />
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2">
         <StatCard label="Current balance" value={formatMoney(balance?.balance ?? 0, currency)} icon={<WalletIcon />} />
         <StatCard label="Reserved" value={formatMoney(balance?.reserved_balance ?? 0, currency)} hint="Held for running resources" />
       </div>
@@ -168,7 +168,7 @@ export default function CustomerTopupPage() {
       {loading && !balance ? (
         <Card>
           <CardContent className="px-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
               <Loader2Icon className="size-4 animate-spin" /> Loading wallet…
             </div>
           </CardContent>
@@ -223,7 +223,7 @@ export default function CustomerTopupPage() {
         <Card className="border-amber-500/40 bg-amber-500/10 dark:bg-amber-500/5">
           <CardContent className="space-y-3 px-4">
             <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
-              <span className="flex items-center gap-2">
+              <span className="flex min-w-0 items-center gap-2">
                 <Loader2Icon className="size-4 animate-spin text-amber-600" />
                 Top-up of <strong>{formatMoney(pending.amount, pending.currency)}</strong> awaiting
                 payment confirmation — polling every 5 s…

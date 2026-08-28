@@ -174,12 +174,12 @@ export default function FinanceReportsPage() {
   }, [summaries])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Finance reports"
         description="Key billing metrics compared across 7/30/90/365-day windows."
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
               <RefreshCwIcon /> Refresh
             </Button>
@@ -256,7 +256,7 @@ export default function FinanceReportsPage() {
 
           <section className="space-y-3">
             <h3 className="text-sm font-semibold">Trend across windows</h3>
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {METRICS.filter((metric) => metric.kind === "money").map((metric) => {
                 const config = {
                   v: { label: metric.label, color: "var(--chart-1)" },

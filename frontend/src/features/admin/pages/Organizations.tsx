@@ -43,7 +43,7 @@ export default function OrganizationsPage() {
   }, [page])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Organizations"
         description="Every customer organization on the platform, newest first."
@@ -58,7 +58,7 @@ export default function OrganizationsPage() {
               <div className="min-w-0">
                 <Link
                   to={`/admin/organizations/${row.id}`}
-                  className="block truncate font-medium text-primary underline-offset-4 hover:underline"
+                  className="min-w-0 block truncate font-medium text-primary underline-offset-4 hover:underline"
                 >
                   {row.name || row.slug}
                 </Link>
@@ -84,7 +84,7 @@ export default function OrganizationsPage() {
             header: "Billing email",
             className: "hidden lg:table-cell",
             render: (row) => (
-              <span className="truncate text-muted-foreground">{row.billing_email || "—"}</span>
+              <span className="min-w-0 truncate text-muted-foreground">{row.billing_email || "—"}</span>
             ),
           },
           {

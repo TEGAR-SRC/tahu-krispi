@@ -209,7 +209,7 @@ export default function FinanceRatesPage() {
   ]
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Custom rates"
         description="Per-dimension resource pricing used by custom_resource quotes. Each row is one rate version with its own validity window."
@@ -240,7 +240,7 @@ export default function FinanceRatesPage() {
         <div className="space-y-6">
           {groups.map(([productCode, productRates]) => (
             <section key={productCode} className="space-y-3">
-              <h3 className="flex items-center gap-2 text-sm font-semibold">
+              <h3 className="flex min-w-0 items-center gap-2 text-sm font-semibold">
                 {productCode}
                 <span className="font-normal text-muted-foreground">
                   ({productRates.length} rate{productRates.length === 1 ? "" : "s"})
@@ -373,7 +373,7 @@ function RateCreateDialog({
             {formError}
           </p>
         ) : null}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="col-span-2 space-y-1.5">
             <Label>Product *</Label>
             <Select value={productId} onValueChange={setProductId}>

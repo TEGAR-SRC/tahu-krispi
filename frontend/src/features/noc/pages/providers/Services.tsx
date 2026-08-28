@@ -68,7 +68,7 @@ export default function NocProviderServicesPage() {
   const [nodeFilter, setNodeFilter] = useState("all")
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <ProviderSubBreadcrumb providerId={providerId} providerName={provider?.name} page="Services" />
       <PageHeader
         title="Cluster services"
@@ -87,7 +87,7 @@ export default function NocProviderServicesPage() {
         </TabsList>
 
         <TabsContent value="containers" className="space-y-4">
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <span className="text-sm text-muted-foreground">Node</span>
             <Select value={nodeFilter} onValueChange={setNodeFilter}>
               <SelectTrigger className="w-48">
@@ -153,7 +153,7 @@ function ContainersSection({
           key: "Status",
           header: "Status",
           render: (row) => (
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 items-center gap-2">
               <HealthBadge status={row.Status} />
               {row.PowerStatus ? <Badge variant="outline">{row.PowerStatus}</Badge> : null}
             </div>
@@ -232,7 +232,7 @@ function CephPanel({ base }: { base: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Health" value={<HealthBadge status={status.health?.status} />} hint={`${checks.length} check(s) firing`} icon={<HeartPulseIcon />} />
         <StatCard label="OSDs" value={`${osd?.num_up_osds ?? "?"} up / ${osd?.num_osds ?? "?"}`} hint={`${osd?.num_in_osds ?? "?"} in`} />
         <StatCard label="Monitors" value={status.monmap?.num_mons ?? "—"} hint={`mgr active ${status.mgrmap?.active_name || "—"}`} />

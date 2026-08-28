@@ -304,7 +304,7 @@ export default function AccountProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-6">
+      <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
         <PageHeader title="Profile" description="Your identity across Kilat Cloud." />
         <Skeleton className="h-64 w-full" />
       </div>
@@ -312,7 +312,7 @@ export default function AccountProfilePage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Profile"
         description="Your identity across Kilat Cloud."
@@ -325,7 +325,7 @@ export default function AccountProfilePage() {
 
       <ErrorBanner error={error} />
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+      <div className="grid w-full max-w-full min-w-0 gap-4 lg:grid-cols-[1fr_320px]">
         {/* Identity form */}
         <Card>
           <CardHeader>
@@ -336,7 +336,7 @@ export default function AccountProfilePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="pf-full-name">Full name *</Label>
                 <Input
@@ -381,7 +381,7 @@ export default function AccountProfilePage() {
               </div>
             </div>
 
-            <div className="grid gap-3 rounded-md border p-3 text-sm sm:grid-cols-3">
+            <div className="grid w-full max-w-full min-w-0 gap-3 rounded-md border p-3 text-sm sm:grid-cols-3">
               <ReadOnlyField label="Email" value={profile?.email} />
               <ReadOnlyField label="Locale" value={profile?.locale} />
               <ReadOnlyField label="Timezone" value={profile?.timezone} />
@@ -412,7 +412,7 @@ export default function AccountProfilePage() {
               {(completion?.missing_requirements ?? []).length > 0 ? (
                 <ul className="space-y-1 text-sm">
                   {(completion?.missing_requirements ?? []).map((item) => (
-                    <li key={item} className="flex items-center gap-2">
+                    <li key={item} className="flex min-w-0 items-center gap-2">
                       <Badge variant="outline" className="capitalize">
                         {item.replace(/_/g, " ")}
                       </Badge>
@@ -434,7 +434,7 @@ export default function AccountProfilePage() {
             <CardHeader>
               <CardTitle>Avatar</CardTitle>
             </CardHeader>
-            <CardContent className="flex items-center gap-4">
+            <CardContent className="flex min-w-0 items-center gap-4">
               <Avatar className="size-14 border">
                 {avatarUrl ? <AvatarImage src={avatarUrl} alt="Your avatar" /> : null}
                 <AvatarFallback>{initials(profile)}</AvatarFallback>
@@ -541,7 +541,7 @@ export default function AccountProfilePage() {
             <CardTitle>Verification documents</CardTitle>
             <CardDescription>KYC documents reviewed by our compliance team.</CardDescription>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <Select value={docType} onValueChange={setDocType}>
               <SelectTrigger aria-label="Document type" className="w-40">
                 <SelectValue />
@@ -610,7 +610,7 @@ export default function AccountProfilePage() {
                         </Badge>
                       </TableCell>
                       <TableCell>{formatBytes(document.size_bytes)}</TableCell>
-                      <TableCell className="text-muted-foreground">
+                      <TableCell className="max-w-[180px] whitespace-normal break-all [overflow-wrap:anywhere] text-muted-foreground">
                         {document.mime_type || "—"}
                       </TableCell>
                     </TableRow>
@@ -659,9 +659,9 @@ export default function AccountProfilePage() {
 
 function ReadOnlyField({ label, value }: { label: string; value?: string | null }) {
   return (
-    <div>
+    <div className="min-w-0 overflow-hidden">
       <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="truncate font-medium">{value || "—"}</p>
+      <p className="min-w-0 block max-w-full truncate font-medium [overflow-wrap:anywhere]">{value || "—"}</p>
     </div>
   )
 }

@@ -156,7 +156,7 @@ function ProfileForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex min-w-0 items-center gap-2">
           <UserIcon className="text-muted-foreground size-5" />
           Account
         </CardTitle>
@@ -168,14 +168,14 @@ function ProfileForm() {
         ) : loading ? (
           <div className="space-y-3">
             {["First Name", "Last Name", "Email"].map((label) => (
-              <div key={label} className="grid gap-1.5">
+              <div key={label} className="grid w-full max-w-full min-w-0 gap-1.5">
                 <span className="text-sm font-medium">{label}</span>
                 <div className="bg-muted h-9 w-full animate-pulse rounded-md" />
               </div>
             ))}
           </div>
         ) : (
-          <form onSubmit={onSubmit} className="grid max-w-xl gap-4">
+          <form onSubmit={onSubmit} className="grid w-full max-w-full min-w-0 max-w-xl gap-4">
             <FieldRow label="First Name" error={fieldError("firstName")}>
               <Input
                 placeholder="John"
@@ -252,7 +252,7 @@ function PasskeysCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex min-w-0 items-center gap-2">
           <FingerprintIcon className="text-muted-foreground size-5" />
           Passkeys
         </CardTitle>
@@ -361,7 +361,7 @@ function ApiKeysCard() {
     <Card>
       <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-4">
         <div>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex min-w-0 items-center gap-2">
             <KeyRoundIcon className="text-muted-foreground size-5" />
             API/CLI Keys
           </CardTitle>
@@ -389,7 +389,7 @@ function ApiKeysCard() {
               </DialogDescription>
             </DialogHeader>
             {revealedKey ? (
-              <div className="grid gap-2">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <p className="text-sm font-medium">Copy your new API key now:</p>
                 <pre className="bg-muted overflow-auto rounded-md p-3 text-xs break-all whitespace-pre-wrap">
                   {revealedKey}
@@ -406,7 +406,7 @@ function ApiKeysCard() {
                 </DialogFooter>
               </div>
             ) : (
-              <form onSubmit={createKey} className="grid gap-4">
+              <form onSubmit={createKey} className="grid w-full max-w-full min-w-0 gap-4">
                 <FieldRow label="Name" error={createError && !name.trim() ? createError : undefined}>
                   <Input
                     placeholder="CI pipeline"
@@ -495,7 +495,7 @@ function ApiKeysCard() {
 
 export default function DokploySettingsProfilePage() {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <K6Breadcrumbs current="Profile" />
       <PageHeader
         title="Profile"

@@ -161,13 +161,13 @@ export default function BillingReportsPage() {
       Promise.all(
         PERIODS.map((days) =>
           apiGet<SummaryData>("/admin/finance/summary", { query: { days } }).then(
-            (envelope) => ({ days, data: envelope.data }),
-          ).catch(() => ({ days, data: null } as SummaryData)),
+            (envelope) => ({ days, data: envelope.data }) as { days: number; data: SummaryData | null },
+          ).catch(() => ({ days, data: null }) as { days: number; data: SummaryData | null }),
         ),
       )
         .then((results) => {
           if (cancelled) return
-          setSummaries(results)
+          setSummaries(results as Array<{ days: number; data: SummaryData | null }>)
           setLoading(false)
         })
         .catch((cause: unknown) => {
@@ -212,7 +212,7 @@ export default function BillingReportsPage() {
         key: "metric",
         header: "Metric",
         render: (row) => (
-          <span className="flex items-center gap-2">
+          <span className="flex min-w-0 items-center gap-2">
             {row.metric.label}
             {row.metric.snapshot ? (
               <span className="text-xs text-muted-foreground">(point-in-time)</span>
@@ -234,7 +234,7 @@ export default function BillingReportsPage() {
   )
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Billing reports"
         description="Finance summary compared across lookback windows (7 / 30 / 90 / 365 days), fetched in parallel."
@@ -261,7 +261,7 @@ export default function BillingReportsPage() {
       {loading ? (
         <>
           <Skeleton className="h-72 w-full rounded-xl" />
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid w-full max-w-full min-w-0 gap-4 lg:grid-cols-2">
             {Array.from({ length: 4 }).map((_, index) => (
               <Skeleton key={index} className="h-56 rounded-xl" />
             ))}
@@ -288,7 +288,7 @@ export default function BillingReportsPage() {
             </CardContent>
           </Card>
 
-          <div className="grid gap-4 xl:grid-cols-2">
+          <div className="grid w-full max-w-full min-w-0 gap-4 xl:grid-cols-2">
             {METRICS.map((metric, index) => {
               const series = PERIODS.map((days) => ({
                 window: `${days}d`,

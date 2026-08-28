@@ -100,7 +100,7 @@ export default function UserDetailPage() {
   )
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <Button asChild variant="ghost" size="sm" className="-ml-2 self-start">
         <Link to="/admin/users">
           <ArrowLeftIcon /> Back to users
@@ -138,7 +138,7 @@ export default function UserDetailPage() {
 
       {error ? <ErrorBanner error={error} /> : null}
       {!error && loading ? (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid w-full max-w-full min-w-0 gap-3 sm:grid-cols-2">
           {Array.from({ length: 8 }).map((_, index) => (
             <Skeleton key={index} className="h-10 w-full" />
           ))}
@@ -152,7 +152,7 @@ export default function UserDetailPage() {
 
       {user ? (
         <>
-          <dl className="grid gap-4 rounded-md border p-4 sm:grid-cols-2 lg:grid-cols-4">
+          <dl className="grid w-full max-w-full min-w-0 gap-4 rounded-md border p-4 sm:grid-cols-2 lg:grid-cols-4">
             <DetailField label="Full name">{user.full_name || "—"}</DetailField>
             <DetailField label="Username">{user.username || "—"}</DetailField>
             <DetailField label="Status">
@@ -285,7 +285,7 @@ function LimitsEditor({ user }: { user: AdminUserRow }) {
           its existing value.
         </p>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid w-full max-w-full min-w-0 gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor={`max-inst-${user.id}`}>Max hourly instances</Label>
           <Input

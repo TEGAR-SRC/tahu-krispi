@@ -239,7 +239,7 @@ export function FieldRow({
   children: ReactNode
 }) {
   return (
-    <div className="grid gap-1.5">
+    <div className="grid w-full max-w-full min-w-0 gap-1.5">
       <label className="text-sm leading-none font-medium">
         {label}
         {required ? <span className="text-destructive"> *</span> : null}
@@ -312,7 +312,7 @@ export function SectionCard({
             <p className="text-sm text-muted-foreground">{description}</p>
           ) : null}
         </div>
-        {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+        {actions ? <div className="flex min-w-0 items-center gap-2">{actions}</div> : null}
       </div>
       {children}
     </div>

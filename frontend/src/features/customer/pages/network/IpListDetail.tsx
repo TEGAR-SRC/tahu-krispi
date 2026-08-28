@@ -87,7 +87,7 @@ export default function IpListDetailPage() {
   }, [load])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -193,7 +193,7 @@ function MetaEditor({ meta, onSaved }: { meta: IpListMeta; onSaved: () => void }
             Entries <span className="tabular-nums">{meta.entry_count ?? 0}</span>
           </span>
         </div>
-        <div className="grid max-w-xl gap-3 sm:grid-cols-2">
+        <div className="grid w-full max-w-full min-w-0 max-w-xl gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="ipld-name">Name *</Label>
             <Input
@@ -326,7 +326,7 @@ function EntriesCard({
         />
 
         {/* Add form */}
-        <div className="grid gap-2 rounded-md border p-3 sm:grid-cols-[1fr_1fr_auto]">
+        <div className="grid w-full max-w-full min-w-0 gap-2 rounded-md border p-3 sm:grid-cols-[1fr_1fr_auto]">
           <div className="space-y-1">
             <Label htmlFor="iplde-value">IP / CIDR *</Label>
             <Input

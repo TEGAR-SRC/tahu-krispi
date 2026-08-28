@@ -360,7 +360,7 @@ export default function NocSecurityPage() {
       key: "description",
       header: "Description",
       render: (row) => (
-        <span className="block max-w-72 truncate text-sm" title={row.description}>
+        <span className="min-w-0 block max-w-72 truncate text-sm" title={row.description}>
           {row.description || "—"}
         </span>
       ),
@@ -397,7 +397,7 @@ export default function NocSecurityPage() {
       key: "reason",
       header: "Reason",
       render: (row) => (
-        <span className="block max-w-80 truncate text-sm" title={row.reason}>
+        <span className="min-w-0 block max-w-80 truncate text-sm" title={row.reason}>
           {row.reason || "—"}
         </span>
       ),
@@ -430,7 +430,7 @@ export default function NocSecurityPage() {
   ]
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Security"
         description="Security incidents, network blocking and provider certificate expiry."
@@ -441,7 +441,7 @@ export default function NocSecurityPage() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-3">
         <StatCard
           label="Open incidents"
           value={openIncidents}
@@ -472,7 +472,7 @@ export default function NocSecurityPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {certsLoading ? (
-            <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+            <div className="flex min-w-0 items-center gap-2 py-4 text-sm text-muted-foreground">
               <Loader2Icon className="size-4 animate-spin" /> Scanning provider certificates…
             </div>
           ) : certsError ? (
@@ -503,12 +503,12 @@ export default function NocSecurityPage() {
                       {certRows.map((row) => (
                         <tr key={row.key} className="border-b last:border-b-0">
                           <td className="max-w-64 px-3 py-2">
-                            <p className="truncate" title={row.subject}>
+                            <p className="min-w-0 truncate" title={row.subject}>
                               {row.subject}
                             </p>
                             {row.fingerprint ? (
                               <p
-                                className="truncate font-mono text-[10px] text-muted-foreground"
+                                className="min-w-0 truncate font-mono text-[10px] text-muted-foreground"
                                 title={row.fingerprint}
                               >
                                 {row.fingerprint}
@@ -519,7 +519,7 @@ export default function NocSecurityPage() {
                             {row.providerName}
                             <span className="text-muted-foreground"> · {row.node}</span>
                           </td>
-                          <td className="max-w-48 truncate px-3 py-2 text-xs text-muted-foreground" title={row.issuer}>
+                          <td className="min-w-0 max-w-48 truncate px-3 py-2 text-xs text-muted-foreground" title={row.issuer}>
                             {row.issuer || "—"}
                           </td>
                           <td className="px-3 py-2 text-xs">
@@ -540,7 +540,7 @@ export default function NocSecurityPage() {
               )}
               {certWarnings.length > 0 ? (
                 <div className="space-y-1 rounded-md border border-amber-500/40 bg-amber-500/5 p-3">
-                  <p className="flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+                  <p className="flex min-w-0 items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
                     <TriangleAlertIcon className="size-3.5" /> Partial results — some scans failed:
                   </p>
                   <ul className="list-inside list-disc space-y-0.5 text-xs text-muted-foreground">
@@ -581,7 +581,7 @@ export default function NocSecurityPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <form
-            className="grid gap-3 sm:grid-cols-[minmax(12rem,1fr)_minmax(14rem,1.5fr)_auto]"
+            className="grid w-full max-w-full min-w-0 gap-3 sm:grid-cols-[minmax(12rem,1fr)_minmax(14rem,1.5fr)_auto]"
             onSubmit={(event) => {
               event.preventDefault()
               void addNetwork()

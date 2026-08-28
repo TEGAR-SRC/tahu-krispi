@@ -106,7 +106,7 @@ export default function CustomerOrdersPage() {
       header: "Order",
       render: (row) => (
         <div className="min-w-0">
-          <p className="truncate font-medium">{row.public_id}</p>
+          <p className="min-w-0 truncate font-medium">{row.public_id}</p>
           <p className="text-xs text-muted-foreground">
             {row.items && row.items.length > 0
               ? `${row.items.length} item${row.items.length === 1 ? "" : "s"}`
@@ -139,7 +139,7 @@ export default function CustomerOrdersPage() {
   ]
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Orders"
         description="Every purchase and provisioning order placed for this organization."

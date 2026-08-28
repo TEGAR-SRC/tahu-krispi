@@ -112,7 +112,7 @@ export default function AffiliateEarningsPage() {
       key: "referrer_email",
       header: "Referrer",
       render: (row) => (
-        <span className="block max-w-40 truncate" title={row.referrer_email}>
+        <span className="min-w-0 block max-w-40 truncate" title={row.referrer_email}>
           {row.referrer_email}
         </span>
       ),
@@ -121,7 +121,7 @@ export default function AffiliateEarningsPage() {
       key: "referee_email",
       header: "Referred user",
       render: (row) => (
-        <span className="block max-w-40 truncate" title={row.referee_email}>
+        <span className="min-w-0 block max-w-40 truncate" title={row.referee_email}>
           {row.referee_email}
         </span>
       ),
@@ -188,7 +188,7 @@ export default function AffiliateEarningsPage() {
   ]
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>

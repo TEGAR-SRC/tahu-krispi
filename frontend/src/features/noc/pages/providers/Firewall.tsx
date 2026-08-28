@@ -69,7 +69,7 @@ export default function NocProviderFirewallPage() {
   const activeGroup = groupName || groups.data?.[0]?.group || ""
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <ProviderSubBreadcrumb providerId={providerId} providerName={provider?.name} page="Firewall" />
       <PageHeader
         title="Cluster firewall"
@@ -104,7 +104,7 @@ export default function NocProviderFirewallPage() {
 
               {activeGroup ? (
                 <section className="space-y-2">
-                  <div className="flex items-center gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
                     <Label htmlFor="fw-group-rules-select" className="text-sm text-muted-foreground">
                       Rules of group
                     </Label>

@@ -217,7 +217,7 @@ export default function NocInstancesPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Instances"
         description="Fleet inventory and lifecycle operations."
@@ -310,8 +310,8 @@ export default function NocInstancesPage() {
                 >
                   <TableCell>
                     <div className="min-w-0">
-                      <p className="truncate font-medium">{row.name}</p>
-                      <p className="truncate text-xs text-muted-foreground">{row.public_id}</p>
+                      <p className="min-w-0 truncate font-medium">{row.name}</p>
+                      <p className="min-w-0 truncate text-xs text-muted-foreground">{row.public_id}</p>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -350,7 +350,7 @@ export default function NocInstancesPage() {
         </div>
       )}
 
-      <div className="flex items-center justify-end gap-3">
+      <div className="flex min-w-0 items-center justify-end gap-3">
         <Button
           variant="outline"
           size="sm"
@@ -394,7 +394,7 @@ export default function NocInstancesPage() {
 
           <div className="space-y-5 pb-6">
             {detailLoading ? (
-              <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
+              <div className="flex min-w-0 items-center gap-2 py-8 text-sm text-muted-foreground">
                 <Loader2Icon className="size-4 animate-spin" /> Loading instance…
               </div>
             ) : detailError ? (
@@ -404,7 +404,7 @@ export default function NocInstancesPage() {
               </p>
             ) : detail ? (
               <>
-                <section className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                <section className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
                   <InfoLine label="Status" value={<StatusBadge status={detail.status} />} />
                   <InfoLine
                     label="Power"
@@ -545,7 +545,7 @@ export default function NocInstancesPage() {
                     <p className="text-sm font-medium">Recent jobs</p>
                     <ul className="space-y-1 text-xs text-muted-foreground">
                       {detail.jobs.slice(0, 5).map((job) => (
-                        <li key={job.id} className="flex items-center gap-2">
+                        <li key={job.id} className="flex min-w-0 items-center gap-2">
                           <StatusBadge status={job.status} />
                           <span>{job.job_type}</span>
                           <span>·</span>
@@ -594,7 +594,7 @@ function InfoLine({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex min-w-0 flex-col">
       <span className="text-xs text-muted-foreground">{label}</span>
-      <span className="truncate">{value}</span>
+      <span className="min-w-0 truncate">{value}</span>
     </div>
   )
 }

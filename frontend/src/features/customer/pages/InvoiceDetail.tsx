@@ -200,7 +200,7 @@ export default function CustomerInvoiceDetailPage() {
 
   if (!loading && error && !invoice) {
     return (
-      <div className="flex flex-col gap-6">
+      <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
@@ -229,7 +229,7 @@ export default function CustomerInvoiceDetailPage() {
     invoice.amount_due > 0
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -301,7 +301,7 @@ export default function CustomerInvoiceDetailPage() {
             </div>
           ) : null}
 
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <SummaryCell label="Status" value={<StatusBadge status={invoice.status} />} />
             <SummaryCell label="Total" value={formatMoney(invoice.total, invoice.currency)} strong />
             <SummaryCell label="Paid" value={formatMoney(invoice.amount_paid, invoice.currency)} />

@@ -21,7 +21,7 @@ export default function NocProviderBackupJobsPage() {
   const jobs = useTyped<PveBackupJob[]>(`/admin/providers/${providerId}/backup-jobs`)
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <ProviderSubBreadcrumb providerId={providerId} providerName={provider?.name} page="Backup jobs" />
       <PageHeader
         title="Backup jobs"

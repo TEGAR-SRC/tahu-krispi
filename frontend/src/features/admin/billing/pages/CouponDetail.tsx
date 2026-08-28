@@ -64,7 +64,7 @@ export default function BillingCouponDetailPage() {
       : null
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <DetailBreadcrumbs
         trail={[
           { label: "Billing", to: "/admin/billing/summary" },
@@ -85,7 +85,7 @@ export default function BillingCouponDetailPage() {
 
       {detail.error ? <ErrorBanner error={detail.error} /> : null}
       {!detail.error && detail.loading ? (
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-3">
           {Array.from({ length: 6 }).map((_, index) => (
             <Skeleton key={index} className="h-14 rounded-lg" />
           ))}
@@ -96,12 +96,12 @@ export default function BillingCouponDetailPage() {
         <>
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-3">
+              <CardTitle className="flex min-w-0 items-center gap-3">
                 Rules{" "}
                 <StatusBadge status={coupon.enabled ? "active" : "disabled"} />
               </CardTitle>
             </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <CardContent className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <DetailField
                 label="Discount"
                 value={
@@ -149,7 +149,7 @@ export default function BillingCouponDetailPage() {
             <CardHeader>
               <CardTitle>Redemptions</CardTitle>
             </CardHeader>
-            <CardContent className="flex flex-col gap-4">
+            <CardContent className="flex w-full max-w-full min-w-0 flex-col gap-4">
               <div className="flex flex-wrap items-center gap-4 text-sm">
                 <span className="tabular-nums">
                   Redeemed{" "}

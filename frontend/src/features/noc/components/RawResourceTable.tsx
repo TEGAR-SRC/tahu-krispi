@@ -69,7 +69,7 @@ export function RawDataView({ data, loading = false, error, emptyMessage = "No e
     )
     if (entries.length === 0) return <EmptyState message={emptyMessage} />
     return (
-      <dl className="grid grid-cols-[minmax(10rem,1fr)_2fr] gap-x-4 gap-y-1 rounded-md border p-3 text-sm">
+      <dl className="grid w-full max-w-full min-w-0 grid-cols-[minmax(10rem,1fr)_2fr] gap-x-4 gap-y-1 rounded-md border p-3 text-sm">
         {entries.map(([key, value]) => (
           <div key={key} className="contents">
             <dt className="text-muted-foreground">{key.replace(/_/g, " ")}</dt>

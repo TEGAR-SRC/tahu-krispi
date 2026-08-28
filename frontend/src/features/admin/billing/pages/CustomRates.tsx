@@ -266,7 +266,7 @@ export default function BillingCustomRatesPage() {
   ]
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Custom Rates"
         description="Per-dimension resource pricing used by custom_resource quotes. Creating a rate appends a new version; the API offers no edit or delete."
@@ -308,9 +308,9 @@ export default function BillingCustomRatesPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="grid gap-2">
+          <div className="grid w-full max-w-full min-w-0 gap-4">
+            <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label>Product *</Label>
                 <Select
                   value={form.product_id}
@@ -330,7 +330,7 @@ export default function BillingCustomRatesPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid gap-2">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="rate-dimension">Dimension code *</Label>
                 <Input
                   id="rate-dimension"
@@ -352,8 +352,8 @@ export default function BillingCustomRatesPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="grid gap-2">
+            <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="rate-currency">Currency</Label>
                 <Input
                   id="rate-currency"
@@ -364,7 +364,7 @@ export default function BillingCustomRatesPage() {
                   }
                 />
               </div>
-              <div className="grid gap-2">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label>Billing period</Label>
                 <Select
                   value={form.billing_period}
@@ -389,8 +389,8 @@ export default function BillingCustomRatesPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="grid gap-2">
+            <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="rate-unit-price">Unit price *</Label>
                 <Input
                   id="rate-unit-price"
@@ -403,7 +403,7 @@ export default function BillingCustomRatesPage() {
                   }
                 />
               </div>
-              <div className="grid gap-2">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="rate-included">Included quantity</Label>
                 <Input
                   id="rate-included"
@@ -421,8 +421,8 @@ export default function BillingCustomRatesPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="grid gap-2">
+            <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="rate-min">Min qty</Label>
                 <Input
                   id="rate-min"
@@ -435,7 +435,7 @@ export default function BillingCustomRatesPage() {
                   }
                 />
               </div>
-              <div className="grid gap-2">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="rate-max">Max qty</Label>
                 <Input
                   id="rate-max"
@@ -449,7 +449,7 @@ export default function BillingCustomRatesPage() {
                   }
                 />
               </div>
-              <div className="grid gap-2">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="rate-step">Step qty</Label>
                 <Input
                   id="rate-step"
@@ -464,7 +464,7 @@ export default function BillingCustomRatesPage() {
               </div>
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid w-full max-w-full min-w-0 gap-2">
               <Label htmlFor="rate-region">Region ID</Label>
               <Input
                 id="rate-region"

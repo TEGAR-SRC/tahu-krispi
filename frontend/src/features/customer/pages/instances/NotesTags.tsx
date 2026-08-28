@@ -34,7 +34,7 @@ export default function InstanceNotesTagsPage() {
   const { instance } = useInstance(instanceId)
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <InstanceBreadcrumb instanceName={instance?.name} section="Notes & tags" />
       <PageHeader
         title="Notes & tags"
@@ -135,7 +135,7 @@ function NotesCard({ instanceId }: { instanceId: string | undefined }) {
               placeholder="e.g. holds the staging database, rebooted monthly…"
               rows={6}
             />
-            <div className="flex items-center gap-3">
+            <div className="flex min-w-0 items-center gap-3">
               <Button
                 size="sm"
                 onClick={() => void save(notes)}
@@ -285,7 +285,7 @@ function TagsCard({ instanceId }: { instanceId: string | undefined }) {
               </Button>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex min-w-0 items-center gap-3">
               <Button size="sm" onClick={() => void saveTags()} disabled={saving || !dirty}>
                 {saving ? <Loader2Icon className="animate-spin" /> : <SaveIcon />} Save tags
               </Button>

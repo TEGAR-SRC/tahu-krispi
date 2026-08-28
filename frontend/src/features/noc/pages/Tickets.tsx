@@ -162,7 +162,7 @@ export default function NocTicketsPage() {
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE))
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Tickets"
         description="Staff queue across all organizations. Click a row for the thread."
@@ -229,8 +229,8 @@ export default function NocTicketsPage() {
                   <TableCell className="font-mono text-xs">{row.ticket_number}</TableCell>
                   <TableCell>
                     <div className="min-w-0">
-                      <p className="truncate font-medium">{row.subject}</p>
-                      <p className="truncate text-xs text-muted-foreground">{row.org_slug}</p>
+                      <p className="min-w-0 truncate font-medium">{row.subject}</p>
+                      <p className="min-w-0 truncate text-xs text-muted-foreground">{row.org_slug}</p>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -272,7 +272,7 @@ export default function NocTicketsPage() {
         </div>
       )}
 
-      <div className="flex items-center justify-end gap-3">
+      <div className="flex min-w-0 items-center justify-end gap-3">
         <Button
           variant="outline"
           size="sm"
@@ -446,7 +446,7 @@ function ThreadDialog({
               rows={3}
             />
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <label className="flex items-center gap-2 text-sm">
+              <label className="flex min-w-0 items-center gap-2 text-sm">
                 <Checkbox checked={internalNote} onCheckedChange={(v) => setInternalNote(v === true)} />
                 Internal note only
               </label>

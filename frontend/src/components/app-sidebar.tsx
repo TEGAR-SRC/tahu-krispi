@@ -188,9 +188,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                   <TerminalIcon className="size-4" aria-hidden="true" />
                 </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">Acme Inc</span>
-                  <span className="truncate text-xs">Enterprise</span>
+                <div className="grid w-full max-w-full min-w-0 flex-1 text-left text-sm leading-tight">
+                  <span className="min-w-0 truncate font-medium">Acme Inc</span>
+                  <span className="min-w-0 truncate text-xs">Enterprise</span>
                 </div>
               </a>
             </SidebarMenuButton>

@@ -131,7 +131,7 @@ export default function BillingOrderDetailPage() {
   const order = detail.data
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <DetailBreadcrumbs
         trail={[
           { label: "Billing", to: "/admin/billing/summary" },
@@ -165,7 +165,7 @@ export default function BillingOrderDetailPage() {
 
       {detail.error ? <ErrorBanner error={detail.error} /> : null}
       {!detail.error && detail.loading ? (
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-3">
           {Array.from({ length: 6 }).map((_, index) => (
             <Skeleton key={index} className="h-14 rounded-lg" />
           ))}
@@ -176,11 +176,11 @@ export default function BillingOrderDetailPage() {
         <>
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-3">
+              <CardTitle className="flex min-w-0 items-center gap-3">
                 Summary <StatusBadge status={order.status} />
               </CardTitle>
             </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <CardContent className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <DetailField label="Total" value={formatMoney(order.total, order.currency)} />
               <DetailField label="Subtotal" value={formatMoney(order.subtotal, order.currency)} />
               <DetailField label="Discount" value={formatMoney(order.discount, order.currency)} />
@@ -246,7 +246,7 @@ export default function BillingOrderDetailPage() {
             <CardHeader>
               <CardTitle>Invoices</CardTitle>
             </CardHeader>
-            <CardContent className="flex flex-col gap-2">
+            <CardContent className="flex w-full max-w-full min-w-0 flex-col gap-2">
               {(order.invoices ?? []).length > 0 ? (
                 order.invoices.map((invoice) => (
                   <Link
@@ -254,11 +254,11 @@ export default function BillingOrderDetailPage() {
                     to={`/admin/billing/invoices/${invoice.id}`}
                     className="flex flex-wrap items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm transition-colors hover:bg-muted/50"
                   >
-                    <span className="flex items-center gap-3">
+                    <span className="flex min-w-0 items-center gap-3">
                       <span className="font-mono text-xs">{invoice.public_id}</span>
                       <StatusBadge status={invoice.status} />
                     </span>
-                    <span className="flex items-center gap-4 tabular-nums">
+                    <span className="flex min-w-0 items-center gap-4 tabular-nums">
                       <span>{formatMoney(invoice.total, order.currency)}</span>
                       <span className="text-muted-foreground">
                         due {formatMoney(invoice.amount_due, order.currency)}
@@ -300,13 +300,13 @@ export default function BillingOrderDetailPage() {
           {order.quote ? (
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex min-w-0 items-center gap-2">
                   Quote breakdown
                   <Badge variant="outline">{order.quote.price_mode}</Badge>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="flex flex-col gap-4">
-                <div className="grid gap-4 sm:grid-cols-4">
+              <CardContent className="flex w-full max-w-full min-w-0 flex-col gap-4">
+                <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-4">
                   <DetailField
                     label="Quote subtotal"
                     value={formatMoney(order.quote.subtotal, order.currency)}
@@ -333,7 +333,7 @@ export default function BillingOrderDetailPage() {
                     {order.quote.pricing_breakdown.map((line, index) => (
                       <li
                         key={`${line.dimension_code ?? "line"}-${index}`}
-                        className="flex items-center justify-between gap-4 rounded-md border px-3 py-1.5"
+                        className="flex min-w-0 items-center justify-between gap-4 rounded-md border px-3 py-1.5"
                       >
                         <span>
                           {line.description} × {line.quantity}

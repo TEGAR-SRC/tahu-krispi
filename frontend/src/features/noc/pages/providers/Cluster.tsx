@@ -42,7 +42,7 @@ export default function NocProviderClusterPage() {
   const [arch, setArch] = useState("x86_64")
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <ProviderSubBreadcrumb providerId={providerId} providerName={provider?.name} page="Cluster" />
       <PageHeader
         title="Cluster"
@@ -66,7 +66,7 @@ export default function NocProviderClusterPage() {
         </TabsContent>
 
         <TabsContent value="log" className="space-y-4">
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <span className="text-sm text-muted-foreground">Entries</span>
             <Select
               value={String(logMax)}
@@ -92,7 +92,7 @@ export default function NocProviderClusterPage() {
         </TabsContent>
 
         <TabsContent value="cpu" className="space-y-4">
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <span className="text-sm text-muted-foreground">Architecture</span>
             <Select value={arch} onValueChange={setArch}>
               <SelectTrigger className="w-40">
@@ -119,7 +119,7 @@ function NodesSection({ base, providerId }: { base: string; providerId: string }
   const nodes = cluster.data?.nodes ?? []
   return (
     <section className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex min-w-0 items-center justify-between gap-3">
         <h2 className="text-sm font-medium text-muted-foreground">Nodes</h2>
         <Button variant="outline" size="sm" onClick={cluster.reload} disabled={cluster.loading}>
           <RefreshCwIcon /> Refresh

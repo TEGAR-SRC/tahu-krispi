@@ -54,7 +54,7 @@ export default function FeatureFlagsPage() {
   }, [keyInput])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Feature flags"
         description="Per-key runtime switches. The API has no listing — look a flag up by key; saving an unknown key creates it."
@@ -156,7 +156,7 @@ function FlagEditor({
             Last updated {formatDateTime(flag.updated_at)}
           </p>
         </div>
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex min-w-0 items-center gap-2 text-sm">
           <Switch checked={enabled} onCheckedChange={setEnabled} />
           {enabled ? "Enabled" : "Disabled"}
         </label>

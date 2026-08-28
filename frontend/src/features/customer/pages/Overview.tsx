@@ -93,14 +93,14 @@ export default function CustomerOverviewPage() {
   const costPercent = Math.min(100, (usedCost / maxCost) * 100)
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Overview"
         description="Your cloud resources, spending and account health at a glance."
       />
       <ErrorBanner error={error} />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {loading ? (
           Array.from({ length: 4 }).map((_, index) => (
             <Card key={index}>
@@ -140,17 +140,17 @@ export default function CustomerOverviewPage() {
         )}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid w-full max-w-full min-w-0 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle className="flex min-w-0 items-center gap-2 text-base">
               <CpuIcon /> Instance resource limits
             </CardTitle>
             <CardDescription>Hourly on-demand provisioning quota for your account.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
+              <div className="flex min-w-0 items-center justify-between text-sm">
                 <span>Instances</span>
                 <span className="tabular-nums text-muted-foreground">
                   Current {usedInstances} / Max {limits?.effective_max_hourly_instances ?? "—"}
@@ -159,7 +159,7 @@ export default function CustomerOverviewPage() {
               <Progress value={instancePercent} />
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
+              <div className="flex min-w-0 items-center justify-between text-sm">
                 <span>Max instance cost</span>
                 <span className="tabular-nums text-muted-foreground">
                   Est. {formatMoney(usedCost, limits?.currency)} /{" "}
@@ -173,7 +173,7 @@ export default function CustomerOverviewPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle className="flex min-w-0 items-center gap-2 text-base">
               <ActivityIcon /> Recent activity
             </CardTitle>
             <CardDescription>Latest events across this organization.</CardDescription>
@@ -187,7 +187,7 @@ export default function CustomerOverviewPage() {
                   <li key={index} className="flex items-start gap-3 text-sm">
                     <ClockIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                     <div className="min-w-0">
-                      <p className="truncate font-medium">{String(item.description ?? item.action ?? "Event")}</p>
+                      <p className="min-w-0 truncate font-medium">{String(item.description ?? item.action ?? "Event")}</p>
                       <p className="text-xs text-muted-foreground">
                         {item.created_at ? formatDateTime(String(item.created_at)) : ""}
                       </p>
@@ -205,7 +205,7 @@ export default function CustomerOverviewPage() {
         </Card>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {quickLinks.map((link) => {
           const Icon = link.icon
           return (
@@ -217,7 +217,7 @@ export default function CustomerOverviewPage() {
                   </div>
                   <div className="min-w-0 space-y-0.5">
                     <p className="font-medium">{link.title}</p>
-                    <p className="truncate text-xs text-muted-foreground">{link.description}</p>
+                    <p className="min-w-0 truncate text-xs text-muted-foreground">{link.description}</p>
                   </div>
                 </CardContent>
               </Card>

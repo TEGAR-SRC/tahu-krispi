@@ -174,7 +174,7 @@ export default function SubscriptionsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Subscriptions"
         description="Recurring services and their billing cycles."
@@ -345,11 +345,11 @@ function SubRows({
         <TableRow>
           <TableCell colSpan={7} className="bg-muted/40">
             {detailLoading ? (
-              <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
+              <div className="flex min-w-0 items-center gap-2 py-2 text-sm text-muted-foreground">
                 <Spinner className="size-4" /> Loading details…
               </div>
             ) : (
-              <dl className="grid gap-x-8 gap-y-3 px-2 py-3 sm:grid-cols-2 lg:grid-cols-3">
+              <dl className="grid w-full max-w-full min-w-0 gap-x-8 gap-y-3 px-2 py-3 sm:grid-cols-2 lg:grid-cols-3">
                 <Detail label="Plan">{planName}</Detail>
                 <Detail label="Billing period">
                   <span className="capitalize">{sub.billing_period}</span>

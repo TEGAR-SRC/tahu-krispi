@@ -144,7 +144,7 @@ function MonitoringSummaryCard({ appRows, serverRows }: { appRows: Row[]; server
   ]
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
+    <div className="grid w-full max-w-full min-w-0 gap-4 md:grid-cols-2">
       {cards.map((card) => (
         <Card key={card.title}>
           <CardHeader>

@@ -36,7 +36,7 @@ export default function NocProviderNodesPage() {
   const nodes = cluster.data?.nodes ?? []
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <ProviderSubBreadcrumb providerId={providerId} providerName={provider?.name} page="Nodes" />
       <PageHeader
         title="Nodes"

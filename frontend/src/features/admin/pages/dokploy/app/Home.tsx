@@ -48,7 +48,7 @@ export default function DokployHomePage() {
   const permissionRows = rows(home.data?.permissions)
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Dokploy home"
         description="Live project stats, recent centralized deployments, and current upstream user context."
@@ -64,7 +64,7 @@ export default function DokployHomePage() {
 
       {home.data ? (
         <>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid w-full max-w-full min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-4">
             {statRows.length ? (
               statRows.map((stat) => (
                 <Card key={stat.label}>
@@ -79,13 +79,13 @@ export default function DokployHomePage() {
             )}
           </div>
 
-          <div className="grid gap-4 xl:grid-cols-[2fr_1fr]">
+          <div className="grid w-full max-w-full min-w-0 gap-4 xl:grid-cols-[2fr_1fr]">
             <Card>
               <CardHeader>
                 <CardTitle>Recent deployments</CardTitle>
                 <CardDescription>From deployment.allCentralized.</CardDescription>
               </CardHeader>
-              <CardContent className="flex flex-col gap-3">
+              <CardContent className="flex w-full max-w-full min-w-0 flex-col gap-3">
                 {deploymentRows.length ? (
                   deploymentRows.slice(0, 12).map((deployment, index) => (
                     <EntityCard
@@ -105,13 +105,13 @@ export default function DokployHomePage() {
               </CardContent>
             </Card>
 
-            <div className="flex flex-col gap-4">
+            <div className="flex w-full max-w-full min-w-0 flex-col gap-4">
               <Card>
                 <CardHeader>
                   <CardTitle>Current user</CardTitle>
                   <CardDescription>From user.get.</CardDescription>
                 </CardHeader>
-                <CardContent className="flex flex-col gap-2 text-sm">
+                <CardContent className="flex w-full max-w-full min-w-0 flex-col gap-2 text-sm">
                   <div>{firstString(user, ["name", "email", "username"]) || "Unknown user"}</div>
                   {user ? (
                     <pre className="max-h-52 overflow-auto rounded-md bg-muted p-2 text-xs">
@@ -128,7 +128,7 @@ export default function DokployHomePage() {
                 </CardHeader>
                 <CardContent>
                   {permissionRows.length ? (
-                    <div className="flex flex-col gap-2 text-sm">
+                    <div className="flex w-full max-w-full min-w-0 flex-col gap-2 text-sm">
                       {permissionRows.slice(0, 20).map((permission, index) => (
                         <div key={index} className="rounded-md bg-muted p-2">
                           {s(permission.action) || s(permission.permission) || JSON.stringify(permission)}

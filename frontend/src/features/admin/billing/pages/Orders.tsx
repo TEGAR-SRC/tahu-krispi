@@ -124,7 +124,7 @@ const TERMINAL_STATUSES = new Set(["cancelled", "refunded", "failed"])
 
 function DetailField({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="flex flex-col gap-0.5 text-sm">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-0.5 text-sm">
       <span className="text-muted-foreground">{label}</span>
       <span className="font-medium">{value}</span>
     </div>
@@ -243,7 +243,7 @@ export default function BillingOrdersPage() {
   ]
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Orders"
         description="Customer orders across the platform."
@@ -304,8 +304,8 @@ export default function BillingOrdersPage() {
           {detailError ? <ErrorBanner error={detailError} /> : null}
 
           {detail ? (
-            <div className="flex flex-col gap-5">
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+            <div className="flex w-full max-w-full min-w-0 flex-col gap-5">
+              <div className="grid w-full max-w-full min-w-0 grid-cols-2 gap-4 sm:grid-cols-3">
                 <DetailField label="Status" value={<StatusBadge status={detail.status} />} />
                 <DetailField label="Total" value={formatMoney(detail.total, detail.currency)} />
                 <DetailField label="Subtotal" value={formatMoney(detail.subtotal, detail.currency)} />
@@ -388,7 +388,7 @@ export default function BillingOrdersPage() {
               {detail.quote?.pricing_breakdown &&
               detail.quote.pricing_breakdown.length > 0 ? (
                 <section className="space-y-2">
-                  <h3 className="flex items-center gap-2 text-sm font-medium">
+                  <h3 className="flex min-w-0 items-center gap-2 text-sm font-medium">
                     Quote breakdown
                     <Badge variant="outline">{detail.quote.price_mode}</Badge>
                   </h3>
@@ -396,7 +396,7 @@ export default function BillingOrdersPage() {
                     {detail.quote.pricing_breakdown.map((line, index) => (
                       <li
                         key={`${line.dimension_code ?? "line"}-${index}`}
-                        className="flex items-center justify-between gap-4 rounded-md border px-3 py-1.5"
+                        className="flex min-w-0 items-center justify-between gap-4 rounded-md border px-3 py-1.5"
                       >
                         <span>
                           {line.description} × {line.quantity}

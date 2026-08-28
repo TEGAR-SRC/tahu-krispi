@@ -392,9 +392,9 @@ function StatusBadge({ status }: { status: string }) {
 function CopyRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   const [copied, setCopied] = useState(false)
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-2">
       <Label className="text-muted-foreground">{label}</Label>
-      <div className="flex items-center gap-1">
+      <div className="flex min-w-0 items-center gap-1">
         <Input readOnly value={value} className={mono ? "font-mono text-xs" : undefined} />
         <Button
           variant="ghost"
@@ -419,9 +419,9 @@ function CopyRow({ label, value, mono }: { label: string; value: string; mono?: 
 function SecretRow({ label, value, action }: { label: string; value: string; action?: ReactNode }) {
   const [visible, setVisible] = useState(false)
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-2">
       <Label className="text-muted-foreground">{label}</Label>
-      <div className="flex items-center gap-1">
+      <div className="flex min-w-0 items-center gap-1">
         <Input readOnly value={visible ? value : "•".repeat(Math.min(value.length || 8, 24))} className="font-mono text-xs" />
         <Button
           variant="ghost"
@@ -535,8 +535,8 @@ function UpdateServiceDialog({
             <DialogTitle>Modify {config.label}</DialogTitle>
             <DialogDescription>Update the {config.kind} name and description.</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4">
-            <div className="grid gap-2">
+          <div className="grid w-full max-w-full min-w-0 gap-4">
+            <div className="grid w-full max-w-full min-w-0 gap-2">
               <Label htmlFor="k4-update-name">
                 Name<span className="text-destructive"> *</span>
               </Label>
@@ -548,7 +548,7 @@ function UpdateServiceDialog({
               />
               {error ? <p className="text-xs font-medium text-destructive">{error}</p> : null}
             </div>
-            <div className="grid gap-2">
+            <div className="grid w-full max-w-full min-w-0 gap-2">
               <Label htmlFor="k4-update-description">Description</Label>
               <Textarea
                 id="k4-update-description"
@@ -632,7 +632,7 @@ function DeleteServiceDialog({
             autoComplete="off"
           />
           {running ? (
-            <p className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
+            <p className="flex min-w-0 items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
               <TriangleAlertIcon /> Cannot delete the service while it is running.
             </p>
           ) : null}
@@ -811,7 +811,7 @@ function ChangePasswordDialog({
               container applies it immediately.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-2">
+          <div className="grid w-full max-w-full min-w-0 gap-2">
             <Label htmlFor="k4-new-password">
               New password<span className="text-destructive"> *</span>
             </Label>
@@ -872,13 +872,13 @@ function InternalCredentialsCard({
     rows.push(<CopyRow key={extra.label} label={extra.label} value={extra.value} />)
   }
   rows.push(
-    <div key="url" className="flex flex-col gap-2 md:col-span-2">
+    <div key="url" className="flex w-full max-w-full min-w-0 flex-col gap-2 md:col-span-2">
       <CopyRow label="Internal Connection URL" value={config.internalUrl(row)} mono />
     </div>,
   )
   if (config.replicationUrl) {
     rows.push(
-      <div key="replication-url" className="flex flex-col gap-2 md:col-span-2">
+      <div key="replication-url" className="flex w-full max-w-full min-w-0 flex-col gap-2 md:col-span-2">
         <CopyRow label="Internal Replication Connection URL" value={config.replicationUrl(row)} mono />
       </div>,
     )
@@ -892,7 +892,7 @@ function InternalCredentialsCard({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid w-full gap-4 md:grid-cols-2">{rows}</div>
+        <div className="grid w-full max-w-full min-w-0 w-full gap-4 md:grid-cols-2">{rows}</div>
       </CardContent>
     </Card>
   )
@@ -960,10 +960,10 @@ function ExternalCredentialsCard({
           ensure that the port is not being used by another application or database.
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <CardContent className="flex w-full max-w-full min-w-0 flex-col gap-4">
+        <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {config.ports.map((port) => (
-            <div key={port.key} className="grid gap-2">
+            <div key={port.key} className="grid w-full max-w-full min-w-0 gap-2">
               <Label htmlFor={`k4-${port.key}`}>{port.label}</Label>
               <Input
                 id={`k4-${port.key}`}
@@ -980,7 +980,7 @@ function ExternalCredentialsCard({
           ))}
         </div>
         {anyPortSet ? (
-          <div className="grid gap-2">
+          <div className="grid w-full max-w-full min-w-0 gap-2">
             <Label className="text-muted-foreground">External Host</Label>
             <Input readOnly value={config.externalUrl(row, hostIp, ports)} className="font-mono text-xs" />
           </div>
@@ -1011,7 +1011,7 @@ function GeneralTab({
   }, [row])
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-4">
       <DeploySettingsCard config={config} row={row} reload={reload} />
       <Card>
         <CardHeader>
@@ -1089,7 +1089,7 @@ function EnvironmentTab({ config, row, reload }: { config: KindConfig; row: Row;
           Service-level variables merged over the project and environment ones by Dokploy.
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">
+      <CardContent className="flex w-full max-w-full min-w-0 flex-col gap-4">
         <Textarea
           aria-label="Environment variables"
           value={env}
@@ -1097,7 +1097,7 @@ function EnvironmentTab({ config, row, reload }: { config: KindConfig; row: Row;
           placeholder="KEY=value"
           className="min-h-64 font-mono text-xs"
         />
-        <div className="flex items-center justify-end gap-3">
+        <div className="flex min-w-0 items-center justify-end gap-3">
           {!dirty ? <p className="text-xs text-muted-foreground">No changes</p> : null}
           <Button onClick={() => void save()} disabled={busy || !dirty}>
             {busy ? "Saving…" : "Save"}
@@ -1165,7 +1165,7 @@ function LogsTab({ config, row }: { config: KindConfig; row: Row }) {
         <CardTitle className="text-xl">Logs</CardTitle>
         <CardDescription>Container logs streamed from the Dokploy server.</CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">
+      <CardContent className="flex w-full max-w-full min-w-0 flex-col gap-4">
         {containers.loading ? (
           <Skeleton className="h-10 w-full" />
         ) : containers.error ? (
@@ -1178,7 +1178,7 @@ function LogsTab({ config, row }: { config: KindConfig; row: Row }) {
         ) : (
           <>
             <div className="flex flex-wrap items-end gap-3">
-              <div className="grid w-full max-w-sm gap-2">
+              <div className="grid w-full max-w-full min-w-0 w-full max-w-sm gap-2">
                 <Label htmlFor="k4-log-container">Container</Label>
                 <Select value={containerId} onValueChange={setContainerId}>
                   <SelectTrigger id="k4-log-container">
@@ -1195,7 +1195,7 @@ function LogsTab({ config, row }: { config: KindConfig; row: Row }) {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid w-28 gap-2">
+              <div className="grid w-full max-w-full min-w-0 w-28 gap-2">
                 <Label htmlFor="k4-log-tail">Tail lines</Label>
                 <Input
                   id="k4-log-tail"
@@ -1204,7 +1204,7 @@ function LogsTab({ config, row }: { config: KindConfig; row: Row }) {
                   onChange={(e) => setTail(e.target.value)}
                 />
               </div>
-              <div className="grid w-56 gap-2">
+              <div className="grid w-full max-w-full min-w-0 w-56 gap-2">
                 <Label htmlFor="k4-log-search">Search</Label>
                 <Input
                   id="k4-log-search"
@@ -1264,7 +1264,7 @@ function MonitoringTab({ row }: { row: Row }) {
 
   if (monitoring.loading) {
     return (
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid w-full max-w-full min-w-0 gap-4 md:grid-cols-2">
         {[0, 1, 2, 3].map((index) => (
           <Skeleton key={index} className="h-32 w-full" />
         ))}
@@ -1287,14 +1287,14 @@ function MonitoringTab({ row }: { row: Row }) {
       (data.network?.length ?? 0) === 0)
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-4">
       {isEmpty ? (
         <EmptyState
           message="No metrics reported yet"
           description={`The Dokploy collector has not recorded any samples for ${appName || "this container"} yet. Metrics appear once the container runs.`}
         />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid w-full max-w-full min-w-0 gap-4 md:grid-cols-2">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base">CPU</CardTitle>
@@ -1479,8 +1479,8 @@ function BackupFormDialog({
             pushed to an S3 destination.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4">
-          <div className="grid gap-2">
+        <div className="grid w-full max-w-full min-w-0 gap-4">
+          <div className="grid w-full max-w-full min-w-0 gap-2">
             <Label htmlFor="k4-bk-dest">
               Destination<span className="text-destructive"> *</span>
             </Label>
@@ -1500,7 +1500,7 @@ function BackupFormDialog({
               <p className="text-xs font-medium text-destructive">{errors.destinationId}</p>
             ) : null}
           </div>
-          <div className="grid gap-2">
+          <div className="grid w-full max-w-full min-w-0 gap-2">
             <Label htmlFor="k4-bk-schedule">
               Schedule (Cron)<span className="text-destructive"> *</span>
             </Label>
@@ -1515,7 +1515,7 @@ function BackupFormDialog({
               <p className="text-xs font-medium text-destructive">{errors.schedule}</p>
             ) : null}
           </div>
-          <div className="grid gap-2">
+          <div className="grid w-full max-w-full min-w-0 gap-2">
             <Label htmlFor="k4-bk-prefix">
               Prefix<span className="text-destructive"> *</span>
             </Label>
@@ -1530,7 +1530,7 @@ function BackupFormDialog({
               <p className="text-xs font-medium text-destructive">{errors.prefix}</p>
             ) : null}
           </div>
-          <div className="grid gap-2">
+          <div className="grid w-full max-w-full min-w-0 gap-2">
             <Label htmlFor="k4-bk-db">
               Database<span className="text-destructive"> *</span>
             </Label>
@@ -1544,7 +1544,7 @@ function BackupFormDialog({
               <p className="text-xs font-medium text-destructive">{errors.database}</p>
             ) : null}
           </div>
-          <div className="grid gap-2">
+          <div className="grid w-full max-w-full min-w-0 gap-2">
             <Label htmlFor="k4-bk-keep">Keep Latest Count</Label>
             <Input
               id="k4-bk-keep"
@@ -1558,7 +1558,7 @@ function BackupFormDialog({
               <p className="text-xs font-medium text-destructive">{errors.keepLatestCount}</p>
             ) : null}
           </div>
-          <div className="flex items-center justify-between rounded-md border px-3 py-2">
+          <div className="flex min-w-0 items-center justify-between rounded-md border px-3 py-2">
             <Label htmlFor="k4-bk-enabled" className="font-normal">
               Enabled
             </Label>
@@ -1612,7 +1612,7 @@ function BackupFilesSheet({
             destination.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-2">
+        <div className="grid w-full max-w-full min-w-0 gap-2">
           <Label htmlFor="k4-files-search">Search prefix</Label>
           <Input id="k4-files-search" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
@@ -1692,8 +1692,8 @@ function BackupsTab({
   return (
     <Card>
       <CardHeader className="gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex flex-col gap-1">
-          <CardTitle className="flex items-center gap-2 text-xl">
+        <div className="flex w-full max-w-full min-w-0 flex-col gap-1">
+          <CardTitle className="flex min-w-0 items-center gap-2 text-xl">
             <DatabaseBackupIcon className="size-5 text-muted-foreground" /> Backups
           </CardTitle>
           <CardDescription>Add backups to your database to save the data to a different provider.</CardDescription>
@@ -1702,7 +1702,7 @@ function BackupsTab({
           <PlusIcon /> Create Backup
         </Button>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">
+      <CardContent className="flex w-full max-w-full min-w-0 flex-col gap-4">
         {backups.length === 0 ? (
           <EmptyState
             message="No backups configured"
@@ -1712,7 +1712,7 @@ function BackupsTab({
           backups.map((backup) => (
             <div
               key={backup.backupId}
-              className="flex flex-col justify-between gap-4 rounded-lg border p-4 transition-colors hover:bg-muted/50 md:flex-row"
+              className="flex min-w-0 flex-col justify-between gap-4 rounded-lg border p-4 transition-colors hover:bg-muted/50 md:flex-row"
             >
               <div className="flex flex-wrap gap-x-8 gap-y-2">
                 <div>
@@ -1889,8 +1889,8 @@ function CustomCommandCard({ config, row, reload }: { config: KindConfig; row: R
         <CardTitle className="text-xl">Custom Command</CardTitle>
         <CardDescription>Docker image, custom command and command arguments.</CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <div className="grid gap-2">
+      <CardContent className="flex w-full max-w-full min-w-0 flex-col gap-4">
+        <div className="grid w-full max-w-full min-w-0 gap-2">
           <Label htmlFor="k4-image">
             Docker Image<span className="text-destructive"> *</span>
           </Label>
@@ -1903,7 +1903,7 @@ function CustomCommandCard({ config, row, reload }: { config: KindConfig; row: R
           />
           {error ? <p className="text-xs font-medium text-destructive">{error}</p> : null}
         </div>
-        <div className="grid gap-2">
+        <div className="grid w-full max-w-full min-w-0 gap-2">
           <Label htmlFor="k4-command">Command</Label>
           <Input
             id="k4-command"
@@ -1916,8 +1916,8 @@ function CustomCommandCard({ config, row, reload }: { config: KindConfig; row: R
             }
           />
         </div>
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
+        <div className="flex w-full max-w-full min-w-0 flex-col gap-2">
+          <div className="flex min-w-0 items-center justify-between">
             <Label>Arguments (Args)</Label>
             <Button variant="outline" size="sm" onClick={() => setArgs((prev) => [...prev, ""])}>
               <PlusIcon /> Add Argument
@@ -2002,10 +2002,10 @@ function ResourcesCard({ config, row, reload }: { config: KindConfig; row: Row; 
         <CardTitle className="text-xl">Resource Limits</CardTitle>
         <CardDescription>Memory / CPU limits &amp; reservations plus swarm replicas.</CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <div className="grid gap-4 sm:grid-cols-2">
+      <CardContent className="flex w-full max-w-full min-w-0 flex-col gap-4">
+        <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2">
           {fields.map((field) => (
-            <div key={field.key} className="grid gap-2">
+            <div key={field.key} className="grid w-full max-w-full min-w-0 gap-2">
               <Label htmlFor={`k4-${field.key}`}>{field.label}</Label>
               <Input
                 id={`k4-${field.key}`}
@@ -2014,7 +2014,7 @@ function ResourcesCard({ config, row, reload }: { config: KindConfig; row: Row; 
               />
             </div>
           ))}
-          <div className="grid gap-2">
+          <div className="grid w-full max-w-full min-w-0 gap-2">
             <Label htmlFor="k4-replicas">Swarm Replicas</Label>
             <Input
               id="k4-replicas"
@@ -2097,7 +2097,7 @@ function JsonUpdateCard({ config, row, reload }: { config: KindConfig; row: Row;
           Generic console for <span className="font-mono text-xs">{config.kind}.update</span>. This sends the JSON body directly to upstream.
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">
+      <CardContent className="flex w-full max-w-full min-w-0 flex-col gap-4">
         <Textarea
           aria-label="Advanced update JSON body"
           value={payload}
@@ -2121,7 +2121,7 @@ function JsonUpdateCard({ config, row, reload }: { config: KindConfig; row: Row;
 
 function AdvancedTab({ config, row, reload }: { config: KindConfig; row: Row; reload: () => void }) {
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-4">
       <JsonUpdateCard config={config} row={row} reload={reload} />
       <CustomCommandCard config={config} row={row} reload={reload} />
       <ResourcesCard config={config} row={row} reload={reload} />
@@ -2229,7 +2229,7 @@ export function DatabaseCreateDialog({
             Dokploy server.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4">
+        <div className="grid w-full max-w-full min-w-0 gap-4">
           {config.createFields.map((field) => {
             const error = errors[field.key]
             const labeled = (
@@ -2240,7 +2240,7 @@ export function DatabaseCreateDialog({
             )
             if (field.kind === "switch") {
               return (
-                <div key={field.key} className="flex items-center justify-between rounded-md border px-3 py-2">
+                <div key={field.key} className="flex min-w-0 items-center justify-between rounded-md border px-3 py-2">
                   <Label htmlFor={`k4-create-${field.key}`} className="font-normal">
                     {field.label}
                     {field.hint ? (
@@ -2256,7 +2256,7 @@ export function DatabaseCreateDialog({
               )
             }
             return (
-              <div key={field.key} className="grid gap-2">
+              <div key={field.key} className="grid w-full max-w-full min-w-0 gap-2">
                 {labeled}
                 {field.kind === "textarea" ? (
                   <Textarea
@@ -2330,7 +2330,7 @@ export function DatabaseServicePage({ kind }: { kind: DbKind }) {
   const environmentBoardHref = `/admin/dokploy/app/p/${projectId}/e/${environmentId}`
 
   return (
-    <div className="flex flex-col gap-6 pb-10">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6 pb-10">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -2358,13 +2358,13 @@ export function DatabaseServicePage({ kind }: { kind: DbKind }) {
       </Breadcrumb>
 
       {service.loading ? (
-        <div className="flex flex-col gap-4">
+        <div className="flex w-full max-w-full min-w-0 flex-col gap-4">
           <Skeleton className="h-10 w-72" />
           <Skeleton className="h-48 w-full" />
           <Skeleton className="h-96 w-full" />
         </div>
       ) : service.error ? (
-        <div className="flex flex-col gap-4">
+        <div className="flex w-full max-w-full min-w-0 flex-col gap-4">
           <PageHeader title={config.label} description={`Route parameter serviceId: ${serviceId}`} />
           <ErrorBanner error={service.error} />
         </div>

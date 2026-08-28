@@ -167,7 +167,7 @@ export default function ProviderNodeDetailPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title={`Node ${node}`}
         description="Status detail, resolver/clock configuration, disks, certificates and power operations."
@@ -211,7 +211,7 @@ export default function ProviderNodeDetailPage() {
                   <CardDescription>{detail.data.PVEVersion || "PVE version n/a"}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <dl className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+                  <dl className="grid w-full max-w-full min-w-0 grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
                     <Field label="CPU usage">{formatPercent(detail.data.CPU)}</Field>
                     <Field label="Uptime">{formatUptime(detail.data.Uptime)}</Field>
                     <Field label="Load average">
@@ -296,7 +296,7 @@ export default function ProviderNodeDetailPage() {
               provider.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-3">
+          <div className="grid w-full max-w-full min-w-0 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="vzdump-vmid">VMID *</Label>
               <Input
@@ -373,7 +373,7 @@ function Field({
   return (
     <div className={`min-w-0 space-y-0.5 ${wide ? "sm:col-span-2 xl:col-span-1" : ""}`}>
       <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
-      <dd className="truncate text-sm">{children}</dd>
+      <dd className="min-w-0 truncate text-sm">{children}</dd>
     </div>
   )
 }
@@ -417,7 +417,7 @@ function DnsTab({ base }: { base: string }) {
         Resolver search domain is required; the three server slots are optional.
       </p>
       {dns.error ? <ErrorBanner error={dns.error} /> : null}
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid w-full max-w-full min-w-0 gap-3 sm:grid-cols-2">
         <div className="space-y-1.5 sm:col-span-2">
           <Label htmlFor="dns-search">Search domain</Label>
           <Input
@@ -454,20 +454,20 @@ function TimeTab({ base }: { base: string }) {
   const epoch = Number(time.data.time ?? 0)
   const localtime = Number(time.data.localtime ?? 0)
   return (
-    <dl className="grid max-w-xl grid-cols-1 gap-4 sm:grid-cols-2">
+    <dl className="grid w-full max-w-full min-w-0 max-w-xl grid-cols-1 gap-4 sm:grid-cols-2">
       <div className="min-w-0 space-y-0.5">
         <dt className="text-xs font-medium text-muted-foreground">Timezone</dt>
-        <dd className="truncate text-sm">{String(time.data.timezone ?? "—")}</dd>
+        <dd className="min-w-0 truncate text-sm">{String(time.data.timezone ?? "—")}</dd>
       </div>
       <div className="min-w-0 space-y-0.5">
         <dt className="text-xs font-medium text-muted-foreground">UTC time</dt>
-        <dd className="truncate text-sm">
+        <dd className="min-w-0 truncate text-sm">
           {epoch > 0 ? new Date(epoch * 1000).toLocaleString() : "—"}
         </dd>
       </div>
       <div className="min-w-0 space-y-0.5">
         <dt className="text-xs font-medium text-muted-foreground">Local time</dt>
-        <dd className="truncate text-sm">
+        <dd className="min-w-0 truncate text-sm">
           {localtime > 0 ? new Date(localtime * 1000).toLocaleString() : "—"}
         </dd>
       </div>

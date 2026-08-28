@@ -51,13 +51,13 @@ const CARDS: HubCard[] = [
 
 export default function AdminSecurityPage() {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Security"
         description="Operational security surface: incidents, network blocklist, feature flags and platform settings."
       />
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2">
         {CARDS.map(({ to, title, description, icon: Icon }) => (
           <Link key={to} to={to} className="group">
             <Card className="h-full transition-colors group-hover:border-primary/40">
@@ -66,7 +66,7 @@ export default function AdminSecurityPage() {
                   <Icon className="size-5" />
                 </span>
                 <span className="min-w-0 flex-1 space-y-1">
-                  <CardTitle className="flex items-center gap-1 text-base font-semibold">
+                  <CardTitle className="flex min-w-0 items-center gap-1 text-base font-semibold">
                     {title}
                     <ChevronRightIcon className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
                   </CardTitle>

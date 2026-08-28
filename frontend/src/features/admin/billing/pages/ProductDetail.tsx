@@ -190,7 +190,7 @@ export default function BillingProductDetailPage() {
       key: "code",
       header: "Plan",
       render: (plan) => (
-        <div className="flex flex-col">
+        <div className="flex min-w-0 flex-col">
           <span className="font-medium">
             {plan.name}
             {plan.featured ? (
@@ -234,7 +234,7 @@ export default function BillingProductDetailPage() {
   ]
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <DetailBreadcrumbs
         trail={[
           { label: "Billing", to: "/admin/billing/summary" },
@@ -255,7 +255,7 @@ export default function BillingProductDetailPage() {
 
       {error ? <ErrorBanner error={error} /> : null}
       {!error && loading ? (
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-3">
           {Array.from({ length: 3 }).map((_, index) => (
             <Skeleton key={index} className="h-14 rounded-lg" />
           ))}
@@ -276,7 +276,7 @@ export default function BillingProductDetailPage() {
         <>
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-3">
+              <CardTitle className="flex min-w-0 items-center gap-3">
                 Identity{" "}
                 <StatusBadge status={product.enabled ? "active" : "disabled"} />
               </CardTitle>
@@ -284,7 +284,7 @@ export default function BillingProductDetailPage() {
                 Code and service kind are immutable through the API.
               </CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <CardContent className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <DetailField label="Code" value={<span className="font-mono text-xs">{product.code}</span>} />
               <DetailField label="Service kind" value={product.service_kind} />
               <DetailField label="Created" value={formatDateTime(product.created_at)} />
@@ -296,9 +296,9 @@ export default function BillingProductDetailPage() {
               <CardTitle>Edit product</CardTitle>
               <CardDescription>PATCH /admin/products/:product_id</CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="grid gap-2">
+            <CardContent className="flex w-full max-w-full min-w-0 flex-col gap-4">
+              <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid w-full max-w-full min-w-0 gap-2">
                   <Label htmlFor="product-name">Name *</Label>
                   <Input
                     id="product-name"
@@ -308,7 +308,7 @@ export default function BillingProductDetailPage() {
                     }
                   />
                 </div>
-                <div className="grid gap-2">
+                <div className="grid w-full max-w-full min-w-0 gap-2">
                   <Label htmlFor="product-sort">Sort order *</Label>
                   <Input
                     id="product-sort"
@@ -320,7 +320,7 @@ export default function BillingProductDetailPage() {
                     }
                   />
                 </div>
-                <div className="grid gap-2">
+                <div className="grid w-full max-w-full min-w-0 gap-2">
                   <Label htmlFor="product-monthly">Default monthly amount *</Label>
                   <Input
                     id="product-monthly"
@@ -348,7 +348,7 @@ export default function BillingProductDetailPage() {
                 </div>
               </div>
 
-              <div className="grid gap-2">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="product-description">Description</Label>
                 <Textarea
                   id="product-description"

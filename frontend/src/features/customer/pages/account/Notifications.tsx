@@ -141,12 +141,12 @@ export default function NotificationsCenterPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Notifications"
         description="Platform events for your account."
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <Badge variant={unreadCount > 0 ? "default" : "outline"}>
               {unreadCount} unread
             </Badge>
@@ -160,7 +160,7 @@ export default function NotificationsCenterPage() {
         }
       />
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+      <div className="grid w-full max-w-full min-w-0 gap-4 lg:grid-cols-[1fr_320px]">
         {/* Inbox */}
         <Card>
           <CardHeader>
@@ -188,7 +188,7 @@ export default function NotificationsCenterPage() {
                   >
                     <ChannelIcon channel={notification.channel} />
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex min-w-0 items-center gap-2">
                         <p className={`min-w-0 truncate text-sm ${unread ? "font-medium" : ""}`}>
                           {notification.subject || notification.event_type || "Notification"}
                         </p>
@@ -324,7 +324,7 @@ function PreferenceToggle({
   onToggle: (value: boolean) => void
 }) {
   return (
-    <label className="flex items-center justify-between gap-2 text-sm">
+    <label className="flex min-w-0 items-center justify-between gap-2 text-sm">
       <span>{label}</span>
       <Switch
         checked={preferences[item]}

@@ -155,7 +155,7 @@ export default function DokploySettingsTagsPage() {
   ]
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Tags"
         description="Labels you can attach to projects and services for filtering and bulk assignment."
@@ -198,7 +198,7 @@ export default function DokploySettingsTagsPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="tag-color">Color</Label>
-              <div className="flex items-center gap-2">
+              <div className="flex min-w-0 items-center gap-2">
                 <Input
                   id="tag-color"
                   type="color"

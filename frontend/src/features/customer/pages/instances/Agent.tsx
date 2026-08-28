@@ -40,7 +40,7 @@ function prettyKey(key: string): string {
 export default function InstanceAgentPage() {
   const { instanceId } = useParams()
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <AgentContent instanceId={instanceId} />
     </div>
   )
@@ -55,7 +55,7 @@ function AgentContent({ instanceId }: { instanceId: string | undefined }) {
         title="Guest agent"
         description="Introspection through the qemu-guest-agent running inside the guest. VM-only."
       />
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid w-full max-w-full min-w-0 gap-4 lg:grid-cols-2">
         <OsInfoCard instanceId={instanceId} />
         <AgentInfoCard instanceId={instanceId} />
       </div>
@@ -89,11 +89,11 @@ function DefinitionList({ rows }: { rows: Array<[string, string]> }) {
     return <p className="text-sm text-muted-foreground">Nothing reported.</p>
   }
   return (
-    <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
+    <dl className="grid w-full max-w-full min-w-0 gap-x-6 gap-y-2 sm:grid-cols-2">
       {rows.map(([key, value]) => (
         <div key={key} className="min-w-0 space-y-0.5">
           <dt className="text-xs uppercase tracking-wide text-muted-foreground">{key}</dt>
-          <dd className="truncate font-mono text-sm">{value || "—"}</dd>
+          <dd className="min-w-0 truncate font-mono text-sm">{value || "—"}</dd>
         </div>
       ))}
     </dl>

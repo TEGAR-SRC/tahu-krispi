@@ -101,7 +101,7 @@ function useMountLoad(load: () => Promise<void>) {
 
 export default function AccountSecurityPage() {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex min-w-0 flex-col gap-6">
       <PageHeader
         title="Account security"
         description="Password, sessions, multi-factor authentication and passkeys."
@@ -164,7 +164,7 @@ function PasswordCard() {
         <CardTitle>Password</CardTitle>
         <CardDescription>Use at least 8 characters; a passphrase works best.</CardDescription>
       </CardHeader>
-      <CardContent className="grid max-w-xl gap-3">
+      <CardContent className="grid w-full max-w-full min-w-0 max-w-xl gap-3">
         <div className="space-y-1.5">
           <Label htmlFor="pw-current">Current password *</Label>
           <Input
@@ -175,7 +175,7 @@ function PasswordCard() {
             onChange={(event) => setCurrent(event.target.value)}
           />
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid w-full max-w-full min-w-0 gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="pw-new">New password *</Label>
             <Input
@@ -301,7 +301,7 @@ function MfaCard() {
     <Card>
       <CardHeader className="flex-row items-start justify-between space-y-0">
         <div>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex min-w-0 items-center gap-2">
             <ShieldCheckIcon className="size-5" /> Two-factor authentication
           </CardTitle>
           <CardDescription>
@@ -312,7 +312,7 @@ function MfaCard() {
           {status?.enabled ? "Enabled" : "Disabled"}
         </Badge>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="min-w-0 space-y-4">
         <p className="text-sm text-muted-foreground">
           Remaining recovery codes:{" "}
           <span className="font-medium text-foreground">
@@ -327,13 +327,13 @@ function MfaCard() {
         ) : null}
 
         {setup ? (
-          <div className="space-y-4 rounded-md border p-4">
+          <div className="min-w-0 space-y-4 overflow-hidden rounded-md border p-4">
             <p className="text-sm font-medium">1. Scan this QR code with your authenticator app</p>
             <div className="flex justify-center rounded-lg bg-white p-4">
               <QRCodeSVG value={setup.otpauth_url} size={180} />
             </div>
             <p className="text-sm font-medium">2. Or copy this secret manually</p>
-            <p className="break-all rounded bg-muted px-2 py-1 font-mono text-xs select-all">
+            <p className="max-w-full overflow-hidden break-all [overflow-wrap:anywhere] rounded bg-muted px-2 py-1 font-mono text-xs select-all">
               {setup.secret}
             </p>
             <p className="text-sm font-medium">3. Enter the current 6-digit code to confirm</p>
@@ -386,14 +386,17 @@ function MfaCard() {
         )}
 
         {revealedCodes ? (
-          <div className="rounded-md border border-dashed p-4">
+          <div className="min-w-0 overflow-hidden rounded-md border border-dashed p-4">
             <p className="mb-2 flex items-center gap-2 text-sm font-medium">
               <FingerprintIcon className="size-4" />
               Save these codes now — they are shown only once.
             </p>
-            <ul className="grid grid-cols-2 gap-1 font-mono text-sm sm:grid-cols-5">
+            <ul className="grid min-w-0 w-full max-w-full grid-cols-2 gap-1 font-mono text-sm sm:grid-cols-5">
               {revealedCodes.map((recoveryCode) => (
-                <li key={recoveryCode} className="rounded bg-muted px-2 py-1 select-all">
+                <li
+                  key={recoveryCode}
+                  className="min-w-0 overflow-hidden break-all [overflow-wrap:anywhere] rounded bg-muted px-2 py-1 select-all"
+                >
                   {recoveryCode}
                 </li>
               ))}
@@ -572,7 +575,7 @@ function PasskeysCard() {
     <Card>
       <CardHeader className="flex-row items-start justify-between space-y-0">
         <div>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex min-w-0 items-center gap-2">
             <FingerprintIcon className="size-5" /> Passkeys
           </CardTitle>
           <CardDescription>
@@ -708,7 +711,7 @@ function SessionsCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex min-w-0 items-center gap-2">
           <MonitorSmartphoneIcon className="size-5" /> Active sessions
         </CardTitle>
         <CardDescription>
@@ -727,7 +730,7 @@ function SessionsCard() {
                 key: "device_name",
                 header: "Device",
                 render: (row) => (
-                  <span className="max-w-70 truncate block" title={row.user_agent}>
+                  <span className="min-w-0 max-w-70 truncate block" title={row.user_agent}>
                     {row.device_name || row.user_agent || "Unknown device"}
                   </span>
                 ),
@@ -846,7 +849,7 @@ function SecurityEventsCard() {
       key: "user_agent",
       header: "Client",
       render: (row) => (
-        <span className="block max-w-60 truncate" title={row.user_agent}>
+        <span className="min-w-0 block max-w-60 truncate" title={row.user_agent}>
           {row.user_agent || "—"}
         </span>
       ),
@@ -886,7 +889,7 @@ function SecurityEventsCard() {
               emptyMessage="No security events recorded."
             />
             {pageCount > 1 ? (
-              <div className="flex items-center justify-end gap-2">
+              <div className="flex min-w-0 items-center justify-end gap-2">
                 <Button
                   size="sm"
                   variant="outline"

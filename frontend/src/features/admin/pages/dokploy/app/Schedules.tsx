@@ -215,7 +215,7 @@ function ScheduleDialog({ draft, setDraft, onSaved }: { draft: Draft | null; set
           </Field>
           <Field>
             <FieldLabel>Enabled</FieldLabel>
-            <div className="flex items-center gap-3 rounded-md border px-3 py-2">
+            <div className="flex min-w-0 items-center gap-3 rounded-md border px-3 py-2">
               <Switch checked={draft.enabled} onCheckedChange={(enabled) => set({ enabled })} />
               <span className="text-sm text-muted-foreground">Disable honestly when upstream schedule should stay defined but not run.</span>
             </div>

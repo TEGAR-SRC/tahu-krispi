@@ -197,7 +197,7 @@ function HandleDnsProviderDialog({
             Let Dokploy create A/CNAME records for domains automatically.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={onSubmit} className="grid gap-4">
+        <form onSubmit={onSubmit} className="grid w-full max-w-full min-w-0 gap-4">
           <FieldRow label="Name" error={errorFor("name")}>
             <Input placeholder="prod-cloudflare" value={values.name} onChange={(e) => set("name", e.target.value)} />
           </FieldRow>
@@ -345,7 +345,7 @@ function RecordDialog({
             {record ? "Update this DNS record." : "Create a new A or CNAME record in this zone."}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={onSubmit} className="grid gap-4">
+        <form onSubmit={onSubmit} className="grid w-full max-w-full min-w-0 gap-4">
           <FieldRow label="Type">
             <Select value={values.type} onValueChange={(value) => set("type", value)}>
               <SelectTrigger className="w-full">
@@ -434,7 +434,7 @@ function ZonesDialog({ provider }: { provider: DnsProviderRow }) {
             No zones found for these credentials. Make sure they can access at least one zone.
           </p>
         ) : (
-          <div className="grid max-h-[60vh] gap-1.5 overflow-y-auto">
+          <div className="grid w-full max-w-full min-w-0 max-h-[60vh] gap-1.5 overflow-y-auto">
             {(zones ?? []).map((zone) => {
               const expanded = expandedZoneId === zone.id
               return (
@@ -509,7 +509,7 @@ function ZoneRecords({
   const recordsChanged = () => setReloadTick((t) => t + 1)
 
   return (
-    <div className="flex flex-col gap-1 px-3 pb-2 pl-8">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-1 px-3 pb-2 pl-8">
       {loading ? (
         <p className="text-muted-foreground py-1 text-xs">Loading records…</p>
       ) : asDisplayError(error) ? (
@@ -520,12 +520,12 @@ function ZoneRecords({
         (data ?? []).map((record) => {
           const editable = record.type === "A" || record.type === "CNAME"
           return (
-            <div key={record.id} className="flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs">
+            <div key={record.id} className="flex min-w-0 items-center gap-2 rounded-md border px-3 py-1.5 text-xs">
               <Badge variant="outline" className="shrink-0">
                 {record.type}
               </Badge>
-              <span className="max-w-40 truncate font-medium">{record.name}</span>
-              <span className="text-muted-foreground flex-1 truncate">→ {record.content}</span>
+              <span className="min-w-0 max-w-40 truncate font-medium">{record.name}</span>
+              <span className="min-w-0 text-muted-foreground flex-1 truncate">→ {record.content}</span>
               {editable ? (
                 <RecordDialog
                   dnsProviderId={dnsProviderId}
@@ -589,7 +589,7 @@ export default function DokploySettingsDnsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <K6Breadcrumbs current="DNS Providers" />
       <PageHeader
         title="DNS Providers"
@@ -607,7 +607,7 @@ export default function DokploySettingsDnsPage() {
       />
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex min-w-0 items-center gap-2">
             <GlobeIcon className="text-muted-foreground size-5" />
             Providers ({providers.length})
           </CardTitle>
@@ -630,7 +630,7 @@ export default function DokploySettingsDnsPage() {
               return (
                 <div key={provider.dnsProviderId} className="rounded-lg border p-3.5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
                       <GlobeIcon className="text-muted-foreground size-6 shrink-0" />
                       <div>
                         <span className="text-sm font-medium">{provider.name}</span>
@@ -639,7 +639,7 @@ export default function DokploySettingsDnsPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex min-w-0 items-center gap-1">
                       <ZonesDialog provider={provider} />
                       <HandleDnsProviderDialog
                         dnsProviderId={provider.dnsProviderId}

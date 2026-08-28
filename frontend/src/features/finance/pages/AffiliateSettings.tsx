@@ -112,7 +112,7 @@ export default function FinanceAffiliateSettingsPage() {
   }, [commissionPercent, refereeBonusPercent, minInvoiceTotal, enabled, load])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -158,8 +158,8 @@ export default function FinanceAffiliateSettingsPage() {
               </Button>
             </>
           ) : (
-            <div className="grid max-w-xl gap-3">
-              <div className="grid grid-cols-1 sm:grid-cols-3 items-end gap-3">
+            <div className="grid w-full max-w-full min-w-0 max-w-xl gap-3">
+              <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-3 items-end gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="aff-commission">Commission % *</Label>
                   <Input
@@ -196,7 +196,7 @@ export default function FinanceAffiliateSettingsPage() {
                   />
                 </div>
               </div>
-              <div className="flex items-center justify-between rounded-md border px-3 py-2">
+              <div className="flex min-w-0 items-center justify-between rounded-md border px-3 py-2">
                 <Label htmlFor="aff-enabled" className="cursor-pointer">
                   Program enabled
                 </Label>

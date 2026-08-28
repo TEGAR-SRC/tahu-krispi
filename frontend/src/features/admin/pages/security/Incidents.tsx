@@ -99,7 +99,7 @@ export default function SecurityIncidentsPage() {
   }, [resolving])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Security incidents"
         description="Sign-in anomalies and abuse signals across the platform."
@@ -134,8 +134,8 @@ export default function SecurityIncidentsPage() {
             header: "Incident",
             render: (row) => (
               <div className="min-w-0">
-                <p className="truncate font-medium capitalize">{row.type || "—"}</p>
-                <p className="truncate text-xs text-muted-foreground" title={row.description}>
+                <p className="min-w-0 truncate font-medium capitalize">{row.type || "—"}</p>
+                <p className="min-w-0 truncate text-xs text-muted-foreground" title={row.description}>
                   {row.description || "—"}
                 </p>
               </div>
@@ -151,8 +151,8 @@ export default function SecurityIncidentsPage() {
             header: "User / org",
             render: (row) => (
               <div className="min-w-0">
-                <p className="truncate text-sm">{row.user_email || "—"}</p>
-                <p className="truncate text-xs text-muted-foreground">{row.org_slug || "—"}</p>
+                <p className="min-w-0 truncate text-sm">{row.user_email || "—"}</p>
+                <p className="min-w-0 truncate text-xs text-muted-foreground">{row.org_slug || "—"}</p>
               </div>
             ),
           },

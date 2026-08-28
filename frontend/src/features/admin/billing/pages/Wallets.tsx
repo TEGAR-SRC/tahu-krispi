@@ -228,7 +228,7 @@ export default function BillingWalletsPage() {
       key: "slug",
       header: "Organization",
       render: (org) => (
-        <div className="flex flex-col">
+        <div className="flex min-w-0 flex-col">
           <Link
             to={`/admin/billing/wallets/${org.id}`}
             title="Open wallet page"
@@ -303,7 +303,7 @@ export default function BillingWalletsPage() {
     txnsMeta?.total !== undefined ? Math.max(1, Math.ceil(txnsMeta.total / 10)) : null
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Wallets"
         description="Per-organization prepaid balances. Balances are read per organization because the API exposes no admin-wide wallet listing."
@@ -343,8 +343,8 @@ export default function BillingWalletsPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4">
-            <div className="grid gap-2">
+          <div className="grid w-full max-w-full min-w-0 gap-4">
+            <div className="grid w-full max-w-full min-w-0 gap-2">
               <Label htmlFor="wallet-direction">Direction</Label>
               <Select
                 value={form.direction}
@@ -365,8 +365,8 @@ export default function BillingWalletsPage() {
               </Select>
             </div>
 
-            <div className="grid grid-cols-[3fr_2fr] gap-3">
-              <div className="grid gap-2">
+            <div className="grid w-full max-w-full min-w-0 grid-cols-[3fr_2fr] gap-3">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="wallet-amount">Amount</Label>
                 <Input
                   id="wallet-amount"
@@ -379,7 +379,7 @@ export default function BillingWalletsPage() {
                   }
                 />
               </div>
-              <div className="grid gap-2">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="wallet-currency">Currency</Label>
                 <Input
                   id="wallet-currency"
@@ -392,7 +392,7 @@ export default function BillingWalletsPage() {
               </div>
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid w-full max-w-full min-w-0 gap-2">
               <Label htmlFor="wallet-description">Description</Label>
               <Input
                 id="wallet-description"
@@ -478,7 +478,7 @@ export default function BillingWalletsPage() {
                     key: "direction",
                     header: "Direction",
                     render: (txn) => (
-                      <span className="flex items-center gap-1.5">
+                      <span className="flex min-w-0 items-center gap-1.5">
                         <ScaleIcon className="size-3.5 text-muted-foreground" />
                         {txn.direction}
                       </span>
@@ -524,7 +524,7 @@ export default function BillingWalletsPage() {
                 getRowKey={(txn) => txn.id}
                 emptyMessage="No transactions yet."
               />
-              <div className="flex items-center justify-between text-sm">
+              <div className="flex min-w-0 items-center justify-between text-sm">
                 <span className="text-muted-foreground">
                   Page {txnsMeta?.page ?? txnsPage}
                   {txnsMeta?.total !== undefined ? ` of ${txnsMeta.total} entries` : ""}

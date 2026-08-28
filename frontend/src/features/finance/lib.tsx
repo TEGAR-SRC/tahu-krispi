@@ -97,7 +97,7 @@ export function TablePagination({ meta, onPageChange }: TablePaginationProps) {
         {lastPage !== undefined ? ` of ${lastPage}` : ""}
         {total !== undefined ? ` · ${formatNumber(total)} rows` : ""}
       </p>
-      <div className="flex items-center gap-2">
+      <div className="flex min-w-0 items-center gap-2">
         <Button
           variant="outline"
           size="sm"

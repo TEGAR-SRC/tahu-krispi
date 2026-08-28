@@ -69,7 +69,7 @@ export default function ProviderContainersPage() {
             key: "Status",
             header: "Status",
             render: (row) => (
-              <div className="flex items-center gap-2">
+              <div className="flex min-w-0 items-center gap-2">
                 <StatusBadge status={row.Status ?? null} />
                 {row.PowerStatus ? (
                   <span className="text-xs text-muted-foreground">{row.PowerStatus}</span>

@@ -121,13 +121,13 @@ export function AddressesTab() {
       header: "Address",
       render: (row) => (
         <div className="min-w-0">
-          <p className="truncate font-medium">
+          <p className="min-w-0 truncate font-medium">
             {row.label || row.recipient_name || "Address"}
             {row.is_default ? (
               <Badgeish />
             ) : null}
           </p>
-          <p className="truncate text-xs text-muted-foreground">
+          <p className="min-w-0 truncate text-xs text-muted-foreground">
             {[row.address_line1, row.district, row.city_or_regency, row.province, row.postal_code]
               .filter(Boolean)
               .join(", ")}
@@ -270,7 +270,7 @@ function AddressDialog({
           <DialogTitle>New address</DialogTitle>
           <DialogDescription>Used for invoices and SIM registration.</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid w-full max-w-full min-w-0 gap-3 sm:grid-cols-2">
           {field("recipient_name", "Recipient name *")}
           {field("company_name", "Company")}
           {field("country_code", "Country code", "ID")}

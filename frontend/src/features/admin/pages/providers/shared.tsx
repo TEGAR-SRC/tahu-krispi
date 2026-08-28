@@ -51,7 +51,7 @@ export function ProviderShell({
   const match = provider.data?.find((row) => row.id === providerId) ?? null
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>

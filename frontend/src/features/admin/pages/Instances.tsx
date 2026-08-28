@@ -93,7 +93,7 @@ export default function AdminInstancesPage() {
   )
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Instances"
         description="Every customer instance across all providers and organizations."
@@ -144,8 +144,8 @@ export default function AdminInstancesPage() {
             header: "Instance",
             render: (row) => (
               <div className="min-w-0">
-                <p className="truncate font-medium">{row.name}</p>
-                <p className="truncate font-mono text-xs text-muted-foreground">
+                <p className="min-w-0 truncate font-medium">{row.name}</p>
+                <p className="min-w-0 truncate font-mono text-xs text-muted-foreground">
                   {row.public_id}
                 </p>
               </div>
@@ -161,7 +161,7 @@ export default function AdminInstancesPage() {
             key: "status",
             header: "Status",
             render: (row) => (
-              <div className="flex items-center gap-2">
+              <div className="flex min-w-0 items-center gap-2">
                 <StatusBadge status={row.status} />
                 {row.power_status ? (
                   <span className="text-xs text-muted-foreground">{row.power_status}</span>

@@ -559,7 +559,7 @@ function OpDialog({
             <span className="font-mono text-[11px]">{op.path}</span>
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-1">
+        <div className="grid w-full max-w-full min-w-0 gap-4 py-1">
           {visibleFields.map((field) => {
             const error = localErrors[field.key] ?? fieldErrors[field.key]
             const options = [
@@ -571,9 +571,9 @@ function OpDialog({
             const optionLabel = (value: string) =>
               dynOptions[field.key]?.find((option) => option.value === value)?.label ?? value
             return (
-              <div key={field.key} className="grid gap-2">
+              <div key={field.key} className="grid w-full max-w-full min-w-0 gap-2">
                 {field.kind === "switch" ? (
-                  <div className="flex items-center justify-between rounded-md border px-3 py-2">
+                  <div className="flex min-w-0 items-center justify-between rounded-md border px-3 py-2">
                     <Label htmlFor={`dk-field-${field.key}`} className="font-normal">
                       {field.label}
                       {field.hint ? (
@@ -912,7 +912,7 @@ export function DokployEngine({ spec }: { spec: DokployConsoleSpec }) {
   const hasActions = (spec.updateOp ?? undefined) !== undefined || (spec.rowActions ?? []).length > 0
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -969,7 +969,7 @@ export function DokployEngine({ spec }: { spec: DokployConsoleSpec }) {
             const label = (value: string) =>
               options?.find((option) => option.value === value)?.label ?? value
             return (
-              <div key={field.key} className="grid min-w-56 gap-1.5">
+              <div key={field.key} className="grid w-full max-w-full min-w-0 min-w-56 gap-1.5">
                 <Label htmlFor={`dk-query-${field.key}`} className="text-xs text-muted-foreground">
                   {field.label}
                   {field.required ? <span className="text-destructive"> *</span> : null}
@@ -1184,7 +1184,7 @@ export function DokployEngine({ spec }: { spec: DokployConsoleSpec }) {
                   />
                 </PaginationItem>
                 <PaginationItem>
-                  <span className="flex items-center gap-1 pl-2 text-sm text-muted-foreground">
+                  <span className="flex min-w-0 items-center gap-1 pl-2 text-sm text-muted-foreground">
                     <ChevronLeftIcon className="hidden" />
                     page {safePage}/{pageCount}
                     <ChevronRightIcon className="hidden" />

@@ -138,12 +138,12 @@ export default function SshKeysPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="SSH keys"
         description="Public keys injected into new instances of the active organization."
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" asChild>
               <Link to="/app/profile">Back to settings</Link>
             </Button>
@@ -164,22 +164,27 @@ export default function SshKeysPage() {
           description="Paste an OpenSSH public key (ssh-ed25519 … or ssh-rsa …)."
         />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid w-full max-w-full min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {keys.map((key) => (
-            <Card key={key.id} className="min-w-0">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <TerminalSquareIcon className="size-4 text-muted-foreground" />
-                  <span className="truncate">{key.name}</span>
+            <Card key={key.id} className="flex w-full max-w-full min-w-0 flex-col overflow-hidden">
+              <CardHeader className="w-full max-w-full min-w-0 overflow-hidden pb-2">
+                <CardTitle className="flex w-full max-w-full min-w-0 items-center gap-2 overflow-hidden text-base">
+                  <TerminalSquareIcon className="size-4 shrink-0 text-muted-foreground" />
+                  <span className="min-w-0 flex-1 truncate">{key.name}</span>
                 </CardTitle>
-                <CardDescription className="font-mono text-xs break-all">
+                <CardDescription className="w-full max-w-full min-w-0 overflow-hidden break-all font-mono text-xs [overflow-wrap:anywhere]">
                   {key.fingerprint || key.public_key.slice(0, 40) + "…"}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <p className="line-clamp-3 font-mono text-xs break-all text-muted-foreground" title={key.public_key}>
-                  {key.public_key}
-                </p>
+              <CardContent className="flex w-full max-w-full min-w-0 flex-col gap-3 overflow-hidden">
+                <div
+                  className="w-full max-w-full min-w-0 overflow-hidden rounded-md border bg-muted/30 p-2.5"
+                  title={key.public_key}
+                >
+                  <code className="block max-h-16 w-full max-w-full min-w-0 overflow-hidden break-all font-mono text-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere] [word-break:break-all]">
+                    <span className="line-clamp-3 block">{key.public_key}</span>
+                  </code>
+                </div>
                 <p className="text-xs text-muted-foreground">
                   Added {formatDateTime(key.created_at)}
                 </p>
@@ -224,8 +229,8 @@ export default function SshKeysPage() {
               Saving replaces both name and public key — paste the full key again.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
-            <div className="space-y-1.5">
+          <div className="w-full max-w-full min-w-0 space-y-3 overflow-hidden">
+            <div className="w-full max-w-full min-w-0 space-y-1.5 overflow-hidden">
               <Label htmlFor="sk-name">Name *</Label>
               <Input
                 id="sk-name"
@@ -234,12 +239,12 @@ export default function SshKeysPage() {
                 onChange={(event) => setName(event.target.value)}
               />
             </div>
-            <div className="space-y-1.5">
+            <div className="w-full max-w-full min-w-0 space-y-1.5 overflow-hidden">
               <Label htmlFor="sk-key">Public key *</Label>
               <Textarea
                 id="sk-key"
                 rows={4}
-                className="font-mono text-xs"
+                className="max-h-40 w-full max-w-full min-w-0 break-all font-mono text-xs whitespace-pre-wrap [overflow-wrap:anywhere] [word-break:break-all]"
                 placeholder="ssh-ed25519 AAAA… comment"
                 value={publicKey}
                 onChange={(event) => setPublicKey(event.target.value)}

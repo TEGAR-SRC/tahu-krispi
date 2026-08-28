@@ -200,9 +200,9 @@ export default function InstanceResizePage() {
 
   if (loading && !instance) {
     return (
-      <div className="flex flex-col gap-6">
+      <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
         <Skeleton className="h-8 w-64" />
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid w-full max-w-full min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, index) => (
             <Skeleton key={index} className="h-24 w-full" />
           ))}
@@ -213,7 +213,7 @@ export default function InstanceResizePage() {
 
   if (error) {
     return (
-      <div className="flex flex-col gap-6">
+      <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
         <InstanceBreadcrumb section="Resize" />
         <ErrorBanner error={error} />
       </div>
@@ -222,7 +222,7 @@ export default function InstanceResizePage() {
 
   if (!instance) {
     return (
-      <div className="flex flex-col gap-6">
+      <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
         <InstanceBreadcrumb section="Resize" />
         <p className="text-sm text-muted-foreground">Instance not found.</p>
       </div>
@@ -230,11 +230,11 @@ export default function InstanceResizePage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <InstanceBreadcrumb instanceName={instance.name} section="Resize" />
 
       <div className="space-y-1">
-        <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight sm:text-2xl">
+        <h1 className="flex min-w-0 items-center gap-2 text-xl font-semibold tracking-tight sm:text-2xl">
           <ScalingIcon className="size-6 text-muted-foreground" /> Resize “{instance.name}”
         </h1>
         <p className="text-sm text-muted-foreground">
@@ -244,7 +244,7 @@ export default function InstanceResizePage() {
 
       {/* Current spec */}
       <Card>
-        <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4 px-4 py-4">
+        <CardContent className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-3 gap-4 px-4 py-4">
           <SpecBox icon={<CpuIcon />} label="Current vCPU" value={String(instance.vcpu)} />
           <SpecBox
             icon={<MemoryStickIcon />}
@@ -256,7 +256,7 @@ export default function InstanceResizePage() {
       </Card>
 
       {/* Mode switch */}
-      <div className="grid w-fit grid-cols-1 sm:grid-cols-2 gap-2">
+      <div className="grid w-full max-w-full min-w-0 w-fit grid-cols-1 sm:grid-cols-2 gap-2">
         <Button
           type="button"
           variant={mode === "plan" ? "default" : "outline"}
@@ -277,7 +277,7 @@ export default function InstanceResizePage() {
         plansError ? (
           <ErrorBanner error={plansError} />
         ) : plansLoading ? (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid w-full max-w-full min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 3 }).map((_, index) => (
               <Skeleton key={index} className="h-28 w-full" />
             ))}
@@ -286,7 +286,7 @@ export default function InstanceResizePage() {
           <p className="text-sm text-muted-foreground">No published plans.</p>
         ) : (
           <TooltipProvider delayDuration={150}>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid w-full max-w-full min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {plans.map((candidate) => {
                 const eligible = planIsUpgrade(
                   candidate,
@@ -306,18 +306,18 @@ export default function InstanceResizePage() {
                       selected ? "border-primary bg-primary/5 ring-1 ring-primary" : ""
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-center justify-between gap-2">
                       <span className="font-medium">{candidate.name}</span>
                       {candidate.featured ? <Badge>featured</Badge> : null}
                     </div>
                     <div className="mt-2 space-y-1 text-xs tabular-nums text-muted-foreground">
-                      <p className="flex items-center gap-1.5">
+                      <p className="flex min-w-0 items-center gap-1.5">
                         <CpuIcon className="size-3.5" /> {candidate.vcpu} vCPU
                       </p>
-                      <p className="flex items-center gap-1.5">
+                      <p className="flex min-w-0 items-center gap-1.5">
                         <MemoryStickIcon className="size-3.5" /> {candidate.ram_mb} MB RAM
                       </p>
-                      <p className="flex items-center gap-1.5">
+                      <p className="flex min-w-0 items-center gap-1.5">
                         <HardDriveIcon className="size-3.5" /> {candidate.disk_gb} GB NVMe
                       </p>
                     </div>
@@ -337,7 +337,7 @@ export default function InstanceResizePage() {
         )
       ) : (
         <TooltipProvider delayDuration={150}>
-          <div className="flex flex-col gap-3 sm:max-w-md sm:grid sm:grid-cols-3">
+          <div className="flex w-full max-w-full min-w-0 flex-col gap-3 sm:max-w-md sm:grid sm:grid-cols-3">
             <UpgradeOnlyField tooltip="Upgrade only — cannot go below the current spec">
               <Label htmlFor="resize-cpu">vCPU (min {instance.vcpu})</Label>
               <Input
@@ -381,7 +381,7 @@ export default function InstanceResizePage() {
       {/* Billing + live quote */}
       <Card>
         <CardContent className="space-y-4 px-4 py-4">
-          <div className="flex flex-col gap-3 sm:max-w-md sm:grid sm:grid-cols-2">
+          <div className="flex w-full max-w-full min-w-0 flex-col gap-3 sm:max-w-md sm:grid sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>Currency</Label>
               <div className="flex gap-2">
@@ -490,7 +490,7 @@ export default function InstanceResizePage() {
             {summaryRows.map((row) => (
               <div
                 key={row.label}
-                className="flex items-center justify-between gap-4 border-b px-3 py-2 last:border-b-0"
+                className="flex min-w-0 items-center justify-between gap-4 border-b px-3 py-2 last:border-b-0"
               >
                 <span className="text-muted-foreground">{row.label}</span>
                 <span className="font-medium tabular-nums">
@@ -538,7 +538,7 @@ function SpecBox({
 }) {
   return (
     <div className="space-y-1">
-      <p className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-muted-foreground">
+      <p className="flex min-w-0 items-center gap-1.5 text-xs uppercase tracking-wide text-muted-foreground">
         <span className="[&_svg]:size-3.5">{icon}</span>
         {label}
       </p>

@@ -62,7 +62,7 @@ interface ApiKey {
 
 export function DeveloperTab() {
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    <div className="grid w-full max-w-full min-w-0 gap-6 lg:grid-cols-2">
       <SshKeysCard />
       <StartupScriptsCard />
       <ApiKeysCard />
@@ -145,10 +145,10 @@ function SshKeysCard() {
         ) : null}
         <ul className="space-y-1.5">
           {keys.map((key) => (
-            <li key={key.id} className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm">
+            <li key={key.id} className="flex min-w-0 items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm">
               <div className="min-w-0">
-                <p className="truncate font-medium">{key.name}</p>
-                <p className="truncate font-mono text-xs text-muted-foreground">
+                <p className="min-w-0 truncate font-medium">{key.name}</p>
+                <p className="min-w-0 truncate font-mono text-xs text-muted-foreground">
                   {key.fingerprint || key.public_key?.slice(0, 40) || ""}
                 </p>
               </div>
@@ -282,10 +282,10 @@ function StartupScriptsCard() {
         ) : null}
         <ul className="space-y-1.5">
           {scripts.map((script) => (
-            <li key={script.id} className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm">
+            <li key={script.id} className="flex min-w-0 items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm">
               <div className="min-w-0">
-                <p className="truncate font-medium">{script.name}</p>
-                <p className="truncate text-xs text-muted-foreground">{script.content?.slice(0, 60)}</p>
+                <p className="min-w-0 truncate font-medium">{script.name}</p>
+                <p className="min-w-0 truncate text-xs text-muted-foreground">{script.content?.slice(0, 60)}</p>
               </div>
               <Button size="icon" variant="ghost" title="Remove" onClick={() => setDeleteTarget(script)}>
                 <Trash2Icon />
@@ -408,8 +408,8 @@ function ApiKeysCard() {
       header: "Key",
       render: (row) => (
         <div className="min-w-0">
-          <p className="truncate font-medium">{row.name}</p>
-          <p className="truncate font-mono text-xs text-muted-foreground">{row.key_prefix ?? row.public_id ?? ""}…</p>
+          <p className="min-w-0 truncate font-medium">{row.name}</p>
+          <p className="min-w-0 truncate font-mono text-xs text-muted-foreground">{row.key_prefix ?? row.public_id ?? ""}…</p>
         </div>
       ),
     },
@@ -601,9 +601,9 @@ function CreateApiKeyDialog({
           </div>
           <div className="space-y-1.5">
             <Label>Scopes *</Label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+            <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-1.5">
               {SCOPE_CHOICES.map((scope) => (
-                <label key={scope} className="flex items-center gap-2 rounded border px-2 py-1.5 text-xs">
+                <label key={scope} className="flex min-w-0 items-center gap-2 rounded border px-2 py-1.5 text-xs">
                   <input
                     type="checkbox"
                     checked={selected.includes(scope)}

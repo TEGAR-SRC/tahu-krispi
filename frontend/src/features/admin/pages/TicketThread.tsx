@@ -89,7 +89,7 @@ export default function TicketThreadPage() {
   const mutated = useCallback(() => setReloadTick((tick) => tick + 1), [])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <Button asChild variant="ghost" size="sm" className="-ml-2 self-start">
         <Link to="/admin/tickets">
           <ArrowLeftIcon /> Back to tickets
@@ -108,7 +108,7 @@ export default function TicketThreadPage() {
         <>
           <PageHeader title={ticket.subject} description={`${ticket.ticket_number} · org ${ticket.org_slug}`} />
 
-          <dl className="grid gap-4 rounded-md border p-4 sm:grid-cols-3 lg:grid-cols-5">
+          <dl className="grid w-full max-w-full min-w-0 gap-4 rounded-md border p-4 sm:grid-cols-3 lg:grid-cols-5">
             <DetailField label="Status">
               <StatusBadge status={ticket.status} />
             </DetailField>
@@ -280,7 +280,7 @@ function Conversation({
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       {/* Conversation thread */}
       <section className="space-y-2 rounded-md border p-4">
         <h2 className="text-sm font-semibold">Conversation</h2>
@@ -322,7 +322,7 @@ function Conversation({
                       <li key={attachment.id}>
                         <button
                           type="button"
-                          className="flex items-center gap-1.5 text-xs text-primary hover:underline disabled:opacity-50"
+                          className="flex min-w-0 items-center gap-1.5 text-xs text-primary hover:underline disabled:opacity-50"
                           onClick={() =>
                             void downloadAttachment(message.id, attachment)
                           }
@@ -354,7 +354,7 @@ function Conversation({
             {files.map((file, index) => (
               <li
                 key={`${file.name}-${index}`}
-                className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs"
+                className="flex min-w-0 items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs"
               >
                 <PaperclipIcon className="size-3" />
                 {file.name} ({formatBytes(file.size)})
@@ -374,8 +374,8 @@ function Conversation({
         {filePercents !== null ? (
           <ul className="space-y-1">
             {files.map((file, index) => (
-              <li key={`${file.name}-${index}`} className="flex items-center gap-2 text-xs">
-                <span className="w-40 truncate text-muted-foreground">{file.name}</span>
+              <li key={`${file.name}-${index}`} className="flex min-w-0 items-center gap-2 text-xs">
+                <span className="min-w-0 w-40 truncate text-muted-foreground">{file.name}</span>
                 <Progress value={filePercents[index] ?? 0} className="h-1 flex-1" />
                 <span className="w-10 shrink-0 text-right tabular-nums text-muted-foreground">
                   {filePercents[index] ?? 0}%
@@ -385,8 +385,8 @@ function Conversation({
           </ul>
         ) : null}
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <label className="flex items-center gap-2 text-sm">
+          <div className="flex min-w-0 items-center gap-3">
+            <label className="flex min-w-0 items-center gap-2 text-sm">
               <Checkbox
                 checked={internalNote}
                 onCheckedChange={(checked) => setInternalNote(checked === true)}
@@ -420,7 +420,7 @@ function Conversation({
       </section>
 
       {/* Assignment + close */}
-      <section className="grid gap-3 rounded-md border p-4 sm:grid-cols-2">
+      <section className="grid w-full max-w-full min-w-0 gap-3 rounded-md border p-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="ticket-thread-assignee">Assign to</Label>
           <Select value={assignTo} onValueChange={setAssignTo}>

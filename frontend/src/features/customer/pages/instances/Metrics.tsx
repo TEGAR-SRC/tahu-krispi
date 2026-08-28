@@ -143,7 +143,7 @@ export default function InstanceMetricsPage() {
   }, [seriesKeys])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <InstanceBreadcrumb instanceName={instance?.name} section="Metrics" />
       <div className="flex flex-wrap items-center justify-between gap-4">
         <PageHeader
@@ -171,7 +171,7 @@ export default function InstanceMetricsPage() {
       <ErrorBanner error={error} />
 
       {loading ? (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid w-full max-w-full min-w-0 gap-4 lg:grid-cols-2">
           <Skeleton className="h-64 w-full" />
           <Skeleton className="h-64 w-full" />
         </div>
@@ -193,7 +193,7 @@ export default function InstanceMetricsPage() {
           description="Charts appear once the provider has collected at least one sample."
         />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid w-full max-w-full min-w-0 gap-4 lg:grid-cols-2">
           {groups.map(([family, keys]) => (
             <MetricChartCard
               key={family}

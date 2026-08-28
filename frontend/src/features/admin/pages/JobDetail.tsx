@@ -99,7 +99,7 @@ export default function AdminJobDetailPage() {
   const canCancel = job?.status === "queued" || job?.status === "retry"
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -118,7 +118,7 @@ export default function AdminJobDetailPage() {
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 space-y-1">
-          <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight sm:text-2xl">
+          <h1 className="flex min-w-0 items-center gap-2 text-xl font-semibold tracking-tight sm:text-2xl">
             {job?.job_type ?? "Job"}
             {job ? <StatusBadge status={job.status} /> : null}
           </h1>
@@ -148,7 +148,7 @@ export default function AdminJobDetailPage() {
               <CardDescription>Queue placement and attempt bookkeeping.</CardDescription>
             </CardHeader>
             <CardContent>
-              <dl className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+              <dl className="grid w-full max-w-full min-w-0 grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
                 <DetailField label="Queue">{job.queue}</DetailField>
                 <DetailField label="Status">
                   <StatusBadge status={job.status} />

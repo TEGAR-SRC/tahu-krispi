@@ -59,14 +59,14 @@ export default function DokployCloudOnlyPage() {
   const page = PAGES[segment] ?? PAGES.billing
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title={page.title}
         description="This Console build targets Dokploy CE parity through the universal upstream proxy."
       />
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
+          <CardTitle className="flex min-w-0 items-center gap-2 text-base">
             {page.badge.includes("Cloud") ? (
               <CloudIcon className="size-4 text-muted-foreground" />
             ) : (

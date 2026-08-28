@@ -69,7 +69,7 @@ export default function NocProvidersPage() {
   }, [])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Providers"
         description="Compute platforms and their NOC-readable infrastructure surfaces."
@@ -83,7 +83,7 @@ export default function NocProvidersPage() {
       {error ? (
         <ErrorBanner error={error} />
       ) : loading ? (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid w-full max-w-full min-w-0 gap-4 lg:grid-cols-2">
           {Array.from({ length: 4 }).map((_, index) => (
             <Skeleton key={index} className="h-48 w-full rounded-lg" />
           ))}
@@ -93,21 +93,21 @@ export default function NocProvidersPage() {
           No providers registered yet.
         </p>
       ) : (
-        <div className="grid gap-4 xl:grid-cols-2">
+        <div className="grid w-full max-w-full min-w-0 gap-4 xl:grid-cols-2">
           {rows.map((provider) => (
             <article
               key={provider.id}
-              className="flex flex-col gap-3 rounded-lg border bg-card p-4 text-card-foreground shadow-sm"
+              className="flex w-full max-w-full min-w-0 flex-col gap-3 rounded-lg border bg-card p-4 text-card-foreground shadow-sm"
             >
               <header className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <Link
                     to={`/noc/providers/${provider.id}`}
-                    className="block truncate font-medium hover:underline"
+                    className="min-w-0 block truncate font-medium hover:underline"
                   >
                     {provider.name}
                   </Link>
-                  <p className="truncate text-xs text-muted-foreground">
+                  <p className="min-w-0 truncate text-xs text-muted-foreground">
                     {provider.code}
                     {provider.api_base_url ? ` · ${provider.api_base_url}` : ""}
                   </p>
@@ -134,11 +134,11 @@ export default function NocProvidersPage() {
                 <StatusBadge status={provider.health_status} />
                 <StatusBadge status={provider.enabled ? "enabled" : "disabled"} />
                 {provider.has_credentials ? (
-                  <span className="flex items-center gap-1 text-muted-foreground">
+                  <span className="flex min-w-0 items-center gap-1 text-muted-foreground">
                     <ShieldCheckIcon className="size-3" /> credentials configured
                   </span>
                 ) : (
-                  <span className="flex items-center gap-1 text-muted-foreground">
+                  <span className="flex min-w-0 items-center gap-1 text-muted-foreground">
                     <LockIcon className="size-3" /> credentials not set
                   </span>
                 )}

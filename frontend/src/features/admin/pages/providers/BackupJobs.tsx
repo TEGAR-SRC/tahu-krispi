@@ -304,8 +304,8 @@ function JobEditorDialog({
             PVE systemd-calendar schedules like “02:00”, “sat 03:00” or “*-*-* 04:30:00”.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid w-full max-w-full min-w-0 gap-3">
+          <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="bj-schedule">Schedule *</Label>
               <Input
@@ -363,7 +363,7 @@ function JobEditorDialog({
               />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
-              <label className="flex items-center gap-2 text-sm">
+              <label className="flex min-w-0 items-center gap-2 text-sm">
                 <input
                   type="checkbox"
                   className="size-4 accent-primary"

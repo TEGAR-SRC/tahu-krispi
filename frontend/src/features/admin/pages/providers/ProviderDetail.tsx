@@ -132,7 +132,7 @@ export default function ProviderDetailPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title={match ? `${match.name}` : `Provider ${providerId.slice(0, 8)}…`}
         description={
@@ -169,14 +169,14 @@ export default function ProviderDetailPage() {
               <CardDescription>Provider registration</CardDescription>
             </CardHeader>
             <CardContent>
-              <dl className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              <dl className="grid w-full max-w-full min-w-0 grid-cols-2 gap-4 md:grid-cols-4">
                 <div className="min-w-0 space-y-0.5">
                   <dt className="text-xs font-medium text-muted-foreground">Code</dt>
-                  <dd className="truncate font-mono text-sm">{match.code}</dd>
+                  <dd className="min-w-0 truncate font-mono text-sm">{match.code}</dd>
                 </div>
                 <div className="min-w-0 space-y-0.5">
                   <dt className="text-xs font-medium text-muted-foreground">API base URL</dt>
-                  <dd className="truncate font-mono text-sm">{match.api_base_url || "—"}</dd>
+                  <dd className="min-w-0 truncate font-mono text-sm">{match.api_base_url || "—"}</dd>
                 </div>
                 <div className="space-y-0.5">
                   <dt className="text-xs font-medium text-muted-foreground">Credentials</dt>
@@ -200,7 +200,7 @@ export default function ProviderDetailPage() {
 
           <section className="space-y-3">
             <h2 className="text-lg font-semibold tracking-tight">Infrastructure sections</h2>
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {SECTIONS.map((section) => {
                 const applies = section.kinds.includes(match.kind)
                 const Icon = section.icon

@@ -118,7 +118,7 @@ export default function AdminTicketsPage() {
   }, [page, status])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Tickets"
         description="Support queue across all organizations."
@@ -153,7 +153,7 @@ export default function AdminTicketsPage() {
             header: "Ticket",
             render: (row) => (
               <div className="min-w-0">
-                <p className="truncate font-medium">{row.subject}</p>
+                <p className="min-w-0 truncate font-medium">{row.subject}</p>
                 <p className="font-mono text-xs text-muted-foreground">{row.ticket_number}</p>
               </div>
             ),
@@ -322,7 +322,7 @@ function TicketDetailSheet({
           </SheetDescription>
         </SheetHeader>
 
-        <dl className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <dl className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-3 gap-3">
           <DetailField label="Status">
             <StatusBadge status={snapshot.status} />
           </DetailField>
@@ -379,8 +379,8 @@ function TicketDetailSheet({
             value={replyBody}
             onChange={(event) => setReplyBody(event.target.value)}
           />
-          <div className="flex items-center justify-between">
-            <label className="flex items-center gap-2 text-sm">
+          <div className="flex min-w-0 items-center justify-between">
+            <label className="flex min-w-0 items-center gap-2 text-sm">
               <Checkbox checked={internalNote} onCheckedChange={(checked) => setInternalNote(checked === true)} />
               Internal note (doesn't change ticket state)
             </label>
@@ -391,7 +391,7 @@ function TicketDetailSheet({
         </section>
 
         {/* Assignment + close */}
-        <section className="grid gap-3 border-t pt-4 sm:grid-cols-2">
+        <section className="grid w-full max-w-full min-w-0 gap-3 border-t pt-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="ticket-assignee">Assign to</Label>
             <Select value={assignTo} onValueChange={setAssignTo}>

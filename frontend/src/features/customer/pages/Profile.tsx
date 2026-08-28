@@ -113,7 +113,7 @@ export default function CustomerProfileHubPage() {
   }, [])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <Card>
         <CardContent className="flex flex-wrap items-center gap-4">
           {avatarChecked ? (
@@ -127,10 +127,10 @@ export default function CustomerProfileHubPage() {
             <Skeleton className="size-16 rounded-full" />
           )}
           <div className="min-w-0 flex-1">
-            <p className="truncate text-lg font-semibold">
+            <p className="min-w-0 truncate text-lg font-semibold">
               {profile?.full_name || profile?.display_name || profile?.email || "Account"}
             </p>
-            <p className="truncate text-sm text-muted-foreground">{profile?.email}</p>
+            <p className="min-w-0 truncate text-sm text-muted-foreground">{profile?.email}</p>
           </div>
           <Button variant="outline" onClick={logout}>
             <LogOutIcon /> Sign out
@@ -138,7 +138,7 @@ export default function CustomerProfileHubPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {SECTIONS.map((section) => (
           <Link key={section.to} to={section.to} className="group">
             <Card className="h-full transition-colors group-hover:border-primary/50">
@@ -155,7 +155,7 @@ export default function CustomerProfileHubPage() {
         ))}
       </div>
 
-      <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      <p className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
         <GlobeIcon className="size-3.5" />
         Organization membership is managed on the{" "}
         <Link to="/app/organizations" className="text-primary hover:underline">

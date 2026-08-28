@@ -111,7 +111,7 @@ export default function CustomerWalletPage() {
   const currency = balance?.currency ?? "IDR"
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Wallet"
         description="Prepaid balance used to pay invoices and hourly instances."
@@ -126,7 +126,7 @@ export default function CustomerWalletPage() {
 
       <ErrorBanner error={error} />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Balance" value={formatMoney(balance?.balance ?? 0, currency)} icon={<PlusIcon />} />
         <StatCard label="Reserved" value={formatMoney(balance?.reserved_balance ?? 0, currency)} hint="Held for running resources" />
         <StatCard label="Available" value={formatMoney((balance?.balance ?? 0) - (balance?.reserved_balance ?? 0), currency)} />

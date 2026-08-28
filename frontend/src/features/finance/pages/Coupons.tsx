@@ -255,7 +255,7 @@ export default function FinanceCouponsPage() {
       render: (row) => (
         <Link
           to={`/finance/coupons/${row.id}`}
-          className="flex items-center gap-2 underline-offset-4 hover:underline"
+          className="flex min-w-0 items-center gap-2 underline-offset-4 hover:underline"
         >
           <TagIcon className="size-3.5 text-muted-foreground" />
           <span className="font-mono font-medium">{row.code}</span>
@@ -325,7 +325,7 @@ export default function FinanceCouponsPage() {
   ]
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Coupons"
         description="Discount codes with usage caps and validity windows."
@@ -363,7 +363,7 @@ export default function FinanceCouponsPage() {
         </TabsContent>
 
         <TabsContent value="redemptions" className="mt-4 space-y-4">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center justify-between gap-2">
             <p className="text-sm text-muted-foreground">
               Redemptions recorded on recent orders (fetched from order details).
             </p>
@@ -409,7 +409,7 @@ export default function FinanceCouponsPage() {
                 {formError}
               </p>
             ) : null}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="col-span-2 space-y-1.5">
                 <Label htmlFor="coupon-code">Code *</Label>
                 <Input

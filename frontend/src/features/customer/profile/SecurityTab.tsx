@@ -48,7 +48,7 @@ interface SecurityEvent {
 
 export function SecurityTab() {
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    <div className="grid w-full max-w-full min-w-0 gap-6 lg:grid-cols-2">
       <PasswordCard />
       <MfaCard />
       <SessionsCard />
@@ -87,7 +87,7 @@ function PasswordCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
+        <CardTitle className="flex min-w-0 items-center gap-2 text-base">
           <KeyRoundIcon /> Change password
         </CardTitle>
       </CardHeader>
@@ -191,7 +191,7 @@ function MfaCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
+        <CardTitle className="flex min-w-0 items-center gap-2 text-base">
           <ShieldCheckIcon /> Two-factor authentication
         </CardTitle>
         <CardDescription>
@@ -214,7 +214,7 @@ function MfaCard() {
             <p>Add this secret to your authenticator app:</p>
             <p className="break-all rounded bg-muted px-2 py-1 font-mono text-xs">{setup.secret}</p>
             <p className="break-all text-xs text-muted-foreground">{setup.otpauth_url}</p>
-            <div className="flex items-center gap-2 pt-1">
+            <div className="flex min-w-0 items-center gap-2 pt-1">
               <Input
                 value={code}
                 onChange={(event) => setCode(event.target.value)}
@@ -247,7 +247,7 @@ function MfaCard() {
         {recoveryCodes.length > 0 ? (
           <div className="rounded-md border p-3">
             <p className="mb-2 text-xs font-medium">Save these now — they are shown only once:</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 font-mono text-xs">
+            <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-1 font-mono text-xs">
               {recoveryCodes.map((item) => (
                 <span key={item}>{item}</span>
               ))}
@@ -332,9 +332,9 @@ function SessionsCard() {
           <p className="text-sm text-muted-foreground">Loading…</p>
         ) : (
           sessions.map((session) => (
-            <div key={session.id} className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm">
+            <div key={session.id} className="flex min-w-0 items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm">
               <div className="min-w-0">
-                <p className="truncate">
+                <p className="min-w-0 truncate">
                   {session.is_current ? <strong>This device</strong> : session.device_name || "Device"}
                   {" · "}
                   <span className="text-muted-foreground">{session.user_agent ?? session.ip ?? ""}</span>

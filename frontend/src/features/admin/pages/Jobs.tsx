@@ -133,12 +133,12 @@ export default function AdminJobsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Jobs"
         description="Background job queue across all workers."
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <Switch checked={autoRefresh} onCheckedChange={setAutoRefresh} id="jobs-auto-refresh" />
             <Label htmlFor="jobs-auto-refresh" className="text-sm text-muted-foreground">
               Auto-refresh 5s
@@ -205,11 +205,11 @@ export default function AdminJobsPage() {
               <div className="min-w-0">
                 <Link
                   to={`/admin/jobs/${row.id}`}
-                  className="block truncate font-medium text-primary underline-offset-4 hover:underline"
+                  className="min-w-0 block truncate font-medium text-primary underline-offset-4 hover:underline"
                 >
                   {row.job_type}
                 </Link>
-                <p className="truncate font-mono text-xs text-muted-foreground">
+                <p className="min-w-0 truncate font-mono text-xs text-muted-foreground">
                   {row.id.slice(0, 8)}…
                 </p>
               </div>

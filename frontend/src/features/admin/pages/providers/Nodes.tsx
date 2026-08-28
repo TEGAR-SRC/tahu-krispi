@@ -49,7 +49,7 @@ export default function ProviderNodesPage() {
             key: "status",
             header: "Status",
             render: (node) => (
-              <div className="flex items-center gap-2">
+              <div className="flex min-w-0 items-center gap-2">
                 <StatusBadge status={node.status ?? null} />
                 {node.level ? (
                   <span className="text-xs text-muted-foreground">{node.level}</span>

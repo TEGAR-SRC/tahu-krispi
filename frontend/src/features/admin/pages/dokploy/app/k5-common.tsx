@@ -180,8 +180,8 @@ export function ResourceTable({
   return (
     <Card>
       <CardHeader>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex flex-col gap-1">
+        <div className="flex w-full max-w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex w-full max-w-full min-w-0 flex-col gap-1">
             <CardTitle>{title}</CardTitle>
             {description ? <CardDescription>{description}</CardDescription> : null}
           </div>
@@ -236,8 +236,8 @@ export function OperationConsole({
   return (
     <Card>
       <CardHeader>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex flex-col gap-1">
+        <div className="flex w-full max-w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex w-full max-w-full min-w-0 flex-col gap-1">
             <CardTitle>{title}</CardTitle>
             {description ? <CardDescription>{description}</CardDescription> : null}
           </div>
@@ -322,7 +322,7 @@ export function RawResultCard({ title, result }: { title: string; result: unknow
 
 export function K5Page({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader title={title} description={description} />
       {children}
     </div>
@@ -388,7 +388,7 @@ export function TextAreaField({ label, value, onChange, placeholder, rows = 10 }
 export function ToggleField({ label, description, checked, disabled, onCheckedChange }: { label: string; description?: string; checked: boolean; disabled?: boolean; onCheckedChange: (checked: boolean) => void }) {
   return (
     <Field orientation="horizontal" data-disabled={disabled || undefined}>
-      <div className="flex flex-col gap-1">
+      <div className="flex w-full max-w-full min-w-0 flex-col gap-1">
         <FieldLabel>{label}</FieldLabel>
         {description ? <FieldDescription>{description}</FieldDescription> : null}
       </div>

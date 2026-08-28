@@ -145,7 +145,7 @@ export default function AdminUsersPage() {
       : null
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Users"
         description="All registered accounts across the platform."
@@ -190,11 +190,11 @@ export default function AdminUsersPage() {
               <div className="min-w-0">
                 <Link
                   to={`/admin/users/${row.id}`}
-                  className="block truncate font-medium text-primary underline-offset-4 hover:underline"
+                  className="min-w-0 block truncate font-medium text-primary underline-offset-4 hover:underline"
                 >
                   {row.email}
                 </Link>
-                <p className="truncate text-xs text-muted-foreground">
+                <p className="min-w-0 truncate text-xs text-muted-foreground">
                   {row.full_name || row.username || "—"}
                 </p>
               </div>
@@ -281,8 +281,8 @@ export default function AdminUsersPage() {
                 <SheetTitle className="break-all">{selected.email}</SheetTitle>
                 <SheetDescription>User account management</SheetDescription>
               </SheetHeader>
-              <div className="flex flex-col gap-6 pb-8">
-                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex w-full max-w-full min-w-0 flex-col gap-6 pb-8">
+                <dl className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-4">
                   <DetailField label="Full name">{selected.full_name || "—"}</DetailField>
                   <DetailField label="Username">{selected.username || "—"}</DetailField>
                   <DetailField label="Status">
@@ -446,7 +446,7 @@ function LimitsEditor({ user }: { user: AdminUserRow }) {
         The API does not expose an endpoint to read a user's current limits — leave
         a field blank to keep its existing value.
       </p>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid w-full max-w-full min-w-0 gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor={`max-inst-${user.id}`}>Max hourly instances</Label>
           <Input

@@ -137,7 +137,7 @@ export default function FinanceCouponDetailPage() {
   }, [load])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -183,10 +183,10 @@ export default function FinanceCouponDetailPage() {
       ) : loading ? (
         <Skeleton className="h-64 w-full" />
       ) : detail ? (
-        <div className="flex flex-col gap-6">
+        <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex min-w-0 items-center gap-2">
                 <TagIcon className="size-4 text-muted-foreground" />
                 <span className="font-mono">{detail.code}</span>
                 {detail.enabled ? (
@@ -197,7 +197,7 @@ export default function FinanceCouponDetailPage() {
               </CardTitle>
               <CardDescription className="font-mono text-xs">{detail.id}</CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-x-8 lg:grid-cols-2">
+            <CardContent className="grid w-full max-w-full min-w-0 gap-x-8 lg:grid-cols-2">
               <div>
                 <DetailRow label="Discount">
                   {detail.discount_type === "percent"

@@ -139,12 +139,12 @@ export default function ApiKeysPage() {
   }, [load])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="API keys"
         description="Programmatic access tokens. Secrets are shown exactly once."
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <Button variant="outline" asChild>
               <Link to="/app/profile">Back to settings</Link>
             </Button>
@@ -192,16 +192,20 @@ export default function ApiKeysPage() {
             {
               key: "name",
               header: "Name",
+              className: "max-w-[200px] whitespace-normal",
               render: (row) => (
-                <span className="font-medium">{row.name}</span>
+                <span className="min-w-0 block max-w-[160px] truncate font-medium" title={row.name}>
+                  {row.name}
+                </span>
               ),
             },
             { key: "key_prefix", header: "Prefix" },
             {
               key: "scopes",
               header: "Scopes",
+              className: "max-w-[260px] whitespace-normal",
               render: (row) => (
-                <span className="text-xs text-muted-foreground">
+                <span className="break-all [overflow-wrap:anywhere] whitespace-normal text-xs text-muted-foreground">
                   {(row.scopes ?? []).join(", ") || "—"}
                 </span>
               ),
@@ -255,7 +259,7 @@ export default function ApiKeysPage() {
       />
 
       {meta && typeof meta.total === "number" && meta.per_page > 0 && meta.total > meta.per_page ? (
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex min-w-0 items-center justify-end gap-2">
           <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage(page - 1)}>
             Previous
           </Button>
@@ -498,7 +502,7 @@ function CreateKeyDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-[1fr_140px]">
+          <div className="grid w-full max-w-full min-w-0 gap-3 sm:grid-cols-[1fr_140px]">
             <div className="space-y-1.5">
               <Label htmlFor="ak-name">Name *</Label>
               <Input
@@ -530,9 +534,9 @@ function CreateKeyDialog({
           </div>
           <div className="space-y-2">
             <Label>Scopes *</Label>
-            <div className="grid max-h-52 grid-cols-2 gap-x-4 gap-y-1.5 overflow-y-auto rounded-md border p-3 sm:grid-cols-3">
+            <div className="grid w-full max-w-full min-w-0 max-h-52 grid-cols-2 gap-x-4 gap-y-1.5 overflow-y-auto rounded-md border p-3 sm:grid-cols-3">
               {VALID_SCOPES.map((scope) => (
-                <label key={scope} className="flex items-center gap-2 text-sm">
+                <label key={scope} className="flex min-w-0 items-center gap-2 text-sm">
                   <Checkbox
                     checked={scopes.includes(scope)}
                     onCheckedChange={(checked) => toggleScope(scope, checked === true)}
@@ -619,7 +623,9 @@ function EditKeyDialog({
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Edit “{row.name}”</DialogTitle>
-          <DialogDescription>Prefix {row.key_prefix || row.public_id || row.id}</DialogDescription>
+          <DialogDescription className="break-all [overflow-wrap:anywhere]">
+            Prefix {row.key_prefix || row.public_id || row.id}
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">
@@ -637,9 +643,9 @@ function EditKeyDialog({
           </div>
           <div className="space-y-2">
             <Label>Scopes *</Label>
-            <div className="grid max-h-52 grid-cols-2 gap-x-4 gap-y-1.5 overflow-y-auto rounded-md border p-3 sm:grid-cols-3">
+            <div className="grid w-full max-w-full min-w-0 max-h-52 grid-cols-2 gap-x-4 gap-y-1.5 overflow-y-auto rounded-md border p-3 sm:grid-cols-3">
               {VALID_SCOPES.map((scope) => (
-                <label key={scope} className="flex items-center gap-2 text-sm">
+                <label key={scope} className="flex min-w-0 items-center gap-2 text-sm">
                   <Checkbox
                     checked={scopes.includes(scope)}
                     onCheckedChange={(checked) => toggleScope(scope, checked === true)}

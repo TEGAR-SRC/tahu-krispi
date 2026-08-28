@@ -433,7 +433,7 @@ function HandleVaultDialog({
             <code>{"${{vault.<name>.<secret>}}"}</code>. Secrets are fetched at deploy time.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={onSubmit} className="grid gap-4">
+        <form onSubmit={onSubmit} className="grid w-full max-w-full min-w-0 gap-4">
           <FieldRow label="Name" error={errorFor("name")}>
             <Input placeholder="prod-vault" value={values.name} onChange={(e) => set("name", e.target.value)} />
           </FieldRow>
@@ -464,7 +464,7 @@ function HandleVaultDialog({
               <FieldRow label="Token" error={errorFor("token")}>
                 <Input type="password" value={values.token} onChange={(e) => set("token", e.target.value)} />
               </FieldRow>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-4">
                 <FieldRow label="KV Mount" error={errorFor("mount")}>
                   <Input placeholder="secret" value={values.mount} onChange={(e) => set("mount", e.target.value)} />
                 </FieldRow>
@@ -480,7 +480,7 @@ function HandleVaultDialog({
               <FieldRow label="Site URL" error={errorFor("siteUrl")}>
                 <Input value={values.siteUrl} onChange={(e) => set("siteUrl", e.target.value)} />
               </FieldRow>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-4">
                 <FieldRow label="Client ID" error={errorFor("clientId")}>
                   <Input value={values.clientId} onChange={(e) => set("clientId", e.target.value)} />
                 </FieldRow>
@@ -488,7 +488,7 @@ function HandleVaultDialog({
                   <Input type="password" value={values.clientSecret} onChange={(e) => set("clientSecret", e.target.value)} />
                 </FieldRow>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-4">
                 <FieldRow label="Project ID" error={errorFor("infisicalProjectId")}>
                   <Input value={values.infisicalProjectId} onChange={(e) => set("infisicalProjectId", e.target.value)} />
                 </FieldRow>
@@ -524,7 +524,7 @@ function HandleVaultDialog({
               <FieldRow label="Service Token" error={errorFor("serviceToken")}>
                 <Input type="password" placeholder="dp.st.…" value={values.serviceToken} onChange={(e) => set("serviceToken", e.target.value)} />
               </FieldRow>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-4">
                 <FieldRow label="Project (optional)">
                   <Input value={values.dopplerProject} onChange={(e) => set("dopplerProject", e.target.value)} />
                 </FieldRow>
@@ -543,7 +543,7 @@ function HandleVaultDialog({
               <FieldRow label="Tenant ID" error={errorFor("tenantId")}>
                 <Input value={values.tenantId} onChange={(e) => set("tenantId", e.target.value)} />
               </FieldRow>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-4">
                 <FieldRow label="Client ID" error={errorFor("azureClientId")}>
                   <Input value={values.azureClientId} onChange={(e) => set("azureClientId", e.target.value)} />
                 </FieldRow>
@@ -556,7 +556,7 @@ function HandleVaultDialog({
 
           {values.providerType === "scaleway" ? (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-4">
                 <FieldRow label="Region" error={errorFor("scalewayRegion")}>
                   <Select value={values.scalewayRegion} onValueChange={(value) => set("scalewayRegion", value)}>
                     <SelectTrigger className="w-full">
@@ -702,7 +702,7 @@ function SecretNamesBrowser({ provider }: { provider: VaultProviderRow }) {
             Names resolvable via <code>{"${{vault." + provider.name + ".<secret>}}"}</code>.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-3">
+        <div className="grid w-full max-w-full min-w-0 gap-3">
           <FieldRow label="Project">
             <Select
               value={selectedProject}
@@ -779,7 +779,7 @@ export default function DokploySettingsSecretsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <K6Breadcrumbs current="Secrets Providers" />
       <PageHeader
         title="Secrets Providers"
@@ -797,7 +797,7 @@ export default function DokploySettingsSecretsPage() {
       />
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex min-w-0 items-center gap-2">
             <VaultIcon className="text-muted-foreground size-5" />
             Providers ({providers.length})
           </CardTitle>
@@ -837,7 +837,7 @@ export default function DokploySettingsSecretsPage() {
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex min-w-0 items-center gap-1">
                       <SecretNamesBrowser provider={provider} />
                       <HandleVaultDialog
                         vaultProviderId={provider.vaultProviderId}

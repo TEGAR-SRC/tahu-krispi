@@ -123,7 +123,7 @@ export default function CustomerOrderDetailPage() {
       header: "Item",
       render: (row) => (
         <div className="min-w-0">
-          <p className="truncate font-medium">{row.description}</p>
+          <p className="min-w-0 truncate font-medium">{row.description}</p>
           <p className="text-xs capitalize text-muted-foreground">{row.service_kind.replace(/_/g, " ")}</p>
         </div>
       ),
@@ -189,7 +189,7 @@ export default function CustomerOrderDetailPage() {
 
   if (!loading && error) {
     return (
-      <div className="flex flex-col gap-6">
+      <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
@@ -212,7 +212,7 @@ export default function CustomerOrderDetailPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -255,7 +255,7 @@ export default function CustomerOrderDetailPage() {
       ) : (
         <>
           <Card>
-            <CardContent className="grid gap-4 px-4 sm:grid-cols-2 xl:grid-cols-4">
+            <CardContent className="grid w-full max-w-full min-w-0 gap-4 px-4 sm:grid-cols-2 xl:grid-cols-4">
               <TotalRow label="Total" value={formatMoney(order.total, order.currency)} strong />
               <TotalRow label="Subtotal" value={formatMoney(order.subtotal, order.currency)} />
               <TotalRow label="Tax" value={formatMoney(order.tax, order.currency)} />

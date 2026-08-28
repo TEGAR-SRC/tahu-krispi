@@ -101,7 +101,7 @@ export default function NocJobDetailPage() {
 
   if (error) {
     return (
-      <div className="flex flex-col gap-6">
+      <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
         <JobBreadcrumb label={null} />
         <ErrorBanner error={error} />
       </div>
@@ -112,13 +112,13 @@ export default function NocJobDetailPage() {
   const canCancel = job !== null && (job.status === "queued" || job.status === "retry")
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <JobBreadcrumb label={job ? `${job.job_type} · ${job.id.slice(0, 8)}…` : null} />
 
       {loading && !job ? (
         <div className="space-y-3">
           <Skeleton className="h-8 w-64" />
-          <div className="grid gap-4 sm:grid-cols-4">
+          <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-4">
             {[0, 1, 2, 3].map((i) => (
               <Skeleton key={i} className="h-24" />
             ))}
@@ -143,7 +143,7 @@ export default function NocJobDetailPage() {
             }
           />
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard label="Status" value={<StatusBadge status={job.status} />} hint={`attempt ${job.attempts} of ${job.max_attempts}`} />
             <StatCard label="Resource" value={
               job.resource_id && ["vm", "instance"].includes(job.resource_type) ? (
@@ -167,7 +167,7 @@ export default function NocJobDetailPage() {
 
           <section className="space-y-2">
             <h2 className="text-sm font-medium text-muted-foreground">Scheduling</h2>
-            <dl className="grid grid-cols-[minmax(10rem,1fr)_2fr] gap-x-4 gap-y-1 rounded-md border p-3 text-sm">
+            <dl className="grid w-full max-w-full min-w-0 grid-cols-[minmax(10rem,1fr)_2fr] gap-x-4 gap-y-1 rounded-md border p-3 text-sm">
               <dt className="text-muted-foreground">Run after</dt>
               <dd>{fmtDateTime(job.run_after)}</dd>
               <dt className="text-muted-foreground">Locked at</dt>

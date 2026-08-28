@@ -83,13 +83,13 @@ export default function FinancePaymentsPage() {
   }, [loadList])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Payments"
         description="Incoming payments and settlements across all organizations."
       />
 
-      <div className="flex flex-col gap-3">
+      <div className="flex w-full max-w-full min-w-0 flex-col gap-3">
         <FilterChips
           options={PAYMENT_STATUSES}
           value={status}

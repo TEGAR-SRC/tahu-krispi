@@ -62,7 +62,7 @@ interface ExplorerResponse {
 
 export default function DokployHubPage() {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Dokploy PaaS"
         description="Mirror of the Dokploy server plus a passthrough explorer for its whole API."
@@ -103,13 +103,13 @@ const UPSTREAM_CONSOLES = [
 function UpstreamManagerGrid() {
   return (
     <section className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex min-w-0 items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">Upstream manager</h2>
         <p className="text-sm text-muted-foreground">
           Full CRUD straight against the Dokploy server — every action runs live.
         </p>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {UPSTREAM_CONSOLES.map((console) => (
           <Card key={console.slug} className="gap-3">
             <CardHeader>
@@ -152,17 +152,17 @@ function EntityGrid() {
 
   return (
     <section className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex min-w-0 items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">Mirror entities</h2>
         <p className="text-sm text-muted-foreground">
           Sync pulls the upstream list and reconciles the local mirror.
         </p>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {DOKPLOY_MIRROR_ENTITIES.map((entity) => (
           <Card key={entity.name} className="gap-3">
             <CardHeader>
-              <CardTitle className="flex items-center justify-between gap-2 font-mono text-base">
+              <CardTitle className="flex min-w-0 items-center justify-between gap-2 font-mono text-base">
                 {entity.name}
                 {entity.syncable ? null : (
                   <Badge variant="outline" className="font-sans text-xs">
@@ -172,7 +172,7 @@ function EntityGrid() {
               </CardTitle>
               <CardDescription>{entity.description}</CardDescription>
             </CardHeader>
-            <CardContent className="flex items-center gap-2">
+            <CardContent className="flex min-w-0 items-center gap-2">
               <Button variant="outline" size="sm" asChild>
                 <Link to={`/admin/dokploy/${entity.name}`}>
                   Browse rows
@@ -270,8 +270,8 @@ function TargetedSyncCard() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="grid gap-2">
+        <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2">
+          <div className="grid w-full max-w-full min-w-0 gap-2">
             <Label htmlFor="dokploy-targeted-entity">Entity</Label>
             <Input
               id="dokploy-targeted-entity"
@@ -280,7 +280,7 @@ function TargetedSyncCard() {
               placeholder="deployments"
             />
           </div>
-          <div className="grid gap-2">
+          <div className="grid w-full max-w-full min-w-0 gap-2">
             <Label htmlFor="dokploy-targeted-op">op_path</Label>
             <Input
               id="dokploy-targeted-op"
@@ -290,7 +290,7 @@ function TargetedSyncCard() {
             />
           </div>
         </div>
-        <div className="grid gap-2">
+        <div className="grid w-full max-w-full min-w-0 gap-2">
           <Label htmlFor="dokploy-targeted-query">Query params (JSON)</Label>
           <Textarea
             id="dokploy-targeted-query"
@@ -389,7 +389,7 @@ function ExplorerCard() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex flex-col gap-2 sm:flex-row">
+        <div className="flex w-full max-w-full min-w-0 flex-col gap-2 sm:flex-row">
           <Select
             value={method}
             onValueChange={(value) => setMethod(value as ExplorerMethod)}
@@ -444,7 +444,7 @@ function ExplorerCard() {
         </div>
 
         {BODY_METHODS.includes(method) ? (
-          <div className="grid gap-2">
+          <div className="grid w-full max-w-full min-w-0 gap-2">
             <Label htmlFor="dokploy-explorer-body">JSON body</Label>
             <Textarea
               id="dokploy-explorer-body"

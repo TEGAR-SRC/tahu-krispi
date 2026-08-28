@@ -84,7 +84,7 @@ export default function FinanceAffiliatePage() {
   }, [load])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Affiliate program"
         description="Referral commission configuration and the resulting earnings ledger."
@@ -110,7 +110,7 @@ export default function FinanceAffiliatePage() {
         </>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-3">
         {loading && !settings ? (
           Array.from({ length: 3 }).map((_, index) => (
             <Skeleton key={index} className="h-28 w-full" />
@@ -119,7 +119,7 @@ export default function FinanceAffiliatePage() {
           <>
             <Card>
               <CardHeader className="pb-2">
-                <CardDescription className="flex items-center gap-1.5">
+                <CardDescription className="flex min-w-0 items-center gap-1.5">
                   <PercentIcon className="size-3.5" /> Commission
                 </CardDescription>
                 <CardTitle className="text-lg tabular-nums sm:text-2xl">
@@ -134,7 +134,7 @@ export default function FinanceAffiliatePage() {
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardDescription className="flex items-center gap-1.5">
+                <CardDescription className="flex min-w-0 items-center gap-1.5">
                   <UserPlusIcon className="size-3.5" /> Pending commissions
                 </CardDescription>
                 <CardTitle className="text-lg tabular-nums sm:text-2xl">{totals.pending ?? "—"}</CardTitle>
@@ -145,7 +145,7 @@ export default function FinanceAffiliatePage() {
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardDescription className="flex items-center gap-1.5">
+                <CardDescription className="flex min-w-0 items-center gap-1.5">
                   <ReceiptTextIcon className="size-3.5" /> Paid commissions
                 </CardDescription>
                 <CardTitle className="text-lg tabular-nums sm:text-2xl">{totals.paid ?? "—"}</CardTitle>
@@ -158,7 +158,7 @@ export default function FinanceAffiliatePage() {
         )}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid w-full max-w-full min-w-0 gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Program settings</CardTitle>

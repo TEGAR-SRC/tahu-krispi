@@ -56,7 +56,7 @@ function UsageBar({ label, used, total }: { label: string; used?: number; total?
   const pct = Math.min(100, Math.round(fraction * 100))
   return (
     <div className="space-y-1">
-      <div className="flex items-center justify-between text-sm">
+      <div className="flex min-w-0 items-center justify-between text-sm">
         <span className="text-muted-foreground">{label}</span>
         <span className="tabular-nums">
           {formatBytes(used)} / {formatBytes(total)} · {fmtFraction(fraction)}
@@ -69,7 +69,7 @@ function UsageBar({ label, used, total }: { label: string; used?: number; total?
 
 function KeyValue({ entries }: { entries: Array<[string, string]> }) {
   return (
-    <dl className="grid grid-cols-[minmax(10rem,1fr)_2fr] gap-x-4 gap-y-1 rounded-md border p-3 text-sm">
+    <dl className="grid w-full max-w-full min-w-0 grid-cols-[minmax(10rem,1fr)_2fr] gap-x-4 gap-y-1 rounded-md border p-3 text-sm">
       {entries.map(([key, value]) => (
         <div key={key} className="contents">
           <dt className="text-muted-foreground">{key}</dt>
@@ -96,7 +96,7 @@ export default function NocProviderNodeDetailPage() {
   const tasks = useTyped<PveTask[]>(`${base}/tasks`, { enabled: tab === "tasks" })
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <ProviderSubBreadcrumb
         providerId={providerId}
         providerName={provider?.name}
@@ -130,7 +130,7 @@ export default function NocProviderNodeDetailPage() {
             <EmptyState message="No detail returned for this node." />
           ) : (
             <>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <StatCard label="PVE version" value={<span className="text-sm break-all">{detail.data.PVEVersion || "—"}</span>} hint={detail.data.Kversion} icon={undefined} />
                 <StatCard label="Uptime" value={fmtUptime(detail.data.Uptime)} hint={`load avg ${(detail.data.LoadAvg ?? []).join(" ") || "—"}`} />
                 <StatCard label="CPU" value={`${detail.data.CPUInfo?.Cores ?? "?"} cores · ${detail.data.CPUInfo?.CPUs ?? "?"} CPUs`} hint={detail.data.CPUInfo?.Model || "unknown model"} />
@@ -228,7 +228,7 @@ export default function NocProviderNodeDetailPage() {
               columns={[
                 { key: "devpath", header: "Device", render: (row) => <span className="font-mono text-xs">{row.devpath ?? "—"}</span> },
                 { key: "type", header: "Type", render: (row) => <Badge variant="outline">{row.type ?? "—"}</Badge> },
-                { key: "model", header: "Model", render: (row) => <span className="truncate">{row.model ?? "—"}</span> },
+                { key: "model", header: "Model", render: (row) => <span className="min-w-0 truncate">{row.model ?? "—"}</span> },
                 { key: "size", header: "Size", render: (row) => formatBytes(row.size) },
                 {
                   key: "health",

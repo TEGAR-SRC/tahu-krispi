@@ -117,11 +117,11 @@ export default function NocJobsPage() {
         <div className="min-w-0">
           <Link
             to={`/noc/jobs/${row.id}`}
-            className="block truncate font-medium underline-offset-4 hover:underline"
+            className="min-w-0 block truncate font-medium underline-offset-4 hover:underline"
           >
             {row.job_type}
           </Link>
-          <p className="truncate text-xs text-muted-foreground">
+          <p className="min-w-0 truncate text-xs text-muted-foreground">
             {row.resource_type ? `${row.resource_type} ${row.resource_id.slice(0, 8)}…` : row.id.slice(0, 8) + "…"}
           </p>
         </div>
@@ -142,7 +142,7 @@ export default function NocJobsPage() {
           <TooltipProvider delayDuration={200}>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="block max-w-48 truncate text-xs text-destructive">
+                <span className="min-w-0 block max-w-48 truncate text-xs text-destructive">
                   {row.last_error}
                 </span>
               </TooltipTrigger>
@@ -220,12 +220,12 @@ export default function NocJobsPage() {
   ]
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Jobs"
         description="Background queue across provisioning, maintenance and email workers."
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <Switch id="jobs-auto-refresh" checked={autoRefresh} onCheckedChange={setAutoRefresh} />
             <Label htmlFor="jobs-auto-refresh" className="text-sm text-muted-foreground">
               Auto-refresh 5s
@@ -272,7 +272,7 @@ export default function NocJobsPage() {
         getRowKey={(row) => row.id}
       />
 
-      <div className="flex items-center justify-end gap-3">
+      <div className="flex min-w-0 items-center justify-end gap-3">
         <Button
           variant="outline"
           size="sm"

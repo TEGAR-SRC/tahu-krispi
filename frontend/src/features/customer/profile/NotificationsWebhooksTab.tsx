@@ -128,7 +128,7 @@ function NotificationPrefsCard() {
       </CardHeader>
       <CardContent className="space-y-1">
         {PREF_LABELS.map(({ key, label }) => (
-          <div key={key} className="flex items-center justify-between gap-4 rounded-md px-2 py-2.5 hover:bg-muted/50">
+          <div key={key} className="flex min-w-0 items-center justify-between gap-4 rounded-md px-2 py-2.5 hover:bg-muted/50">
             <span className="text-sm">{label}</span>
             <Switch
               checked={prefs[key]}
@@ -193,8 +193,8 @@ function WebhooksCard() {
       header: "Endpoint",
       render: (row) => (
         <div className="min-w-0">
-          <p className="truncate font-medium">{row.name || "Webhook"}</p>
-          <p className="truncate font-mono text-xs text-muted-foreground">{row.url}</p>
+          <p className="min-w-0 truncate font-medium">{row.name || "Webhook"}</p>
+          <p className="min-w-0 truncate font-mono text-xs text-muted-foreground">{row.url}</p>
         </div>
       ),
     },
@@ -233,7 +233,7 @@ function WebhooksCard() {
   ]
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    <div className="grid w-full max-w-full min-w-0 gap-6 lg:grid-cols-2">
       <Card>
         <CardHeader className="flex-row items-start justify-between space-y-0">
           <div>

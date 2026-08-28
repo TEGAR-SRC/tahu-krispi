@@ -124,9 +124,9 @@ export default function InstanceOverviewPage() {
 
   if (loading && !instance) {
     return (
-      <div className="flex flex-col gap-6">
+      <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
         <Skeleton className="h-8 w-64" />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, index) => (
             <Skeleton key={index} className="h-24 w-full" />
           ))}
@@ -138,7 +138,7 @@ export default function InstanceOverviewPage() {
 
   if (error) {
     return (
-      <div className="flex flex-col gap-6">
+      <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
         <InstanceBreadcrumb section="Overview" />
         <ErrorBanner error={error} />
       </div>
@@ -147,7 +147,7 @@ export default function InstanceOverviewPage() {
 
   if (!instance) {
     return (
-      <div className="flex flex-col gap-6">
+      <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
         <InstanceBreadcrumb section="Overview" />
         <p className="text-sm text-muted-foreground">Instance not found.</p>
       </div>
@@ -155,7 +155,7 @@ export default function InstanceOverviewPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <InstanceBreadcrumb instanceName={instance.name} />
 
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -210,7 +210,7 @@ export default function InstanceOverviewPage() {
       </div>
 
       {/* Spec tiles */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <SpecTile icon={<CpuIcon />} label="vCPU" value={String(instance.vcpu)} />
         <SpecTile
           icon={<MemoryStickIcon />}
@@ -232,7 +232,7 @@ export default function InstanceOverviewPage() {
 
       {/* Connection + billing summary */}
       <Card>
-        <CardContent className="grid gap-4 px-4 py-4 sm:grid-cols-2 lg:grid-cols-4">
+        <CardContent className="grid w-full max-w-full min-w-0 gap-4 px-4 py-4 sm:grid-cols-2 lg:grid-cols-4">
           <DetailRow label="IPv4" value={instance.primary_ipv4 || "—"} mono />
           <DetailRow label="IPv6" value={instance.primary_ipv6 || "—"} mono />
           <DetailRow
@@ -247,14 +247,14 @@ export default function InstanceOverviewPage() {
       </Card>
 
       {/* Quick tiles */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid w-full max-w-full min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {quickTiles(instance).map((tile) => (
           <Link
             key={tile.to}
             to={tile.to}
             className="rounded-lg border p-4 transition-colors hover:bg-muted"
           >
-            <div className="flex items-center gap-2 font-medium">
+            <div className="flex min-w-0 items-center gap-2 font-medium">
               <span className="[&_svg]:size-4 [&_svg]:text-muted-foreground">{tile.icon}</span>
               {tile.label}
             </div>
@@ -414,7 +414,7 @@ function SpecTile({
   return (
     <Card>
       <CardContent className="px-4 py-4">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
           <span className="[&_svg]:size-4">{icon}</span>
           {label}
         </div>

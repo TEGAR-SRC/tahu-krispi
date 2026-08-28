@@ -65,7 +65,7 @@ export default function VmwareInventoryPage() {
       {!inventory.loading && !inventory.error && hosts.length === 0 && datastores.length === 0 ? (
         <EmptyState message="The inventory came back empty." description="Verify vCenter credentials and datacenter scope on the provider." />
       ) : (
-        <div className="grid gap-4 xl:grid-cols-2">
+        <div className="grid w-full max-w-full min-w-0 gap-4 xl:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Hosts</CardTitle>

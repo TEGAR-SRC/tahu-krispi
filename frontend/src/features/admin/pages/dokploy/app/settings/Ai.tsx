@@ -228,7 +228,7 @@ function HandleAiDialog({
           <DialogTitle>{aiId ? "Edit AI" : "Add AI"}</DialogTitle>
           <DialogDescription>Configure your AI provider settings.</DialogDescription>
         </DialogHeader>
-        <form onSubmit={onSubmit} className="grid gap-4">
+        <form onSubmit={onSubmit} className="grid w-full max-w-full min-w-0 gap-4">
           <FieldRow label="Provider Preset">
             <Select
               value={values.apiUrl}
@@ -330,7 +330,7 @@ function HandleAiDialog({
               </Button>
             </div>
           </FieldRow>
-          <label className="flex items-center justify-between rounded-lg border p-3">
+          <label className="flex min-w-0 items-center justify-between rounded-lg border p-3">
             <span>
               <span className="block text-sm font-medium">Enable AI Features</span>
               <span className="text-muted-foreground block text-xs">Turn on/off AI functionality</span>
@@ -426,7 +426,7 @@ function CustomProvidersDialog({ onSaved }: { onSaved: () => void }) {
             No custom providers defined. The built-in provider list will be used.
           </p>
         ) : null}
-        <div className="grid gap-2">
+        <div className="grid w-full max-w-full min-w-0 gap-2">
           {providers.map((provider, index) => (
             <div key={index} className="flex items-start gap-2">
               <Input
@@ -461,7 +461,7 @@ function CustomProvidersDialog({ onSaved }: { onSaved: () => void }) {
             </div>
           ))}
         </div>
-        <div className="flex items-center justify-between">
+        <div className="flex min-w-0 items-center justify-between">
           <Button
             type="button"
             variant="outline"
@@ -506,13 +506,13 @@ export default function DokploySettingsAiPage() {
   const configs = data ?? []
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <K6Breadcrumbs current="AI" />
       <PageHeader
         title="AI Settings"
         description="Bring your own AI provider keys for log analysis and compose suggestions."
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <CustomProvidersDialog
               onSaved={() => {
                 reloadCustom()
@@ -534,7 +534,7 @@ export default function DokploySettingsAiPage() {
       />
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex min-w-0 items-center gap-2">
             <BotIcon className="text-muted-foreground size-5" />
             Configurations ({configs.length})
           </CardTitle>
@@ -555,7 +555,7 @@ export default function DokploySettingsAiPage() {
           {error ? (
             <p className="text-destructive text-sm">{toErrorMessage(error)}</p>
           ) : loading ? (
-            <div className="grid gap-2">
+            <div className="grid w-full max-w-full min-w-0 gap-2">
               {[1, 2].map((n) => (
                 <div key={n} className="bg-muted h-16 w-full animate-pulse rounded-md" />
               ))}
@@ -568,7 +568,7 @@ export default function DokploySettingsAiPage() {
             configs.map((config) => (
               <div
                 key={config.aiId}
-                className="flex items-center justify-between rounded-lg border p-3.5"
+                className="flex min-w-0 items-center justify-between rounded-lg border p-3.5"
               >
                 <div>
                   <span className="text-sm font-medium">{config.name}</span>
@@ -576,7 +576,7 @@ export default function DokploySettingsAiPage() {
                     {config.model} · {config.apiUrl}
                   </p>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex min-w-0 items-center gap-1">
                   <Badge variant={config.isEnabled ? "secondary" : "outline"}>
                     {config.isEnabled ? "Enabled" : "Disabled"}
                   </Badge>

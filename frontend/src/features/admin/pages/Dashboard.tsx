@@ -105,13 +105,13 @@ export default function AdminDashboardPage() {
   }, [])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Dashboard"
         description="Platform-wide users, infrastructure and finance at a glance."
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label="Users"
           value={users.total ?? "…"}
@@ -141,7 +141,7 @@ export default function AdminDashboardPage() {
       {financeError ? (
         <ErrorBanner error={financeError} />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
             label="Outstanding invoices"
             value={finance ? formatMoney(finance.outstanding.total) : "…"}

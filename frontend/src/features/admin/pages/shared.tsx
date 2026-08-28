@@ -63,14 +63,14 @@ export function PaginationBar({ meta, onPageChange, disabled }: PaginationBarPro
   const to = total !== undefined ? Math.min(page * perPage, total) : undefined
 
   return (
-    <div className="flex items-center justify-between gap-4 pt-1">
+    <div className="flex min-w-0 items-center justify-between gap-4 pt-1">
       <p className="text-xs text-muted-foreground">
         Page {page}
         {totalPages ? ` of ${totalPages}` : ""}
         {to !== undefined ? ` · showing ${from}–${to}` : ""}
         {total !== undefined ? ` of ${total}` : ""}
       </p>
-      <div className="flex items-center gap-2">
+      <div className="flex min-w-0 items-center gap-2">
         <Button
           variant="outline"
           size="sm"
@@ -102,7 +102,7 @@ export function DetailField({ label, children }: DetailFieldProps) {
   return (
     <div className="min-w-0 space-y-0.5">
       <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
-      <dd className="truncate text-sm">{children ?? "—"}</dd>
+      <dd className="min-w-0 truncate text-sm">{children ?? "—"}</dd>
     </div>
   )
 }

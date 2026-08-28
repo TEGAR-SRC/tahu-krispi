@@ -124,7 +124,7 @@ export default function DokploySettingsAuditLogsPage() {
   ]
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <K6Breadcrumbs current="Audit Logs" />
       <PageHeader
         title="Audit Logs"
@@ -137,7 +137,7 @@ export default function DokploySettingsAuditLogsPage() {
       />
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex min-w-0 items-center gap-2">
             <ClipboardListIcon className="text-muted-foreground size-5" />
             Log Entries
           </CardTitle>
@@ -188,7 +188,7 @@ export default function DokploySettingsAuditLogsPage() {
             emptyMessage="No audit log entries for these filters."
           />
           {!error && rows.length > 0 ? (
-            <div className="flex items-center justify-end gap-3">
+            <div className="flex min-w-0 items-center justify-end gap-3">
               <span className="text-muted-foreground text-sm">
                 Page {pageIndex + 1}
                 {typeof total === "number" ? ` of ${Math.max(Math.ceil(total / PAGE_SIZE), 1)} (${total} entries)` : ""}

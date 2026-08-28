@@ -167,7 +167,7 @@ export function AccountTab() {
   )
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    <div className="grid w-full max-w-full min-w-0 gap-6 lg:grid-cols-2">
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Personal information</CardTitle>
@@ -180,7 +180,7 @@ export function AccountTab() {
           {field("full_name", "Full name")}
           {field("display_name", "Display name")}
           {field("company_name", "Company")}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-2">
             {field("country_code", "Country code", "ID")}
             {field("tax_id", "Tax ID")}
           </div>
@@ -195,7 +195,7 @@ export function AccountTab() {
           <CardHeader>
             <CardTitle className="text-base">Avatar</CardTitle>
           </CardHeader>
-          <CardContent className="flex items-center gap-4">
+          <CardContent className="flex min-w-0 items-center gap-4">
             <Avatar className="size-16">
               {avatarUrl ? <AvatarImage src={avatarUrl} alt="Avatar" /> : null}
               <AvatarFallback>{(profile?.full_name || profile?.email || "?").slice(0, 2).toUpperCase()}</AvatarFallback>
@@ -221,7 +221,7 @@ export function AccountTab() {
             ) : null}
             <ul className="space-y-2">
               {documents.map((doc) => (
-                <li key={doc.id} className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm">
+                <li key={doc.id} className="flex min-w-0 items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm">
                   <span className="capitalize">{doc.document_type.replace(/_/g, " ")}</span>
                   <span className="text-xs text-muted-foreground">
                     {formatBytes(doc.size_bytes)} · {formatDateTime(doc.created_at)}
@@ -229,7 +229,7 @@ export function AccountTab() {
                 </li>
               ))}
             </ul>
-            <div className="grid gap-2 sm:grid-cols-[160px_1fr_auto] sm:items-end">
+            <div className="grid w-full max-w-full min-w-0 gap-2 sm:grid-cols-[160px_1fr_auto] sm:items-end">
               <div className="space-y-1.5">
                 <Label htmlFor="doc-type">Type</Label>
                 <select

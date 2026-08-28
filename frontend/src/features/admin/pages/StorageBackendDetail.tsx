@@ -100,7 +100,7 @@ export default function StorageBackendDetailPage() {
   const backend = rows?.find((row) => row.code === code) ?? null
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -117,7 +117,7 @@ export default function StorageBackendDetailPage() {
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 space-y-1">
-          <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight sm:text-2xl">
+          <h1 className="flex min-w-0 items-center gap-2 text-xl font-semibold tracking-tight sm:text-2xl">
             {backend?.name ?? code}
             {backend ? (
               backend.enabled ? (
@@ -163,7 +163,7 @@ export default function StorageBackendDetailPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <dl className="grid grid-cols-2 gap-4 md:grid-cols-3">
+            <dl className="grid w-full max-w-full min-w-0 grid-cols-2 gap-4 md:grid-cols-3">
               <Field label="Driver">
                 <Badge variant="outline">{backend.driver}</Badge>
               </Field>
@@ -234,7 +234,7 @@ function Field({ label, children }: { label: string; children?: React.ReactNode 
   return (
     <div className="min-w-0 space-y-0.5">
       <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
-      <dd className="truncate text-sm">{children ?? "—"}</dd>
+      <dd className="min-w-0 truncate text-sm">{children ?? "—"}</dd>
     </div>
   )
 }
@@ -303,7 +303,7 @@ function EditDialog({
             keep the stored pair.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="sb-name">Name</Label>
             <Input id="sb-name" value={name} onChange={(event) => setName(event.target.value)} />
@@ -367,7 +367,7 @@ function EditDialog({
               onChange={(event) => setSecretKey(event.target.value)}
             />
           </div>
-          <label className="flex items-center gap-2 text-sm sm:col-span-2">
+          <label className="flex min-w-0 items-center gap-2 text-sm sm:col-span-2">
             <input
               type="checkbox"
               className="size-4 accent-primary"

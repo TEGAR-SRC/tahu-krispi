@@ -49,7 +49,7 @@ interface ReservedIp {
 export default function InstanceNetworkPage() {
   const { instanceId } = useParams()
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <NetworkContent instanceId={instanceId} />
     </div>
   )
@@ -65,7 +65,7 @@ function NetworkContent({ instanceId }: { instanceId: string | undefined }) {
         description="Reverse DNS, BGP sessions and reserved IP anchoring for this instance."
       />
       <RdnsCard instanceId={instanceId} />
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid w-full max-w-full min-w-0 gap-4 lg:grid-cols-2">
         <BgpCard instanceId={instanceId} />
         <ReservedIpsCard instance={instance} />
       </div>
@@ -430,7 +430,7 @@ function ReservedIpsCard({ instance }: { instance: InstanceDetail | null }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex min-w-0 items-center gap-2">
           <NetworkIcon className="size-4" /> Reserved IPs
         </CardTitle>
         <CardDescription>{ATTACH_HINT}</CardDescription>
@@ -455,8 +455,8 @@ function ReservedIpsCard({ instance }: { instance: InstanceDetail | null }) {
                   className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2"
                 >
                   <div className="min-w-0">
-                    <p className="truncate font-mono text-sm">{rip.ip_addr ?? rip.id}</p>
-                    <p className="truncate text-xs text-muted-foreground">
+                    <p className="min-w-0 truncate font-mono text-sm">{rip.ip_addr ?? rip.id}</p>
+                    <p className="min-w-0 truncate text-xs text-muted-foreground">
                       {rip.name ? `${rip.name} · ` : ""}
                       {rip.status ?? "—"}
                       {rip.attachment

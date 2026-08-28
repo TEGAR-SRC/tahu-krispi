@@ -241,7 +241,7 @@ export default function NocTicketThreadPage() {
   }, [ticket, assigneeId])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -328,7 +328,7 @@ export default function NocTicketThreadPage() {
                         <li key={attachment.id}>
                           <button
                             type="button"
-                            className="flex items-center gap-1.5 text-xs text-primary hover:underline disabled:opacity-50"
+                            className="flex min-w-0 items-center gap-1.5 text-xs text-primary hover:underline disabled:opacity-50"
                             onClick={() =>
                               void downloadAttachment(message.id, attachment)
                             }
@@ -363,7 +363,7 @@ export default function NocTicketThreadPage() {
                   {files.map((file, index) => (
                     <li
                       key={`${file.name}-${index}`}
-                      className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs"
+                      className="flex min-w-0 items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs"
                     >
                       <PaperclipIcon className="size-3" />
                       {file.name} ({formatBytes(file.size)})
@@ -383,8 +383,8 @@ export default function NocTicketThreadPage() {
               {filePercents !== null ? (
                 <ul className="space-y-1">
                   {files.map((file, index) => (
-                    <li key={`${file.name}-${index}`} className="flex items-center gap-2 text-xs">
-                      <span className="w-40 truncate text-muted-foreground">{file.name}</span>
+                    <li key={`${file.name}-${index}`} className="flex min-w-0 items-center gap-2 text-xs">
+                      <span className="min-w-0 w-40 truncate text-muted-foreground">{file.name}</span>
                       <Progress value={filePercents[index] ?? 0} className="h-1 flex-1" />
                       <span className="w-10 shrink-0 text-right tabular-nums text-muted-foreground">
                         {filePercents[index] ?? 0}%
@@ -394,8 +394,8 @@ export default function NocTicketThreadPage() {
                 </ul>
               ) : null}
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-2 text-sm">
+                <div className="flex min-w-0 items-center gap-3">
+                  <label className="flex min-w-0 items-center gap-2 text-sm">
                     <Checkbox checked={internalNote} onCheckedChange={(v) => setInternalNote(v === true)} />
                     Internal note only
                   </label>

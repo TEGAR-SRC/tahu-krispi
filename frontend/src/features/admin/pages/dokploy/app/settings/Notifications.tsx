@@ -523,7 +523,7 @@ export default function DokploySettingsNotificationsPage() {
   const activeProviderKeys = new Set(grouped.map(([key]) => key))
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Notifications"
         description="Channels that receive deploy, backup and cleanup events — Discord, Email, Telegram, Slack, Teams, Lark, Mattermost, ntfy, Gotify, Pushover, Resend and custom webhooks."
@@ -590,7 +590,7 @@ export default function DokploySettingsNotificationsPage() {
           return (
             <Card key={familyKey}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
+                <CardTitle className="flex min-w-0 items-center gap-2 text-base">
                   <BellIcon className="size-4 text-muted-foreground" />
                   {family?.label ?? familyKey}
                 </CardTitle>
@@ -705,7 +705,7 @@ export default function DokploySettingsNotificationsPage() {
             ))}
 
             {(cfg.flags ?? []).map((flag) => (
-              <div className="flex items-center justify-between rounded-md border p-3" key={flag.key}>
+              <div className="flex min-w-0 items-center justify-between rounded-md border p-3" key={flag.key}>
                 <Label htmlFor={`np-flag-${flag.key}`}>{flag.label}</Label>
                 <Switch
                   id={`np-flag-${flag.key}`}
@@ -719,9 +719,9 @@ export default function DokploySettingsNotificationsPage() {
 
             <div className="rounded-md border p-3">
               <p className="mb-2 text-sm font-medium">Notify on</p>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <div className="grid w-full max-w-full min-w-0 grid-cols-1 gap-2 sm:grid-cols-2">
                 {NOTIFICATION_EVENTS.map((event) => (
-                  <div className="flex items-center justify-between gap-2" key={event.key}>
+                  <div className="flex min-w-0 items-center justify-between gap-2" key={event.key}>
                     <Label htmlFor={`np-ev-${event.key}`} className="text-xs">
                       {event.label}
                     </Label>
@@ -791,7 +791,7 @@ export default function DokploySettingsNotificationsPage() {
               </div>
             ))}
             {(testCfg?.cfg.flags ?? []).map((flag) => (
-              <div className="flex items-center justify-between rounded-md border p-3" key={flag.key}>
+              <div className="flex min-w-0 items-center justify-between rounded-md border p-3" key={flag.key}>
                 <Label htmlFor={`np-test-flag-${flag.key}`}>{flag.label}</Label>
                 <Switch
                   id={`np-test-flag-${flag.key}`}

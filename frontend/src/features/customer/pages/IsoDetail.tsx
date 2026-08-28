@@ -136,7 +136,7 @@ export default function CustomerIsoDetailPage() {
 
   if (!loading && error && !iso) {
     return (
-      <div className="flex flex-col gap-6">
+      <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
@@ -159,7 +159,7 @@ export default function CustomerIsoDetailPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -221,7 +221,7 @@ export default function CustomerIsoDetailPage() {
             {processing ? (
               <div className="space-y-1">
                 <Progress value={Math.max(0, Math.min(100, iso.progress_percent ?? 0))} />
-                <p className="flex items-center gap-2 text-xs tabular-nums text-muted-foreground">
+                <p className="flex min-w-0 items-center gap-2 text-xs tabular-nums text-muted-foreground">
                   <Loader2Icon className="size-3 animate-spin" />
                   {typeof iso.progress_percent === "number"
                     ? `${iso.progress_percent}% — refreshing every 5 s`
@@ -230,7 +230,7 @@ export default function CustomerIsoDetailPage() {
               </div>
             ) : null}
 
-            <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+            <dl className="grid w-full max-w-full min-w-0 gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
               <Detail label="Size">{formatBytes(iso.size_bytes)}</Detail>
               <Detail label="Created">{formatDateTime(iso.created_at)}</Detail>
               <Detail label="Provider ID">
@@ -242,9 +242,9 @@ export default function CustomerIsoDetailPage() {
                     href={iso.source_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex max-w-64 items-center gap-1 truncate underline"
+                    className="min-w-0 inline-flex max-w-64 items-center gap-1 truncate underline"
                   >
-                    <span className="truncate font-mono text-xs">{iso.source_url}</span>
+                    <span className="min-w-0 truncate font-mono text-xs">{iso.source_url}</span>
                     <ExternalLinkIcon className="size-3 shrink-0" />
                   </a>
                 ) : (

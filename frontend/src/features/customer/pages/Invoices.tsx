@@ -99,8 +99,8 @@ export default function CustomerInvoicesPage() {
       header: "Invoice",
       render: (row) => (
         <div className="min-w-0">
-          <p className="truncate font-medium">{row.invoice_number || row.public_id}</p>
-          <p className="truncate font-mono text-xs text-muted-foreground">{row.public_id}</p>
+          <p className="min-w-0 truncate font-medium">{row.invoice_number || row.public_id}</p>
+          <p className="min-w-0 truncate font-mono text-xs text-muted-foreground">{row.public_id}</p>
         </div>
       ),
     },
@@ -138,7 +138,7 @@ export default function CustomerInvoicesPage() {
   ]
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Invoices"
         description="Billing documents for your orders and subscriptions."

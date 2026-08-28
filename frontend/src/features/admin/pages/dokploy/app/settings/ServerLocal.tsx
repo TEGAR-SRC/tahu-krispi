@@ -247,7 +247,7 @@ export default function DokploySettingsServerLocalPage() {
 
   if (settings.error) {
     return (
-      <div className="flex flex-col gap-6">
+      <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
         <PageHeader title="Web Server" />
         <ErrorBanner error={settings.error} />
       </div>
@@ -255,7 +255,7 @@ export default function DokploySettingsServerLocalPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Web Server"
         description="The local Dokploy control plane itself — domain, IP, Traefik wiring and updates."
@@ -266,7 +266,7 @@ export default function DokploySettingsServerLocalPage() {
           {/* Version / update card */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
+              <CardTitle className="flex min-w-0 items-center gap-2 text-base">
                 <RefreshCwIcon className="size-4 text-muted-foreground" />
                 Version
               </CardTitle>
@@ -293,7 +293,7 @@ export default function DokploySettingsServerLocalPage() {
           {/* Infrastructure health */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
+              <CardTitle className="flex min-w-0 items-center gap-2 text-base">
                 <ActivityIcon className="size-4 text-muted-foreground" />
                 Infrastructure health
               </CardTitle>
@@ -311,7 +311,7 @@ export default function DokploySettingsServerLocalPage() {
           {/* Web domain */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
+              <CardTitle className="flex min-w-0 items-center gap-2 text-base">
                 <GlobeIcon className="size-4 text-muted-foreground" />
                 Web domain
               </CardTitle>
@@ -327,7 +327,7 @@ export default function DokploySettingsServerLocalPage() {
             </CardHeader>
             <CardContent>
               {domainForm ? (
-                <div className="grid max-w-xl gap-3">
+                <div className="grid w-full max-w-full min-w-0 max-w-xl gap-3">
                   <div className="space-y-2">
                     <Label htmlFor="ws-host">Host *</Label>
                     <Input
@@ -371,7 +371,7 @@ export default function DokploySettingsServerLocalPage() {
                       />
                     </div>
                   ) : null}
-                  <div className="flex items-center justify-between rounded-md border p-3">
+                  <div className="flex min-w-0 items-center justify-between rounded-md border p-3">
                     <Label htmlFor="ws-https">Serve over HTTPS</Label>
                     <Switch
                       id="ws-https"
@@ -400,7 +400,7 @@ export default function DokploySettingsServerLocalPage() {
           {/* Server IP */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
+              <CardTitle className="flex min-w-0 items-center gap-2 text-base">
                 <NetworkIcon className="size-4 text-muted-foreground" />
                 Server IP
               </CardTitle>
@@ -425,7 +425,7 @@ export default function DokploySettingsServerLocalPage() {
           {/* Traefik env */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
+              <CardTitle className="flex min-w-0 items-center gap-2 text-base">
                 <ServerCogIcon className="size-4 text-muted-foreground" />
                 Traefik environment file
               </CardTitle>
@@ -461,7 +461,7 @@ export default function DokploySettingsServerLocalPage() {
           {/* Traefik ports */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
+              <CardTitle className="flex min-w-0 items-center gap-2 text-base">
                 <NetworkIcon className="size-4 text-muted-foreground" />
                 Traefik published ports
               </CardTitle>
@@ -499,7 +499,7 @@ export default function DokploySettingsServerLocalPage() {
           {/* Web-server database backups */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
+              <CardTitle className="flex min-w-0 items-center gap-2 text-base">
                 <DatabaseBackupIcon className="size-4 text-muted-foreground" />
                 Web-server database backups
               </CardTitle>

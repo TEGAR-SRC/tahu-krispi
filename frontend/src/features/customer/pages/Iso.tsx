@@ -211,14 +211,14 @@ export default function CustomerIsoPage() {
           {row.id ? (
             <Link
               to={`/app/iso/${row.id}`}
-              className="block max-w-72 truncate font-medium underline-offset-2 hover:underline"
+              className="min-w-0 block max-w-72 truncate font-medium underline-offset-2 hover:underline"
             >
               {row.name}
             </Link>
           ) : (
-            <p className="truncate font-medium">{row.name}</p>
+            <p className="min-w-0 truncate font-medium">{row.name}</p>
           )}
-          <p className="truncate text-xs text-muted-foreground">{row.filename ?? row.source_url ?? ""}</p>
+          <p className="min-w-0 truncate text-xs text-muted-foreground">{row.filename ?? row.source_url ?? ""}</p>
         </div>
       ),
     },
@@ -268,7 +268,7 @@ export default function CustomerIsoPage() {
   const usedPercent = usage?.quota_bytes ? Math.min(100, (usage.used_bytes / usage.quota_bytes) * 100) : 0
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="ISO images"
         description="Custom ISOs and measured boot images for your instances."
@@ -553,8 +553,8 @@ function MeasuredBootSection({ onUsageChanged }: { onUsageChanged: () => void })
       header: "Name",
       render: (row) => (
         <div className="min-w-0">
-          <p className="truncate font-medium">{row.name}</p>
-          <p className="truncate text-xs text-muted-foreground">{row.filename ?? ""}</p>
+          <p className="min-w-0 truncate font-medium">{row.name}</p>
+          <p className="min-w-0 truncate text-xs text-muted-foreground">{row.filename ?? ""}</p>
         </div>
       ),
     },
@@ -581,7 +581,7 @@ function MeasuredBootSection({ onUsageChanged }: { onUsageChanged: () => void })
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex min-w-0 items-center justify-between gap-2">
         <p className="text-sm text-muted-foreground">
           Verified-boot images (max 512 MB) that instances can boot with attestation.
         </p>

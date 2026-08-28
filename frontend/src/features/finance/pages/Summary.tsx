@@ -148,12 +148,12 @@ export default function FinanceSummaryPage() {
   const currency = payments[0]?.currency ?? "IDR"
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Summary"
         description={`Financial overview for the last ${days} days.`}
         actions={
-          <div className="flex items-center gap-1.5">
+          <div className="flex min-w-0 items-center gap-1.5">
             {PERIODS.map((period) => (
               <Button
                 key={period}
@@ -170,7 +170,7 @@ export default function FinanceSummaryPage() {
 
       {error ? <ErrorBanner error={error} /> : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {loading && !summary ? (
           Array.from({ length: 5 }).map((_, index) => (
             <Card key={index}>
@@ -260,7 +260,7 @@ export default function FinanceSummaryPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid w-full max-w-full min-w-0 gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Orders by status</CardTitle>

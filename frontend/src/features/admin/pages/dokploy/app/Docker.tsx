@@ -84,7 +84,7 @@ function ContainersTab({ serverId }: { serverId: string }) {
     setResult(response.result)
   }
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-4">
       <OperationConsole
         title="Containers"
         description="docker.getContainers with inspect/start/stop/restart/kill/remove lifecycle actions."
@@ -124,7 +124,7 @@ function ContainersTab({ serverId }: { serverId: string }) {
 function ImagesTab({ serverId }: { serverId: string }) {
   const [config, setConfig] = useState<unknown>(null)
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-4">
       <OperationConsole
         title="Images"
         description="dockerImage.getImages with inspect and remove."
@@ -156,7 +156,7 @@ function ImagesTab({ serverId }: { serverId: string }) {
 function VolumesTab({ serverId }: { serverId: string }) {
   const [config, setConfig] = useState<unknown>(null)
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-4">
       <OperationConsole
         title="Volumes"
         description="dockerVolume.getVolumes with inspect and remove. File-manager ops stay in the generic explorer; this page keeps the core admin views real."
@@ -188,7 +188,7 @@ function NetworksTab({ serverId }: { serverId: string }) {
   const [network, setNetwork] = useState<unknown>(null)
   const [name, setName] = useState("")
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-4">
       <FieldCard title="Create network" description="Minimal network.create form; advanced IPAM/import remain available only through upstream endpoints.">
         <TextField label="Name" value={name} onChange={setName} placeholder="web" />
         <Button disabled={!name.trim()} onClick={() => void mutate(() => dokploy("POST", "network.create", { name: name.trim(), driver: "bridge", internal: false, attachable: true, enableIPv4: true, enableIPv6: false, ...withServerId(serverId) }), "Network created", () => setName(""))}>Create bridge network</Button>
@@ -225,7 +225,7 @@ function NetworksTab({ serverId }: { serverId: string }) {
 
 function DiskUsageTab({ serverId }: { serverId: string }) {
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-4">
       <OperationConsole title="Disk usage" serverId={serverId} loader={(query) => dokploy("GET", "dockerDiskUsage.getDiskUsage", undefined, query)} />
       <OperationConsole
         title="Build cache"
@@ -245,7 +245,7 @@ function SwarmTab({ serverId }: { serverId: string }) {
   const [joinWorker, setJoinWorker] = useState<unknown>(null)
   const [joinManager, setJoinManager] = useState<unknown>(null)
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-4">
       <DisabledOpCard title="Swarm application info" description="Dokploy CE UI references swarm.getAppInfos, but v0.30.2 manifest does not include that operation." />
       <FieldCard title="Swarm cluster ops" description="Dokploy can return join instructions for workers/managers. Node removal is real; app summary still degrades because upstream op is missing.">
         <TextField label="Node ID" value={nodeId} onChange={setNodeId} placeholder="Inspect or remove a specific node" />

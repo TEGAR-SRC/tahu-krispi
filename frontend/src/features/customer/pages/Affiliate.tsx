@@ -111,7 +111,7 @@ export default function CustomerAffiliatePage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Affiliate program"
         description="Share your referral link and earn a share of what your invitees spend."
@@ -119,7 +119,7 @@ export default function CustomerAffiliatePage() {
 
       <ErrorBanner error={error} />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label="Total referrals"
           value={loading ? "…" : (data?.total_referrals ?? 0)}
@@ -145,7 +145,7 @@ export default function CustomerAffiliatePage() {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid w-full max-w-full min-w-0 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Your referral link</CardTitle>
@@ -156,7 +156,7 @@ export default function CustomerAffiliatePage() {
           <CardContent className="space-y-3">
             <div className="space-y-1.5">
               <Label htmlFor="ref-code">Referral code</Label>
-              <div className="flex items-center gap-2">
+              <div className="flex min-w-0 items-center gap-2">
                 <Input id="ref-code" readOnly value={data?.referral_code ?? ""} className="font-mono" />
                 <Button
                   variant="outline"
@@ -170,7 +170,7 @@ export default function CustomerAffiliatePage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="ref-link">Link</Label>
-              <div className="flex items-center gap-2">
+              <div className="flex min-w-0 items-center gap-2">
                 <Input id="ref-link" readOnly value={data?.referral_link ?? ""} className="font-mono text-xs" />
                 <Button
                   variant="outline"

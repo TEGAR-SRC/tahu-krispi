@@ -47,7 +47,7 @@ export default function BillingAffiliateConfigPage() {
   }, [])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Affiliate program"
         description="Referral commission rules and payout records."
@@ -55,10 +55,10 @@ export default function BillingAffiliateConfigPage() {
 
       {error ? <ErrorBanner error={error} /> : null}
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card className="flex flex-col">
+      <div className="grid w-full max-w-full min-w-0 gap-4 md:grid-cols-2">
+        <Card className="flex min-w-0 flex-col">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex min-w-0 items-center gap-2">
               <GiftIcon className="size-4 text-muted-foreground" />
               Settings
             </CardTitle>
@@ -93,9 +93,9 @@ export default function BillingAffiliateConfigPage() {
           </CardFooter>
         </Card>
 
-        <Card className="flex flex-col">
+        <Card className="flex min-w-0 flex-col">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex min-w-0 items-center gap-2">
               <CoinsIcon className="size-4 text-muted-foreground" />
               Earnings
             </CardTitle>

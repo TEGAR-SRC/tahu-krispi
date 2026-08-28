@@ -66,7 +66,7 @@ export default function OrganizationDetailPage() {
   }, [orgId])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <Button asChild variant="ghost" size="sm" className="-ml-2 self-start">
         <Link to="/admin/organizations">
           <ArrowLeftIcon /> Back to organizations
@@ -89,7 +89,7 @@ export default function OrganizationDetailPage() {
 
       {error ? <ErrorBanner error={error} /> : null}
       {!error && loading ? (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid w-full max-w-full min-w-0 gap-3 sm:grid-cols-2">
           {Array.from({ length: 6 }).map((_, index) => (
             <Skeleton key={index} className="h-10 w-full" />
           ))}
@@ -104,7 +104,7 @@ export default function OrganizationDetailPage() {
 
       {org ? (
         <>
-          <dl className="grid gap-4 rounded-md border p-4 sm:grid-cols-2 lg:grid-cols-4">
+          <dl className="grid w-full max-w-full min-w-0 gap-4 rounded-md border p-4 sm:grid-cols-2 lg:grid-cols-4">
             <DetailField label="Status">
               <StatusBadge status={org.status} />
             </DetailField>
@@ -195,7 +195,7 @@ function ProviderAccountForm({ org }: { org: AdminOrgRow }) {
           endpoint for the current mapping — fields saved blank are cleared.
         </p>
       </div>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid w-full max-w-full min-w-0 gap-3 sm:grid-cols-3">
         <div className="space-y-1.5">
           <Label htmlFor={`provider-code-${org.id}`}>Provider code</Label>
           <Input

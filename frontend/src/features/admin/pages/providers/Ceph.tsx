@@ -63,14 +63,14 @@ export default function ProviderCephPage() {
       title="Ceph"
       description={`fsid ${data.fsid ?? "—"} · quorum: ${(data.quorum_names ?? []).join(", ") || "—"}`}
     >
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Health" value={<StatusBadge status={(health?.status ?? "").toLowerCase()} />} hint={`${checks.length} active check(s)`} />
         <StatCard label="OSDs" value={`${osdmap?.num_osds ?? 0}`} hint={`${osdmap?.num_up_osds ?? 0} up · ${osdmap?.num_in_osds ?? 0} in`} />
         <StatCard label="Placement groups" value={`${pgmap?.num_pgs ?? data.pgmap?.num_pgs ?? 0}`} hint={`${pgmap?.num_pools ?? ""} pools`} />
         <StatCard label="Objects" value={pgmap ? (pgmap.num_objects ?? 0).toLocaleString() : "—"} hint={`data ${formatBytes(pgmap?.data_bytes)}`} />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Used" value={formatBytes(pgmap?.bytes_used)} />
         <StatCard label="Total capacity" value={formatBytes(pgmap?.bytes_total)} />
         <StatCard label="Available" value={formatBytes(pgmap?.bytes_avail)} />
@@ -97,7 +97,7 @@ export default function ProviderCephPage() {
           ) : (
             checks.map(([name, check]) => (
               <div key={name} className="rounded-md border p-3 text-sm">
-                <div className="flex items-center gap-2">
+                <div className="flex min-w-0 items-center gap-2">
                   <StatusBadge status={check.severity === "HEALTH_WARN" ? "pending" : "failed"} />
                   <span className="font-mono text-xs">{name}</span>
                   {check.summary?.count ? (

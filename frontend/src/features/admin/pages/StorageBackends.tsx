@@ -83,7 +83,7 @@ export default function AdminStorageBackendsPage() {
   }, [reloadTick])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Storage Backends"
         description="Object storage used for avatars, documents, ISOs, tickets and invoices."
@@ -98,11 +98,11 @@ export default function AdminStorageBackendsPage() {
               <div className="min-w-0">
                 <Link
                   to={`/admin/storage-backends/${row.code}`}
-                  className="block truncate font-medium text-primary underline-offset-4 hover:underline"
+                  className="min-w-0 block truncate font-medium text-primary underline-offset-4 hover:underline"
                 >
                   {row.name}
                 </Link>
-                <p className="truncate font-mono text-xs text-muted-foreground">{row.code}</p>
+                <p className="min-w-0 truncate font-mono text-xs text-muted-foreground">{row.code}</p>
               </div>
             ),
           },
@@ -292,7 +292,7 @@ function BackendEditorDialog({ backend, onClose, onSaved }: BackendEditorDialogP
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="backend-name">Name</Label>
             <Input id="backend-name" value={name} onChange={(event) => setName(event.target.value)} />
@@ -360,7 +360,7 @@ function BackendEditorDialog({ backend, onClose, onSaved }: BackendEditorDialogP
               onChange={(event) => setSecretKey(event.target.value)}
             />
           </div>
-          <label className="flex items-center gap-2 text-sm sm:col-span-2">
+          <label className="flex min-w-0 items-center gap-2 text-sm sm:col-span-2">
             <Checkbox checked={enabled} onCheckedChange={(checked) => setEnabled(checked === true)} />
             Enabled
           </label>

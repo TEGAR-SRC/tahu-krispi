@@ -68,7 +68,7 @@ const PAYMENT_STATUSES = [
 
 function DetailField({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="flex flex-col gap-0.5 text-sm">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-0.5 text-sm">
       <span className="text-muted-foreground">{label}</span>
       <span className="break-all font-medium">{value}</span>
     </div>
@@ -174,12 +174,12 @@ export default function BillingPaymentsPage() {
   ]
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Payments"
         description="Wallet topups and invoice settlements across providers."
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value)}>
               <SelectTrigger className="w-44">
                 <SelectValue placeholder="All statuses" />
@@ -247,8 +247,8 @@ export default function BillingPaymentsPage() {
           </DialogHeader>
 
           {detail ? (
-            <div className="flex flex-col gap-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex w-full max-w-full min-w-0 flex-col gap-4">
+              <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-4">
                 <DetailField label="Status" value={<StatusBadge status={detail.status} />} />
                 <DetailField label="Amount" value={formatMoney(detail.amount, detail.currency)} />
                 <DetailField label="Fee" value={formatMoney(detail.fee, detail.currency)} />
@@ -287,7 +287,7 @@ export default function BillingPaymentsPage() {
                         {events.map((event) => (
                           <li
                             key={String(event.id)}
-                            className="flex items-center justify-between gap-4 rounded-md border px-3 py-1.5"
+                            className="flex min-w-0 items-center justify-between gap-4 rounded-md border px-3 py-1.5"
                           >
                             <span>{event.event_type}</span>
                             <span className="text-muted-foreground">

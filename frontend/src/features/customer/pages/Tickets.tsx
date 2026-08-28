@@ -118,7 +118,7 @@ export default function CustomerTicketsPage() {
   }, [load])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Support tickets"
         description="Ask us anything — attachments up to 100 MB per file."
@@ -131,7 +131,7 @@ export default function CustomerTicketsPage() {
 
       <ErrorBanner error={error} />
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(280px,380px)_1fr]">
+      <div className="grid w-full max-w-full min-w-0 gap-4 lg:grid-cols-[minmax(280px,380px)_1fr]">
         {/* Ticket list */}
         <div className="space-y-2">
           {loading ? (
@@ -151,11 +151,11 @@ export default function CustomerTicketsPage() {
                   }`}
                 >
                   <CardContent className="space-y-1.5 px-4 py-3">
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-center justify-between gap-2">
                       <p className="min-w-0 truncate font-medium">{ticket.subject}</p>
                       <StatusBadge status={ticket.status} />
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
                       <span>#{ticket.ticket_number ?? ticket.id.slice(0, 8)}</span>
                       {ticket.priority ? <span className="capitalize">{ticket.priority}</span> : null}
                       <span className="ml-auto">{formatDateTime(ticket.last_reply_at || ticket.created_at)}</span>
@@ -326,7 +326,7 @@ function TicketThread({ ticketId, onClosed }: { ticketId: string; onClosed: () =
     <Card className="flex h-full flex-col">
       <CardHeader className="flex-row items-start justify-between space-y-0">
         <div className="min-w-0">
-          <CardTitle className="truncate text-lg">{ticket?.subject ?? "Ticket"}</CardTitle>
+          <CardTitle className="min-w-0 truncate text-lg">{ticket?.subject ?? "Ticket"}</CardTitle>
           <p className="mt-1 text-xs text-muted-foreground">
             #{ticket?.ticket_number ?? ticketId.slice(0, 8)}
             {ticket?.created_at ? ` · opened ${formatDateTime(ticket.created_at)}` : ""}
@@ -387,7 +387,7 @@ function TicketThread({ ticketId, onClosed }: { ticketId: string; onClosed: () =
                         <li key={attachment.id}>
                           <button
                             type="button"
-                            className="flex items-center gap-1.5 text-xs text-primary hover:underline"
+                            className="flex min-w-0 items-center gap-1.5 text-xs text-primary hover:underline"
                             onClick={() =>
                               void downloadAttachment(message.id, attachment)
                             }
@@ -419,7 +419,7 @@ function TicketThread({ ticketId, onClosed }: { ticketId: string; onClosed: () =
                 {files.map((file, index) => (
                   <span
                     key={`${file.name}-${index}`}
-                    className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs"
+                    className="flex min-w-0 items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs"
                   >
                     <PaperclipIcon className="size-3" />
                     {file.name} ({formatBytes(file.size)})
@@ -438,7 +438,7 @@ function TicketThread({ ticketId, onClosed }: { ticketId: string; onClosed: () =
             {percent !== null ? (
               <p className="text-xs tabular-nums text-muted-foreground">Uploading… {percent}%</p>
             ) : null}
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex min-w-0 items-center justify-between gap-2">
               <div>
                 <Input
                   ref={fileInputRef}
@@ -540,7 +540,7 @@ function CreateTicketDialog({
               placeholder="Instance unreachable after reboot"
             />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-2">
             <div className="space-y-1.5">
               <Label htmlFor="tk-category">Category</Label>
               <Select value={category} onValueChange={setCategory}>

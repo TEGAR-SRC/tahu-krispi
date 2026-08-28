@@ -61,7 +61,7 @@ export default function DokployEntityPage() {
 
 function UnknownEntity() {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -168,7 +168,7 @@ function EntityBrowser({ entityName }: { entityName: string }) {
   const shownTo = Math.min(offset + items.length, total)
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -194,7 +194,7 @@ function EntityBrowser({ entityName }: { entityName: string }) {
               </Badge>
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -226,7 +226,7 @@ function EntityBrowser({ entityName }: { entityName: string }) {
               Showing {shownFrom.toLocaleString()}–{shownTo.toLocaleString()} of{" "}
               {total.toLocaleString()}
             </p>
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -314,7 +314,7 @@ function CellPreview({ value }: { value: unknown }) {
       ? String(value)
       : JSON.stringify(value)
   return (
-    <span className="block max-w-64 truncate font-mono text-xs" title={text}>
+    <span className="min-w-0 block max-w-64 truncate font-mono text-xs" title={text}>
       {text.length > 120 ? `${text.slice(0, 117)}…` : text}
     </span>
   )

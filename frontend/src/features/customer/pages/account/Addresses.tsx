@@ -210,12 +210,12 @@ export default function AccountAddressesPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Addresses"
         description="Billing and shipping addresses used across your account."
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <Button variant="outline" asChild>
               <Link to="/app/profile">Back to settings</Link>
             </Button>
@@ -233,13 +233,13 @@ export default function AccountAddressesPage() {
       ) : addresses.length === 0 && !error ? (
         <EmptyState message="No addresses yet." description="Add a billing address to complete your profile." />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid w-full max-w-full min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {addresses.map((address) => (
             <Card key={address.id} className={address.is_default ? "border-primary/60" : ""}>
               <CardHeader className="flex-row items-start justify-between space-y-0 pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <MapPinIcon className="size-4 text-muted-foreground" />
-                  {address.label || (address.type === "shipping" ? "Shipping" : "Billing")}
+                <CardTitle className="flex min-w-0 items-center gap-2 text-base">
+                  <MapPinIcon className="size-4 shrink-0 text-muted-foreground" />
+                  <span className="min-w-0 flex-1 truncate">{address.label || (address.type === "shipping" ? "Shipping" : "Billing")}</span>
                 </CardTitle>
                 {address.is_default ? <Badge>Default</Badge> : null}
               </CardHeader>
@@ -308,7 +308,7 @@ export default function AccountAddressesPage() {
             <DialogTitle>{editing ? "Edit address" : "Add address"}</DialogTitle>
             <DialogDescription>Fields marked * are required.</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid w-full max-w-full min-w-0 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>Type</Label>
               <Select value={form.type} onValueChange={(value) => setForm({ ...form, type: value })}>

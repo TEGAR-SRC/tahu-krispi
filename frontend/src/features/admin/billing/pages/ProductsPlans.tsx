@@ -382,7 +382,7 @@ export default function BillingProductsPlansPage() {
       key: "code",
       header: "Product",
       render: (product) => (
-        <div className="flex flex-col">
+        <div className="flex min-w-0 flex-col">
           <Link
             to={`/admin/billing/products/${product.id}`}
             title="Open product detail page"
@@ -431,7 +431,7 @@ export default function BillingProductsPlansPage() {
       key: "code",
       header: "Plan",
       render: (plan) => (
-        <div className="flex flex-col">
+        <div className="flex min-w-0 flex-col">
           <Link
             to={`/admin/billing/plans/${plan.id}`}
             title="Open plan prices page"
@@ -486,7 +486,7 @@ export default function BillingProductsPlansPage() {
   ]
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Products & Plans"
         description="Catalog hierarchy: products own plans, plans own per-period prices."
@@ -575,9 +575,9 @@ export default function BillingProductsPlansPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="grid gap-2">
+          <div className="grid w-full max-w-full min-w-0 gap-4">
+            <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="product-code">Code *</Label>
                 <Input
                   id="product-code"
@@ -588,7 +588,7 @@ export default function BillingProductsPlansPage() {
                   }
                 />
               </div>
-              <div className="grid gap-2">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="product-name">Name *</Label>
                 <Input
                   id="product-name"
@@ -600,8 +600,8 @@ export default function BillingProductsPlansPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="grid gap-2">
+            <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="product-kind">Service kind</Label>
                 <Select
                   value={productForm.service_kind}
@@ -624,7 +624,7 @@ export default function BillingProductsPlansPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid gap-2">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="product-sort">Sort order</Label>
                 <Input
                   id="product-sort"
@@ -641,8 +641,8 @@ export default function BillingProductsPlansPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-[3fr_2fr] items-end gap-3">
-              <div className="grid gap-2">
+            <div className="grid w-full max-w-full min-w-0 grid-cols-[3fr_2fr] items-end gap-3">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="product-monthly">Default monthly amount</Label>
                 <Input
                   id="product-monthly"
@@ -670,7 +670,7 @@ export default function BillingProductsPlansPage() {
               </div>
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid w-full max-w-full min-w-0 gap-2">
               <Label htmlFor="product-description">Description</Label>
               <Textarea
                 id="product-description"
@@ -716,9 +716,9 @@ export default function BillingProductsPlansPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="grid gap-2">
+          <div className="grid w-full max-w-full min-w-0 gap-4">
+            <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label>Product *</Label>
                 <Select
                   value={planForm.product_id}
@@ -743,7 +743,7 @@ export default function BillingProductsPlansPage() {
                   </p>
                 ) : null}
               </div>
-              <div className="grid gap-2">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="plan-mode">Price mode</Label>
                 <Select
                   value={planForm.price_mode}
@@ -768,8 +768,8 @@ export default function BillingProductsPlansPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="grid gap-2">
+            <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="plan-code">Code *</Label>
                 <Input
                   id="plan-code"
@@ -779,7 +779,7 @@ export default function BillingProductsPlansPage() {
                   }
                 />
               </div>
-              <div className="grid gap-2">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="plan-name">Name *</Label>
                 <Input
                   id="plan-name"
@@ -791,7 +791,7 @@ export default function BillingProductsPlansPage() {
               </div>
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid w-full max-w-full min-w-0 gap-2">
               <Label htmlFor="plan-description">Description</Label>
               <Textarea
                 id="plan-description"
@@ -808,7 +808,7 @@ export default function BillingProductsPlansPage() {
 
             <fieldset className="rounded-md border p-3">
               <legend className="px-1 text-sm font-medium">Specs (optional)</legend>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-3 gap-3">
                 {(
                   [
                     ["vcpu", "vCPU"],
@@ -821,7 +821,7 @@ export default function BillingProductsPlansPage() {
                     ["network_rate_mbps", "Network Mbps"],
                   ] as Array<[keyof PlanFormState, string]>
                 ).map(([key, label]) => (
-                  <div key={key} className="grid gap-1">
+                  <div key={key} className="grid w-full max-w-full min-w-0 gap-1">
                     <Label htmlFor={`plan-${key}`} className="text-xs text-muted-foreground">
                       {label}
                     </Label>
@@ -843,8 +843,8 @@ export default function BillingProductsPlansPage() {
               </div>
             </fieldset>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="grid gap-2">
+            <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="plan-setup-fee">Setup fee</Label>
                 <Input
                   id="plan-setup-fee"
@@ -857,7 +857,7 @@ export default function BillingProductsPlansPage() {
                   }
                 />
               </div>
-              <div className="grid gap-2">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="plan-sort">Sort order</Label>
                 <Input
                   id="plan-sort"
@@ -870,7 +870,7 @@ export default function BillingProductsPlansPage() {
                 />
               </div>
               <div className="flex h-9 items-center gap-4 pt-5">
-                <label className="flex items-center gap-2 text-sm">
+                <label className="flex min-w-0 items-center gap-2 text-sm">
                   <Switch
                     checked={planForm.enabled}
                     onCheckedChange={(checked) =>
@@ -879,7 +879,7 @@ export default function BillingProductsPlansPage() {
                   />
                   Enabled
                 </label>
-                <label className="flex items-center gap-2 text-sm">
+                <label className="flex min-w-0 items-center gap-2 text-sm">
                   <Switch
                     checked={planForm.featured}
                     onCheckedChange={(checked) =>
@@ -922,9 +922,9 @@ export default function BillingProductsPlansPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="grid gap-2">
+          <div className="grid w-full max-w-full min-w-0 gap-4">
+            <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="price-currency">Currency *</Label>
                 <Input
                   id="price-currency"
@@ -935,7 +935,7 @@ export default function BillingProductsPlansPage() {
                   }
                 />
               </div>
-              <div className="grid gap-2">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label>Billing period</Label>
                 <Select
                   value={priceForm.billing_period}
@@ -960,8 +960,8 @@ export default function BillingProductsPlansPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="grid gap-2">
+            <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="price-amount">Amount *</Label>
                 <Input
                   id="price-amount"
@@ -974,7 +974,7 @@ export default function BillingProductsPlansPage() {
                   }
                 />
               </div>
-              <div className="grid gap-2">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="price-minimum">Minimum charge</Label>
                 <Input
                   id="price-minimum"
@@ -992,8 +992,8 @@ export default function BillingProductsPlansPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="grid gap-2">
+            <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="price-provider-cost">Provider cost</Label>
                 <Input
                   id="price-provider-cost"
@@ -1009,7 +1009,7 @@ export default function BillingProductsPlansPage() {
                   }
                 />
               </div>
-              <div className="grid gap-2">
+              <div className="grid w-full max-w-full min-w-0 gap-2">
                 <Label htmlFor="price-region">Region ID</Label>
                 <Input
                   id="price-region"

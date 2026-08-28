@@ -168,7 +168,7 @@ export default function FinanceOrderDetailPage() {
     detail.status !== "refunded"
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -218,8 +218,8 @@ export default function FinanceOrderDetailPage() {
           <Skeleton className="h-64 w-full" />
         </div>
       ) : detail ? (
-        <div className="flex flex-col gap-6">
-          <div className="grid gap-4 lg:grid-cols-2">
+        <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
+          <div className="grid w-full max-w-full min-w-0 gap-4 lg:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle>Summary</CardTitle>

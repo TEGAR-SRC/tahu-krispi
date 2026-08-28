@@ -54,7 +54,7 @@ export function DetailField({
   value: ReactNode
 }) {
   return (
-    <div className="flex flex-col gap-0.5 text-sm">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-0.5 text-sm">
       <span className="text-muted-foreground">{label}</span>
       <span className="break-all font-medium">{value}</span>
     </div>

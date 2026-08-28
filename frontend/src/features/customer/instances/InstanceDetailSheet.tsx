@@ -182,13 +182,13 @@ function OverviewTab({ instance }: { instance: CustomerInstance }) {
   ]
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-2">
         {specs.map((spec) => (
           <Card key={spec.label}>
-            <CardContent className="flex items-center gap-2 px-3 py-2.5 text-sm">
+            <CardContent className="flex min-w-0 items-center gap-2 px-3 py-2.5 text-sm">
               <span className="[&_svg]:size-4 [&_svg]:text-muted-foreground">{spec.icon}</span>
               <span className="text-muted-foreground">{spec.label}</span>
-              <span className="ml-auto truncate font-medium tabular-nums">{spec.value}</span>
+              <span className="min-w-0 ml-auto truncate font-medium tabular-nums">{spec.value}</span>
             </CardContent>
           </Card>
         ))}
@@ -247,7 +247,7 @@ function MetricsTab({ instanceId }: { instanceId: string }) {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2">
+      <div className="flex min-w-0 items-center gap-2">
         <Label htmlFor="metric-timeframe" className="text-sm">
           Timeframe
         </Label>
@@ -402,7 +402,7 @@ function NotesTagsTab({ instanceId, onSaved }: { instanceId: string; onSaved: ()
             <p className="text-xs text-muted-foreground">No tags yet.</p>
           ) : null}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
           <Input
             id="instance-tags"
             value={tagDraft}
@@ -490,7 +490,7 @@ function ResizeTab({
         (provider policy). Smaller options are disabled.
       </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
+      <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
         <div>
           <p className="text-muted-foreground">Current vCPU</p>
           <p className="font-medium tabular-nums">{instance.vcpu}</p>
@@ -513,7 +513,7 @@ function ResizeTab({
           <p className="text-sm text-muted-foreground">No plans published.</p>
         ) : (
           <TooltipProvider delayDuration={150}>
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid w-full max-w-full min-w-0 gap-2 sm:grid-cols-2">
               {plans.map((plan) => {
                 const eligible = specAtLeast(plan, instance)
                 const button = (
@@ -548,7 +548,7 @@ function ResizeTab({
         )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-3 gap-2">
         <div className="space-y-1">
           <Label htmlFor="resize-cpu">vCPU</Label>
           <Input

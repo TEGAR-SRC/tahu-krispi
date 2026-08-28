@@ -157,7 +157,7 @@ export default function BillingFinanceSummaryPage() {
   )
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Finance Summary"
         description="Platform-wide collections, outstanding invoices and wallet balances."
@@ -179,7 +179,7 @@ export default function BillingFinanceSummaryPage() {
 
       {error ? <ErrorBanner error={error} /> : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {loading && !summary ? (
           Array.from({ length: 5 }).map((_, index) => (
             <Skeleton key={index} className="h-24 rounded-xl" />

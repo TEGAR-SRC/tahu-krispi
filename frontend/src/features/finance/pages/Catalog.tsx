@@ -186,7 +186,7 @@ export default function FinanceCatalogPage() {
   }, [loadCatalog])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Catalog"
         description="Products, plans and pricing used across the billing pipeline."
@@ -296,7 +296,7 @@ function ProductFormFields({
   codeLocked?: boolean
 }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-3">
       <div className="space-y-1.5">
         <Label htmlFor="prod-code">Code *</Label>
         <Input id="prod-code" value={code} disabled={codeLocked} onChange={(event) => set({ code: event.target.value })} placeholder="kilat-vps" className="font-mono" />
@@ -458,7 +458,7 @@ function ProductEditDialog({
         <InlineFormError error={error} />
         {product ? (
           <div className="space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="edit-prod-name">Name</Label>
                 <Input id="edit-prod-name" value={name} onChange={(event) => setName(event.target.value)} />
@@ -471,7 +471,7 @@ function ProductEditDialog({
                 <Label htmlFor="edit-prod-sort">Sort order</Label>
                 <Input id="edit-prod-sort" type="number" step="1" value={sortOrder} onChange={(event) => setSortOrder(event.target.value)} />
               </div>
-              <div className="flex items-center justify-between rounded-md border px-3 py-2">
+              <div className="flex min-w-0 items-center justify-between rounded-md border px-3 py-2">
                 <Label htmlFor="edit-prod-enabled" className="cursor-pointer">Enabled</Label>
                 <Switch id="edit-prod-enabled" checked={enabled} onCheckedChange={setEnabled} />
               </div>
@@ -644,7 +644,7 @@ function PlanCreateDialog({
           <DialogDescription>Fixed-size offering under a product.</DialogDescription>
         </DialogHeader>
         <InlineFormError error={error} />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="col-span-2 space-y-1.5">
             <Label>Product *</Label>
             <Select value={productId} onValueChange={setProductId}>
@@ -681,11 +681,11 @@ function PlanCreateDialog({
           {numField("plan-bw", "Bandwidth (GB/mo)", bandwidthGb, setBandwidthGb)}
           {numField("plan-ipv4", "IPv4 count", ipv4Count, setIpv4Count)}
           {numField("plan-setup", "Setup fee", setupFee, setSetupFee, "any")}
-          <div className="flex items-center justify-between rounded-md border px-3 py-2">
+          <div className="flex min-w-0 items-center justify-between rounded-md border px-3 py-2">
             <Label htmlFor="plan-enabled" className="cursor-pointer">Enabled</Label>
             <Switch id="plan-enabled" checked={enabled} onCheckedChange={setEnabled} />
           </div>
-          <div className="flex items-center justify-between rounded-md border px-3 py-2">
+          <div className="flex min-w-0 items-center justify-between rounded-md border px-3 py-2">
             <Label htmlFor="plan-featured" className="cursor-pointer">Featured</Label>
             <Switch id="plan-featured" checked={featured} onCheckedChange={setFeatured} />
           </div>
@@ -766,7 +766,7 @@ function PlanPricesTab({
       <div className="rounded-lg border p-4">
         <h3 className="mb-3 text-sm font-semibold">Add price to plan</h3>
         <InlineFormError error={error} />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:grid-cols-3">
+        <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-3 md:grid-cols-3">
           <div className="col-span-2 space-y-1.5 md:col-span-3">
             <Label>Plan *</Label>
             <Select value={planId} onValueChange={setPlanId}>
@@ -997,7 +997,7 @@ function RateCreateDialog({
           <DialogDescription>Priced per unit of a resource dimension.</DialogDescription>
         </DialogHeader>
         <InlineFormError error={error} />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="col-span-2 space-y-1.5">
             <Label>Product *</Label>
             <Select value={productId} onValueChange={setProductId}>

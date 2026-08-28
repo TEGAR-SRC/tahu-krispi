@@ -95,7 +95,7 @@ export function ErrorAlert({ title = "Upstream request failed", error }: { title
 
 export function LoadingCards({ count = 3 }: { count?: number }) {
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <div className="grid w-full max-w-full min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-3">
       {Array.from({ length: count }).map((_, index) => (
         <Card key={index}>
           <CardHeader>
@@ -173,7 +173,7 @@ export function JsonMutationDialog({
           <DialogTitle>{title}</DialogTitle>
           {description ? <DialogDescription>{description}</DialogDescription> : null}
         </DialogHeader>
-        <div className="flex flex-col gap-2">
+        <div className="flex w-full max-w-full min-w-0 flex-col gap-2">
           <Label htmlFor={`${op}-json`}>Request JSON</Label>
           <Textarea
             id={`${op}-json`}
@@ -282,7 +282,7 @@ export function EntityCard({
           </CardAction>
         ) : null}
       </CardHeader>
-      {children ? <CardContent className="flex flex-col gap-3">{children}</CardContent> : null}
+      {children ? <CardContent className="flex w-full max-w-full min-w-0 flex-col gap-3">{children}</CardContent> : null}
       {actions ? <CardContent className="flex flex-wrap gap-2">{actions}</CardContent> : null}
     </Card>
   )

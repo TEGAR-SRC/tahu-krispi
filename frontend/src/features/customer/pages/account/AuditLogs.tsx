@@ -89,7 +89,7 @@ export default function MyAuditLogsPage() {
   }, [rows, actionFilter, dateFrom, dateTo])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Audit logs"
         description="Actions recorded inside the active organization (latest 200)."
@@ -105,7 +105,7 @@ export default function MyAuditLogsPage() {
           <CardTitle className="text-base">Filters</CardTitle>
           <CardDescription>Applied locally over the loaded window.</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-3">
+        <CardContent className="grid w-full max-w-full min-w-0 gap-3 sm:grid-cols-3">
           <div className="space-y-1.5">
             <label htmlFor="al-action" className="text-sm font-medium">
               Action contains

@@ -162,8 +162,8 @@ function specFor(kind: DbKind): DokployConsoleSpec {
 export default function DokployDatabaseConsole() {
   const [kind, setKind] = useState<DbKind>("postgres")
   return (
-    <div className="flex flex-col gap-6">
-      <div className="grid max-w-56 gap-1.5">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
+      <div className="grid w-full max-w-full min-w-0 max-w-56 gap-1.5">
         <Label htmlFor="dokploy-db-kind">Database engine</Label>
         <Select value={kind} onValueChange={(value) => setKind(value as DbKind)}>
           <SelectTrigger id="dokploy-db-kind">

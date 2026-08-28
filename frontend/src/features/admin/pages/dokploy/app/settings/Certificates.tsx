@@ -182,7 +182,7 @@ export default function DokploySettingsCertificatesPage() {
   ]
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Certificates"
         description="Custom TLS certificates served by Traefik. Upload a full chain plus its private key."

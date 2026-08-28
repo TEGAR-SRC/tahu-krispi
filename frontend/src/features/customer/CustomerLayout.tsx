@@ -70,7 +70,7 @@ function OrgSwitcher() {
           className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
         >
           <BuildingIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-          <span className="max-w-48 truncate">{label(organization)}</span>
+          <span className="min-w-0 max-w-48 truncate">{label(organization)}</span>
           {organization?.status ? (
             <Badge variant="secondary" className="hidden sm:inline-flex">
               {organization.status}
@@ -125,9 +125,9 @@ function CustomerShell() {
                   <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                     <TerminalIcon className="size-4" aria-hidden="true" />
                   </div>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-medium">Kilat Cloud</span>
-                    <span className="truncate text-xs text-muted-foreground">
+                  <div className="grid w-full max-w-full min-w-0 flex-1 text-left text-sm leading-tight">
+                    <span className="min-w-0 truncate font-medium">Kilat Cloud</span>
+                    <span className="min-w-0 truncate text-xs text-muted-foreground">
                       Customer console
                     </span>
                   </div>
@@ -171,15 +171,15 @@ function CustomerShell() {
                         {initialsFor(email)}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-medium">{email || "Signed in"}</span>
-                      <span className="truncate text-xs text-muted-foreground">Customer</span>
+                    <div className="grid w-full max-w-full min-w-0 flex-1 text-left text-sm leading-tight">
+                      <span className="min-w-0 truncate font-medium">{email || "Signed in"}</span>
+                      <span className="min-w-0 truncate text-xs text-muted-foreground">Customer</span>
                     </div>
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent side="top" align="start" className="min-w-56">
                   <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
+                    <div className="flex min-w-0 flex-col space-y-1">
                       <p className="text-sm font-medium">{email || "Signed in"}</p>
                       <p className="text-xs text-muted-foreground">Customer account</p>
                     </div>

@@ -216,7 +216,7 @@ export default function FinanceOrgWalletPage() {
   ]
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -250,12 +250,12 @@ export default function FinanceOrgWalletPage() {
           </Button>
         </>
       ) : loading && !wallet ? (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2">
           <Skeleton className="h-28 w-full" />
           <Skeleton className="h-28 w-full" />
         </div>
       ) : wallet ? (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2">
           <StatCard
             label="Available balance"
             value={formatMoney(wallet.balance, wallet.currency)}
@@ -279,7 +279,7 @@ export default function FinanceOrgWalletPage() {
             the transaction history below.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid max-w-xl gap-3">
+        <CardContent className="grid w-full max-w-full min-w-0 max-w-xl gap-3">
           <div className="space-y-2">
             <Label htmlFor="orgwallet-direction">Direction</Label>
             <Select
@@ -291,12 +291,12 @@ export default function FinanceOrgWalletPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="credit">
-                  <span className="flex items-center gap-1.5">
+                  <span className="flex min-w-0 items-center gap-1.5">
                     <ArrowUpIcon className="size-3.5" /> Credit (add funds)
                   </span>
                 </SelectItem>
                 <SelectItem value="debit">
-                  <span className="flex items-center gap-1.5">
+                  <span className="flex min-w-0 items-center gap-1.5">
                     <ArrowDownIcon className="size-3.5" /> Debit (remove funds)
                   </span>
                 </SelectItem>

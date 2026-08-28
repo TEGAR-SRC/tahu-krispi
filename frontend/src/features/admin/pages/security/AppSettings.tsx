@@ -58,7 +58,7 @@ export default function AppSettingsPage() {
   }, [keyInput])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="App settings"
         description="Per-key platform configuration values. The API has no listing — look a setting up by key; saving an unknown key creates it."
@@ -161,7 +161,7 @@ function SettingEditor({
             Last updated {formatDateTime(setting.updated_at)}
           </p>
         </div>
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex min-w-0 items-center gap-2 text-sm">
           <Checkbox checked={isSecret} onCheckedChange={(checked) => setIsSecret(checked === true)} />
           Secret value
         </label>

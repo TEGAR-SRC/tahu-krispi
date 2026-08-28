@@ -141,7 +141,7 @@ export default function CatalogPage() {
   }, [])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Catalog & pricing"
         description="Browse what the platform offers and estimate costs before provisioning."
@@ -263,15 +263,15 @@ function PriceCalculator({
     setDims((prev) => ({ ...prev, [code]: value }))
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
+    <div className="grid w-full max-w-full min-w-0 gap-6 lg:grid-cols-[1fr_380px]">
       {/* Inputs */}
       <Card>
         <CardContent className="space-y-4 px-4">
-          <div className="flex items-center gap-2 text-sm font-medium">
+          <div className="flex min-w-0 items-center gap-2 text-sm font-medium">
             <CalculatorIcon className="size-4" /> Configure a workload
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid w-full max-w-full min-w-0 gap-3 sm:grid-cols-3">
             <div className="space-y-1.5">
               <Label>Pricing model</Label>
               <Select value={mode} onValueChange={setMode}>
@@ -353,7 +353,7 @@ function PriceCalculator({
               {planId ? <PlanSpecNote plan={plans.find((p) => p.id === planId)} /> : null}
             </div>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid w-full max-w-full min-w-0 gap-3 sm:grid-cols-2">
               {CUSTOM_DIMENSIONS.map((dim) => (
                 <div key={dim.code} className="space-y-1.5">
                   <Label htmlFor={`dim-${dim.code}`}>{dim.label}</Label>
@@ -380,7 +380,7 @@ function PriceCalculator({
       {/* Estimate */}
       <Card>
         <CardContent className="space-y-4 px-4">
-          <div className="flex items-center justify-between">
+          <div className="flex min-w-0 items-center justify-between">
             <h2 className="font-semibold">Estimate</h2>
             {quoteLoading ? <Loader2Icon className="size-4 animate-spin text-muted-foreground" /> : null}
           </div>
@@ -501,8 +501,8 @@ function PlansTable({
       header: "Plan",
       render: (row) => (
         <div className="min-w-0">
-          <p className="truncate font-medium">{row.name}</p>
-          <p className="truncate font-mono text-xs text-muted-foreground">{row.code}</p>
+          <p className="min-w-0 truncate font-medium">{row.name}</p>
+          <p className="min-w-0 truncate font-mono text-xs text-muted-foreground">{row.code}</p>
         </div>
       ),
     },

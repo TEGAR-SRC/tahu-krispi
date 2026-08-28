@@ -119,7 +119,7 @@ export default function StaffProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-6">
+      <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
         <PageHeader title="My profile" description="Your identity across Kilat Cloud." />
         <Skeleton className="h-64 w-full" />
       </div>
@@ -127,12 +127,12 @@ export default function StaffProfilePage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader title="My profile" description="Your identity across Kilat Cloud." />
 
       <ErrorBanner error={error} />
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+      <div className="grid w-full max-w-full min-w-0 gap-4 lg:grid-cols-[1fr_320px]">
         {/* Identity form */}
         <Card>
           <CardHeader>
@@ -143,7 +143,7 @@ export default function StaffProfilePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="sp-full-name">Full name</Label>
                 <Input
@@ -194,7 +194,7 @@ export default function StaffProfilePage() {
               <p className="text-sm text-destructive">{formError}</p>
             ) : null}
 
-            <div className="grid gap-3 rounded-md border p-3 text-sm sm:grid-cols-3">
+            <div className="grid w-full max-w-full min-w-0 gap-3 rounded-md border p-3 text-sm sm:grid-cols-3">
               <ReadOnlyField label="Email" value={profile?.email} />
               <ReadOnlyField label="Phone" value={profile?.phone} />
               <ReadOnlyField label="Username" value={profile?.username} />
@@ -217,7 +217,7 @@ export default function StaffProfilePage() {
             <CardTitle>Avatar</CardTitle>
             <CardDescription>Shown next to your name across the console.</CardDescription>
           </CardHeader>
-          <CardContent className="flex items-center gap-4">
+          <CardContent className="flex min-w-0 items-center gap-4">
             <Avatar className="size-14 border">
               {avatarUrl ? <AvatarImage src={avatarUrl} alt="Your avatar" /> : null}
               <AvatarFallback>{initials(profile)}</AvatarFallback>
@@ -236,9 +236,9 @@ export default function StaffProfilePage() {
 
 function ReadOnlyField({ label, value }: { label: string; value?: string | null }) {
   return (
-    <div>
+    <div className="min-w-0 overflow-hidden">
       <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="truncate font-medium">{value || "—"}</p>
+      <p className="min-w-0 block max-w-full truncate font-medium [overflow-wrap:anywhere]">{value || "—"}</p>
     </div>
   )
 }

@@ -92,7 +92,7 @@ export default function OrphansPage() {
   }, [resolving, resolutionNote])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Orphan resources"
         description="Provider-side resources no longer referenced by any platform instance."
@@ -105,8 +105,8 @@ export default function OrphansPage() {
             header: "Resource",
             render: (row) => (
               <div className="min-w-0">
-                <p className="truncate font-medium capitalize">{row.resource_type || "—"}</p>
-                <p className="truncate font-mono text-xs text-muted-foreground">
+                <p className="min-w-0 truncate font-medium capitalize">{row.resource_type || "—"}</p>
+                <p className="min-w-0 truncate font-mono text-xs text-muted-foreground">
                   {row.external_resource_id}
                 </p>
               </div>

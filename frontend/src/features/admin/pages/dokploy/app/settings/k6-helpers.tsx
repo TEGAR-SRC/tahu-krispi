@@ -196,7 +196,7 @@ export function FieldRow({
   children: ReactNode
 }) {
   return (
-    <div className="grid gap-1.5">
+    <div className="grid w-full max-w-full min-w-0 gap-1.5">
       <label className="text-sm leading-none font-medium">{label}</label>
       {children}
       {hint ? <p className="text-muted-foreground text-xs">{hint}</p> : null}

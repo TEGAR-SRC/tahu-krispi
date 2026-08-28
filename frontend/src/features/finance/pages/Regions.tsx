@@ -98,12 +98,12 @@ export default function FinanceRegionsPage() {
   ]
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Regions"
         description="Provider regions available for pricing and placement. Read-only view."
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <Input
               value={search}
               onChange={(event) => setSearch(event.target.value)}

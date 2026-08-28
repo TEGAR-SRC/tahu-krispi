@@ -182,7 +182,7 @@ export default function NocDashboardPage() {
   ]
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="NOC Dashboard"
         description="Infrastructure health at a glance."
@@ -193,7 +193,7 @@ export default function NocDashboardPage() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label="Instances"
           value={instanceTotal}
@@ -220,7 +220,7 @@ export default function NocDashboardPage() {
         />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid w-full max-w-full min-w-0 gap-4 xl:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Jobs per hour</CardTitle>
@@ -305,7 +305,7 @@ export default function NocDashboardPage() {
             {stateCounts.length > 0 ? (
               <ul className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs">
                 {stateCounts.map((entry, index) => (
-                  <li key={entry.state} className="flex items-center gap-1.5">
+                  <li key={entry.state} className="flex min-w-0 items-center gap-1.5">
                     <span
                       className="size-2.5 rounded-sm"
                       style={{ background: PIE_COLORS[index % PIE_COLORS.length] }}
@@ -327,7 +327,7 @@ export default function NocDashboardPage() {
       </div>
 
       <section className="space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex min-w-0 items-center justify-between">
           <h2 className="text-lg font-semibold">Provider health</h2>
           <Button asChild variant="ghost" size="sm">
             <Link to="/noc/providers">Manage providers</Link>
@@ -339,7 +339,7 @@ export default function NocDashboardPage() {
             {providersError instanceof Error ? providersError.message : "request failed"}.
           </p>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {loading ? (
               Array.from({ length: 3 }).map((_, index) => (
                 <Skeleton key={index} className="h-24 w-full rounded-lg" />
@@ -353,8 +353,8 @@ export default function NocDashboardPage() {
               >
                 <div className="flex items-start justify-between gap-2 px-4 pt-4">
                   <div className="min-w-0">
-                    <p className="truncate font-medium">{provider.name}</p>
-                    <p className="truncate text-xs text-muted-foreground">{provider.code}</p>
+                    <p className="min-w-0 truncate font-medium">{provider.name}</p>
+                    <p className="min-w-0 truncate text-xs text-muted-foreground">{provider.code}</p>
                   </div>
                   <KindBadge kind={provider.kind} />
                 </div>
@@ -362,11 +362,11 @@ export default function NocDashboardPage() {
                   <StatusBadge status={provider.health_status} />
                   <StatusBadge status={provider.enabled ? "enabled" : "disabled"} />
                   {provider.has_credentials ? (
-                    <span className="flex items-center gap-1">
+                    <span className="flex min-w-0 items-center gap-1">
                       <ShieldCheckIcon className="size-3" /> credentials configured
                     </span>
                   ) : (
-                    <span className="flex items-center gap-1">
+                    <span className="flex min-w-0 items-center gap-1">
                       <LockIcon className="size-3" /> no credentials
                     </span>
                   )}

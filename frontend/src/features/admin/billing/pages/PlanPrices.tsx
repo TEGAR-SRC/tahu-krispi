@@ -195,7 +195,7 @@ export default function PlanPricesPage() {
     : []
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <DetailBreadcrumbs
         trail={[
           { label: "Billing", to: "/admin/billing/summary" },
@@ -236,8 +236,8 @@ export default function PlanPricesPage() {
                 ) : null}
               </CardTitle>
             </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <CardContent className="flex w-full max-w-full min-w-0 flex-col gap-4">
+              <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <DetailField label="Code" value={<span className="font-mono text-xs">{plan.code}</span>} />
                 <DetailField
                   label="Setup fee"
@@ -248,7 +248,7 @@ export default function PlanPricesPage() {
               </div>
 
               {specs.length > 0 ? (
-                <div className="grid grid-cols-2 gap-3 rounded-md border p-3 sm:grid-cols-5">
+                <div className="grid w-full max-w-full min-w-0 grid-cols-2 gap-3 rounded-md border p-3 sm:grid-cols-5">
                   {specs.map(([label, value]) => (
                     <div key={label} className="text-sm">
                       <p className="text-xs text-muted-foreground">{label}</p>
@@ -268,9 +268,9 @@ export default function PlanPricesPage() {
                 insert-only through this API.
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <div className="grid gap-2">
+            <CardContent className="flex w-full max-w-full min-w-0 flex-col gap-4">
+              <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid w-full max-w-full min-w-0 gap-2">
                   <Label htmlFor="price-currency">Currency *</Label>
                   <Input
                     id="price-currency"
@@ -280,7 +280,7 @@ export default function PlanPricesPage() {
                     onChange={(event) => setCurrency(event.target.value)}
                   />
                 </div>
-                <div className="grid gap-2">
+                <div className="grid w-full max-w-full min-w-0 gap-2">
                   <Label htmlFor="price-period">Billing period *</Label>
                   <Select
                     value={billingPeriod}
@@ -300,7 +300,7 @@ export default function PlanPricesPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="grid gap-2">
+                <div className="grid w-full max-w-full min-w-0 gap-2">
                   <Label htmlFor="price-amount">Amount *</Label>
                   <Input
                     id="price-amount"
@@ -311,7 +311,7 @@ export default function PlanPricesPage() {
                     onChange={(event) => setAmount(event.target.value)}
                   />
                 </div>
-                <div className="grid gap-2">
+                <div className="grid w-full max-w-full min-w-0 gap-2">
                   <Label htmlFor="price-minimum">Minimum charge</Label>
                   <Input
                     id="price-minimum"
@@ -322,7 +322,7 @@ export default function PlanPricesPage() {
                     onChange={(event) => setMinimumCharge(event.target.value)}
                   />
                 </div>
-                <div className="grid gap-2">
+                <div className="grid w-full max-w-full min-w-0 gap-2">
                   <Label htmlFor="price-provider-cost">Provider cost</Label>
                   <Input
                     id="price-provider-cost"
@@ -333,7 +333,7 @@ export default function PlanPricesPage() {
                     onChange={(event) => setProviderCost(event.target.value)}
                   />
                 </div>
-                <div className="grid gap-2">
+                <div className="grid w-full max-w-full min-w-0 gap-2">
                   <Label htmlFor="price-region">Region ID</Label>
                   <Input
                     id="price-region"

@@ -79,7 +79,7 @@ interface ReservedIp {
 
 export default function CustomerNetworkPage() {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Network"
         description="VPCs, firewalls, IP lists and reserved addresses for this organization."
@@ -159,8 +159,8 @@ function VpcSection() {
       header: "Name",
       render: (row) => (
         <div className="min-w-0">
-          <p className="truncate font-medium">{row.name}</p>
-          <p className="truncate text-xs text-muted-foreground">{row.description || "—"}</p>
+          <p className="min-w-0 truncate font-medium">{row.name}</p>
+          <p className="min-w-0 truncate text-xs text-muted-foreground">{row.description || "—"}</p>
         </div>
       ),
     },
@@ -393,7 +393,7 @@ function FirewallSection() {
       render: (row) => (
         <Link
           to={`/app/network/firewall/${row.id}`}
-          className="block max-w-72 truncate font-medium underline-offset-2 hover:underline"
+          className="min-w-0 block max-w-72 truncate font-medium underline-offset-2 hover:underline"
         >
           {row.name}
         </Link>
@@ -579,7 +579,7 @@ function IpListSection() {
       render: (row) => (
         <Link
           to={`/app/ip-lists/${row.id}`}
-          className="block max-w-72 truncate font-medium underline-offset-2 hover:underline"
+          className="min-w-0 block max-w-72 truncate font-medium underline-offset-2 hover:underline"
         >
           {row.name}
         </Link>

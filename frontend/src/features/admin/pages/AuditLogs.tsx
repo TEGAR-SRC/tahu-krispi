@@ -114,7 +114,7 @@ export default function AdminAuditLogsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Audit Logs"
         description="Immutable record of every privileged action on the platform."
@@ -192,7 +192,7 @@ export default function AdminAuditLogsPage() {
             render: (row) => (
               <div className="min-w-0">
                 <p>{row.resource_type || "—"}</p>
-                <p className="truncate font-mono text-xs text-muted-foreground">
+                <p className="min-w-0 truncate font-mono text-xs text-muted-foreground">
                   {row.resource_id}
                 </p>
               </div>

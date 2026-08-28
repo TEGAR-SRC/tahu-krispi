@@ -104,7 +104,7 @@ export default function AdminProvidersPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Providers"
         description="Upstream compute providers and their infrastructure."
@@ -127,8 +127,8 @@ export default function AdminProvidersPage() {
             header: "Provider",
             render: (row) => (
               <div className="min-w-0">
-                <p className="truncate font-medium">{row.name}</p>
-                <p className="truncate font-mono text-xs text-muted-foreground">{row.code}</p>
+                <p className="min-w-0 truncate font-medium">{row.name}</p>
+                <p className="min-w-0 truncate font-mono text-xs text-muted-foreground">{row.code}</p>
               </div>
             ),
           },
@@ -366,7 +366,7 @@ function ProviderEditorDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="provider-code">Code</Label>
             <Input
@@ -432,7 +432,7 @@ function ProviderEditorDialog({
               onChange={(event) => setApiKey(event.target.value)}
             />
           </div>
-          <label className="flex items-center gap-2 text-sm sm:col-span-2">
+          <label className="flex min-w-0 items-center gap-2 text-sm sm:col-span-2">
             <Checkbox checked={enabled} onCheckedChange={(checked) => setEnabled(checked === true)} />
             Enabled
           </label>

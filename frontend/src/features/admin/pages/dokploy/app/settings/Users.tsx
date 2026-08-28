@@ -148,8 +148,8 @@ function OperationDialog({ spec, onSuccess }: { spec: OperationSpec; onSuccess?:
           <DialogTitle>{spec.title}</DialogTitle>
           <DialogDescription>{spec.description}</DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-2">
+        <div className="flex w-full max-w-full min-w-0 flex-col gap-3">
+          <div className="flex min-w-0 items-center gap-2">
             <Badge variant="outline">{spec.method ?? "POST"}</Badge>
             <code className="text-muted-foreground text-xs">{spec.op}</code>
           </div>
@@ -241,7 +241,7 @@ function UsersPanel() {
   ]
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Input className="max-w-sm" placeholder="Filter users…" value={filter} onChange={(event) => setFilter(event.target.value)} />
         <Button variant="outline" size="sm" onClick={reload}>Refresh</Button>
@@ -291,7 +291,7 @@ function InvitationsPanel() {
     },
   ]
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-4">
       <div className="flex justify-end"><Button variant="outline" size="sm" onClick={reload}>Refresh</Button></div>
       <SimpleDataTable<InvitationRow>
         columns={columns}
@@ -337,7 +337,7 @@ function RolesPanel() {
     },
   ]
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-4">
       <div className="flex justify-end"><Button variant="outline" size="sm" onClick={reload}>Refresh</Button></div>
       <SimpleDataTable<CustomRoleRow>
         columns={columns}
@@ -353,7 +353,7 @@ function RolesPanel() {
 
 export default function DokploySettingsUsersPage() {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <K6Breadcrumbs current="Users" />
       <PageHeader
         title="Users"
@@ -366,23 +366,23 @@ export default function DokploySettingsUsersPage() {
           Forms below send raw JSON to the upstream v0.30.2 proxy operations; destructive operations require confirmation and surface upstream responses/errors.
         </AlertDescription>
       </Alert>
-      <Tabs defaultValue="users" className="flex flex-col gap-4">
+      <Tabs defaultValue="users" className="flex w-full max-w-full min-w-0 flex-col gap-4">
         <TabsList className="w-fit">
           <TabsTrigger value="users">Members</TabsTrigger>
           <TabsTrigger value="invitations">Invitations</TabsTrigger>
           <TabsTrigger value="roles">Custom Roles</TabsTrigger>
         </TabsList>
-        <TabsContent value="users" className="flex flex-col gap-4">
+        <TabsContent value="users" className="flex w-full max-w-full min-w-0 flex-col gap-4">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2"><UsersIcon className="text-muted-foreground size-5" /> Members</CardTitle>
+              <CardTitle className="flex min-w-0 items-center gap-2"><UsersIcon className="text-muted-foreground size-5" /> Members</CardTitle>
               <CardDescription>Backed by user.all and user.remove.</CardDescription>
             </CardHeader>
             <CardContent className="border-t pt-6"><UsersPanel /></CardContent>
           </Card>
           <OperationsCard title="User and organization operations" description="Create users, invitations, permission assignments and inspect sessions." specs={USER_OPERATIONS} />
         </TabsContent>
-        <TabsContent value="invitations" className="flex flex-col gap-4">
+        <TabsContent value="invitations" className="flex w-full max-w-full min-w-0 flex-col gap-4">
           <Card>
             <CardHeader>
               <CardTitle>Invitations</CardTitle>
@@ -392,7 +392,7 @@ export default function DokploySettingsUsersPage() {
           </Card>
           <OperationsCard title="Invitation operations" description="Invite members through user.sendInvitation or organization.inviteMember." specs={USER_OPERATIONS.filter((spec) => spec.op.includes("Invitation") || spec.op.includes("inviteMember"))} />
         </TabsContent>
-        <TabsContent value="roles" className="flex flex-col gap-4">
+        <TabsContent value="roles" className="flex w-full max-w-full min-w-0 flex-col gap-4">
           <Card>
             <CardHeader>
               <CardTitle>Custom Roles</CardTitle>

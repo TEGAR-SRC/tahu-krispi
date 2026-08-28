@@ -198,7 +198,7 @@ export default function DokploySettingsGitProvidersPage() {
   const [removing, setRemoving] = useState(false)
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Git Providers"
         description="Connected GitHub, GitLab, Gitea and Bitbucket accounts used to deploy applications."
@@ -295,7 +295,7 @@ function SharedProvidersPanel({
       key: "sharedWithOrganization",
       header: "Shared with organization",
       render: (row) => (
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex min-w-0 items-center justify-end gap-2">
           <Switch
             checked={Boolean(row.sharedWithOrganization)}
             disabled={toggling === String(row.gitProviderId)}
@@ -417,7 +417,7 @@ function FamilyPanel({ family }: { family: FamilyConfig }) {
       {list.error ? <ErrorBanner error={list.error} /> : null}
       {list.loading ? (
         <Card>
-          <CardContent className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
+          <CardContent className="flex min-w-0 items-center gap-2 py-8 text-sm text-muted-foreground">
             <Spinner className="size-4" /> Loading {family.label} providers…
           </CardContent>
         </Card>
@@ -436,7 +436,7 @@ function FamilyPanel({ family }: { family: FamilyConfig }) {
           return (
             <Card key={String(row[family.idKey] ?? gp.gitProviderId)}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
+                <CardTitle className="flex min-w-0 items-center gap-2 text-base">
                   <GitBranchIcon className="size-4 text-muted-foreground" />
                   {String(gp.name ?? family.label)}
                   <Badge variant="outline" className="ml-1">
@@ -446,7 +446,7 @@ function FamilyPanel({ family }: { family: FamilyConfig }) {
                     <Badge variant="secondary">shared</Badge>
                   ) : null}
                 </CardTitle>
-                <CardDescription className="flex items-center gap-1">
+                <CardDescription className="flex min-w-0 items-center gap-1">
                   {String(row[`${family.key}Url`] ?? "")}
                   {typeof gp.createdAt === "string" ? <> · created {gp.createdAt.slice(0, 10)}</> : null}
                 </CardDescription>
@@ -586,7 +586,7 @@ function RepoExplorer({ family, row }: { family: FamilyConfig; row: Row }) {
 
           {reposError ? <ErrorBanner error={reposError} /> : null}
           {!repos && reposLoading ? (
-            <p className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+            <p className="flex min-w-0 items-center gap-2 py-4 text-sm text-muted-foreground">
               <Spinner className="size-4" /> Loading repositories…
             </p>
           ) : null}
@@ -609,7 +609,7 @@ function RepoExplorer({ family, row }: { family: FamilyConfig; row: Row }) {
                         void loadBranches(owner, name)
                       }}
                     >
-                      <span className="truncate">{fullName || name}</span>
+                      <span className="min-w-0 truncate">{fullName || name}</span>
                       {"private" in repo && repo.private ? (
                         <Badge variant="secondary">private</Badge>
                       ) : null}
@@ -622,7 +622,7 @@ function RepoExplorer({ family, row }: { family: FamilyConfig; row: Row }) {
 
           {selectedRepo ? (
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
+              <div className="flex min-w-0 items-center justify-between">
                 <p className="text-sm font-medium">
                   {selectedRepo.owner}/{selectedRepo.repo}
                 </p>
@@ -632,7 +632,7 @@ function RepoExplorer({ family, row }: { family: FamilyConfig; row: Row }) {
               </div>
               {branchesError ? <ErrorBanner error={branchesError} /> : null}
               {branchesLoading ? (
-                <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                <p className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
                   <Spinner className="size-4" /> Loading branches…
                 </p>
               ) : branches && branches.length === 0 ? (
@@ -643,7 +643,7 @@ function RepoExplorer({ family, row }: { family: FamilyConfig; row: Row }) {
                   {branches.slice(0, 50).map((branch) => (
                     <li
                       key={String(branch.name ?? ((branch.commit as Row | undefined)?.sha ?? ""))}
-                      className="flex items-center gap-2 px-3 py-2 text-sm"
+                      className="flex min-w-0 items-center gap-2 px-3 py-2 text-sm"
                     >
                       <RefreshCwIcon className="size-3 rotate-45 text-muted-foreground" />
                       {String(branch.name ?? "?")}

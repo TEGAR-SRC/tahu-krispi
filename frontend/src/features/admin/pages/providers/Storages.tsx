@@ -122,9 +122,9 @@ export default function ProviderStoragesPage() {
             header: "Storage",
             render: (row) => (
               <div className="min-w-0">
-                <p className="truncate font-mono text-sm font-medium">{row.storage || "—"}</p>
+                <p className="min-w-0 truncate font-mono text-sm font-medium">{row.storage || "—"}</p>
                 {row.path ? (
-                  <p className="truncate font-mono text-xs text-muted-foreground">{row.path}</p>
+                  <p className="min-w-0 truncate font-mono text-xs text-muted-foreground">{row.path}</p>
                 ) : null}
               </div>
             ),
@@ -271,8 +271,8 @@ function CreateStorageDialog({ open, busy, onOpenChange, onSubmit }: StorageDial
             and type are mandatory, everything else goes in the JSON field.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid w-full max-w-full min-w-0 gap-3">
+          <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="cs-name">Storage id *</Label>
               <Input
@@ -431,7 +431,7 @@ function ContentBrowser({
             </CardTitle>
             <CardDescription>Volumes reported by the provider for one node.</CardDescription>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <Select value={effectiveNode} onValueChange={setNode}>
               <SelectTrigger className="w-44">
                 <SelectValue placeholder={nodesLoading ? "Loading nodes…" : "Pick a node"} />
@@ -596,8 +596,8 @@ function FileRestoreBrowser({
           ) : (
             <ul className="max-h-60 space-y-1 overflow-auto">
               {entries.map((entry, index) => (
-                <li key={`${entry.filepath ?? index}`} className="flex items-center justify-between gap-2 text-xs">
-                  <span className="truncate font-mono">
+                <li key={`${entry.filepath ?? index}`} className="flex min-w-0 items-center justify-between gap-2 text-xs">
+                  <span className="min-w-0 truncate font-mono">
                     {entry.type === "d" ? "📁 " : entry.type === "l" ? "🔗 " : "📄 "}
                     {entry.filepath || entry.text}
                   </span>

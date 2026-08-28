@@ -220,7 +220,7 @@ export default function DokploySettingsDestinationsPage() {
   ]
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="S3 Destinations"
         description="Backup storage targets — AWS S3, Cloudflare R2, Wasabi, DigitalOcean Spaces and any S3-compatible endpoint."

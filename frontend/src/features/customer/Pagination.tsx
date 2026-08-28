@@ -17,11 +17,11 @@ export function Pagination({ page, perPage, total, onPageChange }: PaginationPro
   const pageCount = Math.ceil(total / perPage)
 
   return (
-    <div className="flex items-center justify-between gap-4">
+    <div className="flex min-w-0 items-center justify-between gap-4">
       <p className="text-sm text-muted-foreground">
         Page {page} of {pageCount} · {total} total
       </p>
-      <div className="flex items-center gap-2">
+      <div className="flex min-w-0 items-center gap-2">
         <Button
           variant="outline"
           size="sm"

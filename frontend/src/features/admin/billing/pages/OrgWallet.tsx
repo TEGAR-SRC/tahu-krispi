@@ -205,7 +205,7 @@ export default function BillingOrgWalletPage() {
   const currency = wallet.data?.currency
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <DetailBreadcrumbs
         trail={[
           { label: "Billing", to: "/admin/billing/summary" },
@@ -230,14 +230,14 @@ export default function BillingOrgWalletPage() {
 
       {wallet.error ? <ErrorBanner error={wallet.error} /> : null}
       {!wallet.error && wallet.loading ? (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2">
           <Skeleton className="h-24 rounded-xl" />
           <Skeleton className="h-24 rounded-xl" />
         </div>
       ) : null}
 
       {wallet.data ? (
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-3">
           <StatCard
             label="Balance"
             value={formatMoney(wallet.data.balance, wallet.data.currency)}
@@ -260,9 +260,9 @@ export default function BillingOrgWalletPage() {
             description and lands immediately on the ledger below.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <div className="grid gap-4 sm:grid-cols-[200px_200px_1fr]">
-            <div className="grid gap-2">
+        <CardContent className="flex w-full max-w-full min-w-0 flex-col gap-4">
+          <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-[200px_200px_1fr]">
+            <div className="grid w-full max-w-full min-w-0 gap-2">
               <Label htmlFor="adjust-direction">Direction</Label>
               <Select
                 value={direction}
@@ -275,19 +275,19 @@ export default function BillingOrgWalletPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="credit">
-                    <span className="flex items-center gap-2">
+                    <span className="flex min-w-0 items-center gap-2">
                       <ArrowUpIcon className="size-3.5" /> Credit (add)
                     </span>
                   </SelectItem>
                   <SelectItem value="debit">
-                    <span className="flex items-center gap-2">
+                    <span className="flex min-w-0 items-center gap-2">
                       <ArrowDownIcon className="size-3.5" /> Debit (remove)
                     </span>
                   </SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid gap-2">
+            <div className="grid w-full max-w-full min-w-0 gap-2">
               <Label htmlFor="adjust-amount">Amount *</Label>
               <Input
                 id="adjust-amount"
@@ -299,7 +299,7 @@ export default function BillingOrgWalletPage() {
                 onChange={(event) => setAmount(event.target.value)}
               />
             </div>
-            <div className="grid gap-2">
+            <div className="grid w-full max-w-full min-w-0 gap-2">
               <Label htmlFor="adjust-description">Description *</Label>
               <Input
                 id="adjust-description"
@@ -322,7 +322,7 @@ export default function BillingOrgWalletPage() {
         <CardHeader>
           <CardTitle>Transactions</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col gap-4">
+        <CardContent className="flex w-full max-w-full min-w-0 flex-col gap-4">
           {txnsError ? <ErrorBanner error={txnsError} /> : null}
           {!txnsError ? (
             <>

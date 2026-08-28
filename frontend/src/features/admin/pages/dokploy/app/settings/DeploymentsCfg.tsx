@@ -88,7 +88,7 @@ export default function DokploySettingsDeploymentsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Builds concurrency"
         description="Tune how many builds Dokploy may execute concurrently on the local server and on each remote build server."
@@ -100,7 +100,7 @@ export default function DokploySettingsDeploymentsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
+          <CardTitle className="flex min-w-0 items-center gap-2 text-base">
             <GaugeIcon className="size-4 text-muted-foreground" />
             Local Dokploy server
           </CardTitle>
@@ -144,7 +144,7 @@ export default function DokploySettingsDeploymentsPage() {
               return (
                 <div key={serverId} className="flex items-end gap-3 rounded-md border p-3">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{String(server.name ?? serverId)}</p>
+                    <p className="min-w-0 truncate text-sm font-medium">{String(server.name ?? serverId)}</p>
                     <p className="text-xs text-muted-foreground">{String(server.serverType ?? "deploy")}</p>
                   </div>
                   <div className="w-36 space-y-2">

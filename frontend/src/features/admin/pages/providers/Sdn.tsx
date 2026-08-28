@@ -29,7 +29,7 @@ export default function ProviderSdnPage() {
       title="SDN"
       description="Software-defined networking: zones and virtual networks as configured on the cluster."
     >
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid w-full max-w-full min-w-0 gap-4 xl:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Zones</CardTitle>

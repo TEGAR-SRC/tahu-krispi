@@ -290,7 +290,7 @@ export default function DokploySettingsServersPage() {
       key: "name",
       header: "Name",
       render: (row) => (
-        <div className="flex flex-col">
+        <div className="flex min-w-0 flex-col">
           <span className="font-medium">{String(row.name ?? "?")}</span>
           <span className="text-muted-foreground text-xs">{String(row.description ?? "")}</span>
         </div>
@@ -363,7 +363,7 @@ export default function DokploySettingsServersPage() {
   ]
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Remote Servers"
         description="Additional machines Dokploy deploys to. Register via SSH, validate connectivity, then let the panel provision them."
@@ -376,7 +376,7 @@ export default function DokploySettingsServersPage() {
       />
 
       {/* Diagnostics strip */}
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid w-full max-w-full min-w-0 gap-3 sm:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Public IP (server.publicIp)</CardDescription>
@@ -394,7 +394,7 @@ export default function DokploySettingsServersPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Global build concurrency</CardDescription>
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle className="flex min-w-0 items-center gap-2 text-base">
               <GaugeIcon className="size-4 text-muted-foreground" />
               {webSettings.loading ? "…" : String(webSettings.data?.buildsConcurrency ?? "?")}
             </CardTitle>
@@ -445,7 +445,7 @@ export default function DokploySettingsServersPage() {
             <DialogDescription>Raw output of server.security for the selected machine.</DialogDescription>
           </DialogHeader>
           {securityLoading ? (
-            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+            <p className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
               <Spinner className="size-4" /> Auditing…
             </p>
           ) : (
@@ -481,7 +481,7 @@ export default function DokploySettingsServersPage() {
                 />
                 {!draft.name.trim() ? <FieldErrorText>Name is required</FieldErrorText> : null}
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="sm:col-span-2 space-y-2">
                   <Label htmlFor="srv-ip">IP address *</Label>
                   <Input
@@ -519,7 +519,7 @@ export default function DokploySettingsServersPage() {
                   onChange={(event) => setDraft({ ...draft, description: event.target.value })}
                 />
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label htmlFor="srv-type">Server type</Label>
                   <select
@@ -552,7 +552,7 @@ export default function DokploySettingsServersPage() {
                 </div>
               </div>
               {draft.serverType === "deploy" ? (
-                <div className="flex items-center justify-between rounded-md border p-3">
+                <div className="flex min-w-0 items-center justify-between rounded-md border p-3">
                   <Label htmlFor="srv-cleanup" className="text-sm">
                     Nightly Docker cleanup
                   </Label>
@@ -608,10 +608,10 @@ export default function DokploySettingsServersPage() {
       </AlertDialog>
 
       {/* Monitoring + GPU */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid w-full max-w-full min-w-0 gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle className="flex min-w-0 items-center gap-2 text-base">
               <GaugeIcon className="size-4 text-muted-foreground" />
               Monitoring setup
             </CardTitle>
@@ -662,7 +662,7 @@ export default function DokploySettingsServersPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle className="flex min-w-0 items-center gap-2 text-base">
               <CpuIcon className="size-4 text-muted-foreground" />
               GPU support
             </CardTitle>
@@ -686,7 +686,7 @@ export default function DokploySettingsServersPage() {
       {/* Docker cleanup actions */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
+          <CardTitle className="flex min-w-0 items-center gap-2 text-base">
             <Trash2Icon className="size-4 text-muted-foreground" />
             Docker cleanup actions
           </CardTitle>
@@ -760,7 +760,7 @@ export default function DokploySettingsServersPage() {
       </AlertDialog>
 
       {/* Build servers + SSH-key servers */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid w-full max-w-full min-w-0 gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Build servers</CardTitle>
@@ -772,7 +772,7 @@ export default function DokploySettingsServersPage() {
                 <li className="text-muted-foreground">No dedicated build servers.</li>
               ) : (
                 (buildServersList.data ?? []).map((row, index) => (
-                  <li key={String(row.serverId ?? index)} className="flex items-center justify-between">
+                  <li key={String(row.serverId ?? index)} className="flex min-w-0 items-center justify-between">
                     <span>{String(row.name ?? row.serverId)}</span>
                     <Badge variant="secondary">build</Badge>
                   </li>
@@ -806,7 +806,7 @@ export default function DokploySettingsServersPage() {
       </div>
 
       {/* Create / edit dialog footer hint about terminal access */}
-      <p className="flex items-center gap-2 text-xs text-muted-foreground">
+      <p className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
         <TerminalIcon className="size-3" />
         Setup provisioning (server.setup) intentionally requires manual confirmation per server and is
         available from each application's build settings after validation succeeds.
