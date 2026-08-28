@@ -176,7 +176,7 @@ export default function AdminProvidersPage() {
           {
             key: "actions",
             header: "",
-            className: "w-[330px] text-right",
+            className: "w-full sm:w-[330px] text-right",
             render: (row) => (
               <div className="flex justify-end gap-2">
                 <Button
@@ -260,7 +260,7 @@ export default function AdminProvidersPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              className="bg-destructive text-primary-foreground hover:bg-destructive/90"
               onClick={() => {
                 const target = deleteTarget
                 setDeleteTarget(null)

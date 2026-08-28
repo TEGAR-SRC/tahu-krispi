@@ -282,7 +282,7 @@ export default function AdminUsersPage() {
                 <SheetDescription>User account management</SheetDescription>
               </SheetHeader>
               <div className="flex flex-col gap-6 pb-8">
-                <dl className="grid grid-cols-2 gap-4">
+                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <DetailField label="Full name">{selected.full_name || "—"}</DetailField>
                   <DetailField label="Username">{selected.username || "—"}</DetailField>
                   <DetailField label="Status">

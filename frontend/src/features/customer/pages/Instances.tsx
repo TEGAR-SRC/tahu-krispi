@@ -368,7 +368,7 @@ export default function CustomerInstancesPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              className="bg-destructive text-primary-foreground hover:bg-destructive/90"
               disabled={busy || deleteTyped !== deleteTarget?.name}
               onClick={(event) => {
                 event.preventDefault()

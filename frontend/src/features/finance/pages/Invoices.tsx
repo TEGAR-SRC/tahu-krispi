@@ -114,8 +114,17 @@ export default function FinanceInvoicesPage() {
   }, [page, status, appliedSearch])
 
   useEffect(() => {
-    const t = setTimeout(() => void loadList(), 0)
-    return () => clearTimeout(t)
+    let cancelled = false
+    const t = setTimeout(() => {
+      void (async () => {
+        try {
+          await loadList()
+        } catch {
+          if (!cancelled) setError(null)
+        }
+      })()
+    }, 0)
+    return () => { cancelled = true; clearTimeout(t) }
   }, [loadList])
 
   const openDetail = useCallback(async (invoiceId: string) => {

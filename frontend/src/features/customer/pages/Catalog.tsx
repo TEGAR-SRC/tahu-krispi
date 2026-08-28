@@ -307,7 +307,6 @@ function PriceCalculator({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="IDR">IDR</SelectItem>
-                  <SelectItem value="USD">USD</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -395,7 +394,7 @@ function PriceCalculator({
           {quote ? (
             <div className="space-y-4">
               <div>
-                <p className={`text-3xl font-semibold tabular-nums ${quoteLoading ? "opacity-60 transition-opacity" : ""}`}>
+                <p className={`text-2xl font-semibold tabular-nums sm:text-3xl ${quoteLoading ? "opacity-60 transition-opacity" : ""}`}>
                   {formatMoney(quote.total, quote.currency)}
                 </p>
                 <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">

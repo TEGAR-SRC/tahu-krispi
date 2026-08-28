@@ -248,7 +248,7 @@ export default function BillingPaymentsPage() {
 
           {detail ? (
             <div className="flex flex-col gap-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <DetailField label="Status" value={<StatusBadge status={detail.status} />} />
                 <DetailField label="Amount" value={formatMoney(detail.amount, detail.currency)} />
                 <DetailField label="Fee" value={formatMoney(detail.fee, detail.currency)} />

@@ -309,7 +309,7 @@ export default function BillingCustomRatesPage() {
           </DialogHeader>
 
           <div className="grid gap-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="grid gap-2">
                 <Label>Product *</Label>
                 <Select
@@ -352,7 +352,7 @@ export default function BillingCustomRatesPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="grid gap-2">
                 <Label htmlFor="rate-currency">Currency</Label>
                 <Input
@@ -389,7 +389,7 @@ export default function BillingCustomRatesPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="grid gap-2">
                 <Label htmlFor="rate-unit-price">Unit price *</Label>
                 <Input
@@ -421,7 +421,7 @@ export default function BillingCustomRatesPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="grid gap-2">
                 <Label htmlFor="rate-min">Min qty</Label>
                 <Input

@@ -65,8 +65,17 @@ export default function FinanceAffiliateSettingsPage() {
   }, [])
 
   useEffect(() => {
-    const t = setTimeout(() => void load(), 0)
-    return () => clearTimeout(t)
+    let cancelled = false
+    const t = setTimeout(() => {
+      void (async () => {
+        try {
+          await load()
+        } catch {
+          if (!cancelled) setLoading(false)
+        }
+      })()
+    }, 0)
+    return () => { cancelled = true; clearTimeout(t) }
   }, [load])
 
   const save = useCallback(async () => {
@@ -150,7 +159,7 @@ export default function FinanceAffiliateSettingsPage() {
             </>
           ) : (
             <div className="grid max-w-xl gap-3">
-              <div className="grid grid-cols-3 items-end gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 items-end gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="aff-commission">Commission % *</Label>
                   <Input

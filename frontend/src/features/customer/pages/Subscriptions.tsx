@@ -110,8 +110,17 @@ export default function SubscriptionsPage() {
   }, [orgId, page])
 
   useEffect(() => {
-    const t = setTimeout(() => void load(), 0)
-    return () => clearTimeout(t)
+    let cancelled = false
+    const t = setTimeout(() => {
+      void (async () => {
+        try {
+          await load()
+        } catch {
+          if (!cancelled) setError(null)
+        }
+      })()
+    }, 0)
+    return () => { cancelled = true; clearTimeout(t) }
   }, [load])
 
   const toggleRow = async (subscription: Subscription) => {
@@ -181,7 +190,7 @@ export default function SubscriptionsPage() {
           ))}
         </div>
       ) : error ? null : subscriptions.length === 0 ? (
-        <div className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">
+        <div className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground sm:p-6 lg:p-8">
           No active subscriptions yet.
         </div>
       ) : (
@@ -248,7 +257,7 @@ export default function SubscriptionsPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Keep subscription</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              className="bg-destructive text-primary-foreground hover:bg-destructive/90"
               disabled={cancelling}
               onClick={(event) => {
                 event.preventDefault()

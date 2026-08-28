@@ -463,7 +463,7 @@ function Conversation({
           <AlertDialogFooter>
             <AlertDialogCancel>Keep open</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              className="bg-destructive text-primary-foreground hover:bg-destructive/90"
               onClick={() => void closeTicket()}
             >
               Close ticket

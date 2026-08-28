@@ -73,7 +73,7 @@ function PaginationPrevious({
       className={cn("pl-1.5!", className)}
       {...props}
     >
-      <ChevronLeftIcon data-icon="inline-start" />
+      <ChevronLeftIcon data-icon="inline-start" aria-hidden="true" />
       <span className="hidden sm:block">{text}</span>
     </PaginationLink>
   )
@@ -92,7 +92,7 @@ function PaginationNext({
       {...props}
     >
       <span className="hidden sm:block">{text}</span>
-      <ChevronRightIcon data-icon="inline-end" />
+      <ChevronRightIcon data-icon="inline-end" aria-hidden="true" />
     </PaginationLink>
   )
 }
@@ -112,6 +112,7 @@ function PaginationEllipsis({
       {...props}
     >
       <MoreHorizontalIcon
+        aria-hidden="true"
       />
       <span className="sr-only">More pages</span>
     </span>

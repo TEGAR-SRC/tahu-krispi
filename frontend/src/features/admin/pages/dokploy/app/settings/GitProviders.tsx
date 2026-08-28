@@ -262,7 +262,7 @@ export default function DokploySettingsGitProvidersPage() {
                       allProviders.reload()
                     },
                   },
-                ).then(() => setRemoving(false))
+                ).then(() => setRemoving(false)).catch(() => {})
               }}
             >
               {removing ? <Spinner className="size-4" /> : null}
@@ -311,7 +311,7 @@ function SharedProvidersPanel({
                   success: checked ? "Provider shared" : "Sharing disabled",
                   onDone: () => providers.reload(),
                 },
-              ).then(() => setToggling(null))
+              ).then(() => setToggling(null)).catch(() => {})
             }}
           />
         </div>

@@ -282,7 +282,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setClaims(null)
     setRole(null)
     setProfile(null)
-    setToken(null)
     clearPersistedSession()
   }, [])
 

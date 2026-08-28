@@ -576,7 +576,7 @@ export default function BillingProductsPlansPage() {
           </DialogHeader>
 
           <div className="grid gap-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="grid gap-2">
                 <Label htmlFor="product-code">Code *</Label>
                 <Input
@@ -600,7 +600,7 @@ export default function BillingProductsPlansPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="grid gap-2">
                 <Label htmlFor="product-kind">Service kind</Label>
                 <Select
@@ -717,7 +717,7 @@ export default function BillingProductsPlansPage() {
           </DialogHeader>
 
           <div className="grid gap-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="grid gap-2">
                 <Label>Product *</Label>
                 <Select
@@ -768,7 +768,7 @@ export default function BillingProductsPlansPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="grid gap-2">
                 <Label htmlFor="plan-code">Code *</Label>
                 <Input
@@ -808,7 +808,7 @@ export default function BillingProductsPlansPage() {
 
             <fieldset className="rounded-md border p-3">
               <legend className="px-1 text-sm font-medium">Specs (optional)</legend>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {(
                   [
                     ["vcpu", "vCPU"],
@@ -843,7 +843,7 @@ export default function BillingProductsPlansPage() {
               </div>
             </fieldset>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="grid gap-2">
                 <Label htmlFor="plan-setup-fee">Setup fee</Label>
                 <Input
@@ -923,7 +923,7 @@ export default function BillingProductsPlansPage() {
           </DialogHeader>
 
           <div className="grid gap-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="grid gap-2">
                 <Label htmlFor="price-currency">Currency *</Label>
                 <Input
@@ -960,7 +960,7 @@ export default function BillingProductsPlansPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="grid gap-2">
                 <Label htmlFor="price-amount">Amount *</Label>
                 <Input
@@ -992,7 +992,7 @@ export default function BillingProductsPlansPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="grid gap-2">
                 <Label htmlFor="price-provider-cost">Provider cost</Label>
                 <Input

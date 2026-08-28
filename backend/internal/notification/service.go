@@ -5,6 +5,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -29,6 +30,11 @@ FROM notification_preferences WHERE user_id=$1`, userID)
 	var p Preferences
 	err := row.Scan(&p.EmailEnabled, &p.WebEnabled, &p.SmsEnabled, &p.BillingEvents,
 		&p.SecurityEvents, &p.ProductEvents, &p.MarketingEvents)
+	if err == pgx.ErrNoRows {
+		// No preferences row yet — return sane defaults instead of an error.
+		return &Preferences{EmailEnabled: true, WebEnabled: true, SmsEnabled: true,
+			BillingEvents: true, SecurityEvents: true, ProductEvents: true, MarketingEvents: false}, nil
+	}
 	if err != nil {
 		return nil, err
 	}

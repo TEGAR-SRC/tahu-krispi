@@ -31,7 +31,9 @@ type Service struct {
 // NewService accepts the provider abstraction so future providers (Proxmox,
 // XCP-ng, VMware) plug in without touching this business layer.
 func NewService(db *pgxpool.Pool, prov provider.ComputeProvider, ps *pricing.Service) *Service {
-	return &Service{db: db, provider: prov, pricing: ps, baseURL: "https://dl.kilat-cloud.com"}
+	// baseURL is intentionally empty here; runtime entrypoints pass the real
+	// download host via NewServiceWithBaseURL (cfg.DownloadBaseURL).
+	return &Service{db: db, provider: prov, pricing: ps, baseURL: ""}
 }
 
 // ProviderRecord resolves the enabled Onidel provider row from DB.

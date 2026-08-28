@@ -143,7 +143,7 @@ export default function OrganizationDetailPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              className="bg-destructive text-primary-foreground hover:bg-destructive/90"
               onClick={() => {
                 setSuspendOpen(false)
                 void suspendOrg()

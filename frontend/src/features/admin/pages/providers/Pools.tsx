@@ -355,7 +355,7 @@ function MembersDialog({
         <MemberList heading="Guests in this pool" rows={guests} />
         <MemberList heading="Storages in this pool" rows={poolStorages} />
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label htmlFor="pool-vms">VMIDs</Label>
             <Input

@@ -201,7 +201,7 @@ export default function NocTicketsPage() {
           ))}
         </div>
       ) : rows.length === 0 ? (
-        <p className="rounded-md border p-6 text-center text-sm text-muted-foreground">
+        <p className="rounded-md border p-4 text-center text-sm text-muted-foreground sm:p-6">
           No tickets match the current filter.
         </p>
       ) : (

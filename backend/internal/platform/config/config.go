@@ -2,6 +2,7 @@
 package config
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"strconv"
@@ -63,6 +64,7 @@ type Config struct {
 }
 
 func Load() (*Config, error) {
+	loadDotEnv(".env")
 	cfg := &Config{
 		AppEnv:                   getEnv("APP_ENV", "development"),
 		AppPort:                  getEnvInt("APP_PORT", 8080),
@@ -160,4 +162,38 @@ func getEnvDuration(key string, def time.Duration) time.Duration {
 		return def
 	}
 	return d
+}
+
+// loadDotEnv reads a .env file from path and exports its KEY=VALUE entries
+// into the process environment. Variables already present in the environment
+// take precedence (real env wins over the file). Lines starting with '#' and
+// blank lines are ignored; surrounding whitespace and optional double quotes
+// are stripped from values.
+func loadDotEnv(path string) {
+	f, err := os.Open(path)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		eq := strings.Index(line, "=")
+		if eq <= 0 {
+			continue
+		}
+		key := strings.TrimSpace(line[:eq])
+		val := strings.TrimSpace(line[eq+1:])
+		val = strings.Trim(val, `"`)
+		if key == "" {
+			continue
+		}
+		if os.Getenv(key) == "" {
+			os.Setenv(key, val)
+		}
+	}
 }

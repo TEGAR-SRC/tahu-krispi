@@ -127,7 +127,7 @@ export default function BillingWalletsPage() {
         if (cancelled) return
         setWallets(new Map(pairs))
         setWalletsLoading(false)
-      })
+      }).catch(() => {})
     })
     return () => {
       cancelled = true

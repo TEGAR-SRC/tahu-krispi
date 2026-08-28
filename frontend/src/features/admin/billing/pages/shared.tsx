@@ -19,7 +19,7 @@ export function formatMoney(
   if (amount === null || amount === undefined || Number.isNaN(amount)) return "—"
   const code = (currency ?? "IDR").trim().toUpperCase() || "IDR"
   try {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("id-ID", {
       style: "currency",
       currency: code,
       maximumFractionDigits: code === "IDR" ? 0 : 2,

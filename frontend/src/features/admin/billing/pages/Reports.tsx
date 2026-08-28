@@ -162,7 +162,7 @@ export default function BillingReportsPage() {
         PERIODS.map((days) =>
           apiGet<SummaryData>("/admin/finance/summary", { query: { days } }).then(
             (envelope) => ({ days, data: envelope.data }),
-          ),
+          ).catch(() => ({ days, data: null } as SummaryData)),
         ),
       )
         .then((results) => {

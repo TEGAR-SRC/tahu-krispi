@@ -122,8 +122,17 @@ export default function FinanceSummaryPage() {
   }, [])
 
   useEffect(() => {
-    const t = setTimeout(() => void load(days), 0)
-    return () => clearTimeout(t)
+    let cancelled = false
+    const t = setTimeout(() => {
+      void (async () => {
+        try {
+          await load(days)
+        } catch {
+          if (!cancelled) setError(null)
+        }
+      })()
+    }, 0)
+    return () => { cancelled = true; clearTimeout(t) }
   }, [load, days])
 
   const trend = useMemo(

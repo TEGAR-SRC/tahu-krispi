@@ -257,7 +257,7 @@ export default function BlockedNetworksPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              className="bg-destructive text-primary-foreground hover:bg-destructive/90"
               onClick={() => void deleteNetwork()}
             >
               Unblock network

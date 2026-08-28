@@ -481,8 +481,8 @@ export default function DokploySettingsServersPage() {
                 />
                 {!draft.name.trim() ? <FieldErrorText>Name is required</FieldErrorText> : null}
               </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="col-span-2 space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-2 space-y-2">
                   <Label htmlFor="srv-ip">IP address *</Label>
                   <Input
                     id="srv-ip"
@@ -519,7 +519,7 @@ export default function DokploySettingsServersPage() {
                   onChange={(event) => setDraft({ ...draft, description: event.target.value })}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label htmlFor="srv-type">Server type</Label>
                   <select
@@ -593,7 +593,7 @@ export default function DokploySettingsServersPage() {
           <AlertDialogFooter>
             <AlertDialogCancel disabled={removing}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              className="bg-destructive text-primary-foreground hover:bg-destructive/90"
               disabled={removing}
               onClick={(event) => {
                 event.preventDefault()
@@ -722,7 +722,7 @@ export default function DokploySettingsServersPage() {
           <AlertDialogFooter>
             <AlertDialogCancel disabled={cleanupRunning}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              className="bg-destructive text-primary-foreground hover:bg-destructive/90"
               disabled={cleanupRunning}
               onClick={(event) => {
                 event.preventDefault()

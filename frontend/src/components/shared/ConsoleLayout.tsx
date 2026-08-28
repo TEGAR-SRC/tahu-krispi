@@ -91,7 +91,7 @@ export function ConsoleLayout({ brand, brandTagline, navSections }: ConsoleLayou
               <SidebarMenuButton size="lg" asChild>
                 <Link to="/">
                   <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                    <TerminalIcon className="size-4" />
+                    <TerminalIcon className="size-4" aria-hidden="true" />
                   </div>
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-medium">{brand}</span>
@@ -120,7 +120,7 @@ export function ConsoleLayout({ brand, brandTagline, navSections }: ConsoleLayou
                       <SidebarMenuItem key={item.url}>
                         <SidebarMenuButton isActive={isActive(item.url)} asChild>
                           <Link to={item.url}>
-                            {Icon ? <Icon /> : null}
+                            {Icon ? <Icon aria-hidden="true" /> : null}
                             <span>{item.title}</span>
                           </Link>
                         </SidebarMenuButton>
@@ -162,11 +162,11 @@ export function ConsoleLayout({ brand, brandTagline, navSections }: ConsoleLayou
                       navigate(`${homePathFor(role)}/account/profile`)
                     }
                   >
-                    <SettingsIcon />
+                    <SettingsIcon aria-hidden="true" />
                     Account settings
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleLogout}>
-                    <LogOutIcon />
+                    <LogOutIcon aria-hidden="true" />
                     Log out
                   </DropdownMenuItem>
                 </DropdownMenuContent>

@@ -42,6 +42,31 @@ export function setToken(token: string | null): void {
   }
 }
 
+/**
+ * Paths that legitimately answer 401 on bad credentials / expired links and
+ * must NOT trigger the global "session expired" redirect.
+ */
+const AUTH_ONLY_PATHS = ["/auth/", "/contact-change/confirm"]
+
+/**
+ * Clears the persisted session and bounces the user to the login page. Called
+ * on any 401 from a request that carried a token (i.e. the session expired).
+ */
+function handleSessionExpired(): void {
+  try {
+    localStorage.removeItem(TOKEN_KEY)
+    localStorage.removeItem("kilat_role")
+    localStorage.removeItem("kilat_profile")
+    localStorage.removeItem("kilat_org_id")
+  } catch {
+    // ignore storage errors
+  }
+  if (window.location.pathname !== "/login") {
+    const target = `${window.location.pathname}${window.location.search}`
+    window.location.assign(`/login?next=${encodeURIComponent(target)}`)
+  }
+}
+
 /** Headers carrying the bearer token when one is stored. */
 export function authHeaders(): Record<string, string> {
   const token = getToken()
@@ -97,6 +122,7 @@ async function request<T>(
   opts?: ApiOptions,
 ): Promise<ApiEnvelope<T>> {
   const url = buildUrl(path, opts?.query)
+  const hadToken = Boolean(getToken())
   const headers: Record<string, string> = {
     Accept: "application/json",
     ...authHeaders(),
@@ -128,6 +154,11 @@ async function request<T>(
   }
 
   if (!response.ok) {
+    // A 401 on a token-bearing request means the session expired — clear it
+    // and bounce to /login (unless it's an auth-only path, e.g. bad login).
+    if (response.status === 401 && hadToken && !AUTH_ONLY_PATHS.some((p) => path.startsWith(p))) {
+      handleSessionExpired()
+    }
     const err =
       typeof payload === "object" && payload !== null && "error" in payload
         ? (payload as { error: ErrorBody }).error

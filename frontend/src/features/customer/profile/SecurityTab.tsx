@@ -247,7 +247,7 @@ function MfaCard() {
         {recoveryCodes.length > 0 ? (
           <div className="rounded-md border p-3">
             <p className="mb-2 text-xs font-medium">Save these now — they are shown only once:</p>
-            <div className="grid grid-cols-2 gap-1 font-mono text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 font-mono text-xs">
               {recoveryCodes.map((item) => (
                 <span key={item}>{item}</span>
               ))}
@@ -265,7 +265,7 @@ function MfaCard() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              className="bg-destructive text-primary-foreground hover:bg-destructive/90"
               onClick={(event) => {
                 event.preventDefault()
                 void disable()
@@ -364,7 +364,7 @@ function SessionsCard() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              className="bg-destructive text-primary-foreground hover:bg-destructive/90"
               onClick={(event) => {
                 event.preventDefault()
                 void revoke()

@@ -182,7 +182,7 @@ function OverviewTab({ instance }: { instance: CustomerInstance }) {
   ]
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {specs.map((spec) => (
           <Card key={spec.label}>
             <CardContent className="flex items-center gap-2 px-3 py-2.5 text-sm">
@@ -490,7 +490,7 @@ function ResizeTab({
         (provider policy). Smaller options are disabled.
       </p>
 
-      <div className="grid grid-cols-3 gap-2 text-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
         <div>
           <p className="text-muted-foreground">Current vCPU</p>
           <p className="font-medium tabular-nums">{instance.vcpu}</p>
@@ -548,7 +548,7 @@ function ResizeTab({
         )}
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         <div className="space-y-1">
           <Label htmlFor="resize-cpu">vCPU</Label>
           <Input

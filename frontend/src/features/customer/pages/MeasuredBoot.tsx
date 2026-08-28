@@ -91,7 +91,7 @@ export default function MeasuredBootPage() {
           ({ data }) => {
             setImages(data ?? [])
           },
-        ),
+        ).catch(() => {}),
         apiGet<CustomerInstance[]>("/instances", { headers: orgHeaders(orgId) })
           .then(({ data }) => {
             instanceList = data ?? []
@@ -107,8 +107,17 @@ export default function MeasuredBootPage() {
   }, [orgId])
 
   useEffect(() => {
-    const t = setTimeout(() => void load(), 0)
-    return () => clearTimeout(t)
+    let cancelled = false
+    const t = setTimeout(() => {
+      void (async () => {
+        try {
+          await load()
+        } catch {
+          if (!cancelled) setError(null)
+        }
+      })()
+    }, 0)
+    return () => { cancelled = true; clearTimeout(t) }
   }, [load])
 
   const startUpload = async () => {

@@ -137,8 +137,17 @@ export default function FinanceCouponsPage() {
   }, [page])
 
   useEffect(() => {
-    const t = setTimeout(() => void loadCoupons(), 0)
-    return () => clearTimeout(t)
+    let cancelled = false
+    const t = setTimeout(() => {
+      void (async () => {
+        try {
+          await loadCoupons()
+        } catch {
+          if (!cancelled) setError(null)
+        }
+      })()
+    }, 0)
+    return () => { cancelled = true; clearTimeout(t) }
   }, [loadCoupons])
 
   // Scans recent orders for coupon redemptions exposed in order details.
@@ -400,7 +409,7 @@ export default function FinanceCouponsPage() {
                 {formError}
               </p>
             ) : null}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="col-span-2 space-y-1.5">
                 <Label htmlFor="coupon-code">Code *</Label>
                 <Input

@@ -37,13 +37,15 @@ export function fmtDateTime(value?: string | null): string {
 /** Money formatter; currency comes from the API field when present. */
 export function formatMoney(amount?: number | null, currency?: string | null): string {
   if (amount === null || amount === undefined) return "—"
+  const code = currency && currency.length === 3 ? currency : "IDR"
   try {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("id-ID", {
       style: "currency",
-      currency: currency && currency.length === 3 ? currency : "USD",
+      currency: code,
+      maximumFractionDigits: code === "IDR" || code === "VND" ? 0 : 2,
     }).format(amount)
   } catch {
-    return `${amount} ${currency ?? ""}`.trim()
+    return `${amount} ${code}`.trim()
   }
 }
 

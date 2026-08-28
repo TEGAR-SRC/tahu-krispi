@@ -274,7 +274,7 @@ export default function CustomerIsoDetailPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              className="bg-destructive text-primary-foreground hover:bg-destructive/90"
               disabled={deleting}
               onClick={(event) => {
                 event.preventDefault()

@@ -15,7 +15,7 @@ export default function TermsPage() {
         </Button>
 
         <div className="prose prose-neutral dark:prose-invert max-w-none">
-          <h1 className="text-3xl font-bold tracking-tight mb-2">Syarat & Ketentuan</h1>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl mb-2">Syarat & Ketentuan</h1>
           <p className="text-sm text-muted-foreground mb-8">
             Terakhir diperbarui: Agustus 2025
           </p>

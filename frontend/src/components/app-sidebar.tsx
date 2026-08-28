@@ -29,6 +29,7 @@ const data = {
       url: "#",
       icon: (
         <TerminalSquareIcon
+          aria-hidden="true"
         />
       ),
       isActive: true,
@@ -52,6 +53,7 @@ const data = {
       url: "#",
       icon: (
         <BotIcon
+          aria-hidden="true"
         />
       ),
       items: [
@@ -74,6 +76,7 @@ const data = {
       url: "#",
       icon: (
         <BookOpenIcon
+          aria-hidden="true"
         />
       ),
       items: [
@@ -100,6 +103,7 @@ const data = {
       url: "#",
       icon: (
         <Settings2Icon
+          aria-hidden="true"
         />
       ),
       items: [
@@ -128,6 +132,7 @@ const data = {
       url: "#",
       icon: (
         <LifeBuoyIcon
+          aria-hidden="true"
         />
       ),
     },
@@ -136,6 +141,7 @@ const data = {
       url: "#",
       icon: (
         <SendIcon
+          aria-hidden="true"
         />
       ),
     },
@@ -146,6 +152,7 @@ const data = {
       url: "#",
       icon: (
         <FrameIcon
+          aria-hidden="true"
         />
       ),
     },
@@ -154,6 +161,7 @@ const data = {
       url: "#",
       icon: (
         <PieChartIcon
+          aria-hidden="true"
         />
       ),
     },
@@ -162,6 +170,7 @@ const data = {
       url: "#",
       icon: (
         <MapIcon
+          aria-hidden="true"
         />
       ),
     },
@@ -177,7 +186,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuButton size="lg" asChild>
               <a href="#">
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <TerminalIcon className="size-4" />
+                  <TerminalIcon className="size-4" aria-hidden="true" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">Acme Inc</span>

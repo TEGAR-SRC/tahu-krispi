@@ -508,7 +508,7 @@ function StepSize({
 }) {
   return (
     <div className="space-y-5">
-      <div className="grid w-fit grid-cols-2 gap-2">
+      <div className="grid w-fit grid-cols-1 sm:grid-cols-2 gap-2">
         <Button
           type="button"
           variant={mode === "plan" ? "default" : "outline"}
@@ -564,7 +564,7 @@ function StepSize({
           </div>
         )
       ) : (
-        <div className="grid max-w-md grid-cols-3 gap-3">
+        <div className="grid max-w-md grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="space-y-1.5">
             <Label htmlFor="ci-cpu">vCPU</Label>
             <Input
@@ -626,11 +626,11 @@ function StepBilling({
   return (
     <Card>
       <CardContent className="space-y-4">
-        <div className="grid max-w-md grid-cols-2 gap-3">
+        <div className="flex flex-col gap-3 sm:max-w-md sm:grid sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label>Currency</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {["IDR", "USD"].map((code) => (
+            <div className="flex gap-2">
+              {["IDR"].map((code) => (
                 <Button
                   key={code}
                   type="button"
@@ -644,7 +644,7 @@ function StepBilling({
           </div>
           <div className="space-y-1.5">
             <Label>Billing period</Label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="flex flex-wrap gap-2">
               {BILLING_PERIODS.map((period) => (
                 <Button
                   key={period}
@@ -673,7 +673,7 @@ function StepBilling({
         ) : quote ? (
           <div className="space-y-1 text-sm">
             <div className="flex flex-wrap items-baseline gap-2">
-              <span className="text-3xl font-semibold tabular-nums">
+              <span className="text-2xl font-semibold tabular-nums sm:text-3xl">
                 {formatMoney(quote.total, quote.currency)}
               </span>
               <span className="text-muted-foreground">

@@ -64,7 +64,7 @@ export function syncDokployEntity(
     entity,
     ...(options?.opPath ? { op_path: options.opPath } : {}),
     ...(options?.query ? { query: options.query } : {}),
-  }).then((envelope) => envelope.data)
+  }).then((envelope) => envelope.data).catch(() => { throw new Error("sync failed") })
 }
 
 /** One-line human summary for the sync toast. */

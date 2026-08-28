@@ -955,7 +955,7 @@ function DeleteIPSetButton({
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              className="bg-destructive text-primary-foreground hover:bg-destructive/90"
               disabled={busy}
               onClick={(event) => {
                 event.preventDefault()
@@ -1158,7 +1158,7 @@ function EntriesPanel({
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              className="bg-destructive text-primary-foreground hover:bg-destructive/90"
               onClick={(event) => {
                 event.preventDefault()
                 void runDelete()

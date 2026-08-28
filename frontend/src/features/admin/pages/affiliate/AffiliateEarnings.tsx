@@ -256,7 +256,7 @@ export default function AffiliateEarningsPage() {
           <AlertDialogFooter>
             <AlertDialogCancel disabled={reversing}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              className="bg-destructive text-primary-foreground hover:bg-destructive/90"
               disabled={reversing}
               onClick={(event) => {
                 event.preventDefault()

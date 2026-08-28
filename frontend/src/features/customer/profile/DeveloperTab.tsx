@@ -188,7 +188,7 @@ function SshKeysCard() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              className="bg-destructive text-primary-foreground hover:bg-destructive/90"
               onClick={(event) => {
                 event.preventDefault()
                 void runDelete()
@@ -323,7 +323,7 @@ function StartupScriptsCard() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              className="bg-destructive text-primary-foreground hover:bg-destructive/90"
               onClick={(event) => {
                 event.preventDefault()
                 void runDelete()
@@ -511,7 +511,7 @@ function ApiKeysCard() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              className="bg-destructive text-primary-foreground hover:bg-destructive/90"
               onClick={(event) => {
                 event.preventDefault()
                 void revoke()
@@ -601,7 +601,7 @@ function CreateApiKeyDialog({
           </div>
           <div className="space-y-1.5">
             <Label>Scopes *</Label>
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
               {SCOPE_CHOICES.map((scope) => (
                 <label key={scope} className="flex items-center gap-2 rounded border px-2 py-1.5 text-xs">
                   <input

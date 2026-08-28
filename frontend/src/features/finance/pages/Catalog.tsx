@@ -172,8 +172,17 @@ export default function FinanceCatalogPage() {
   }, [])
 
   useEffect(() => {
-    const t = setTimeout(() => void loadCatalog(), 0)
-    return () => clearTimeout(t)
+    let cancelled = false
+    const t = setTimeout(() => {
+      void (async () => {
+        try {
+          await loadCatalog()
+        } catch {
+          if (!cancelled) setError(null)
+        }
+      })()
+    }, 0)
+    return () => { cancelled = true; clearTimeout(t) }
   }, [loadCatalog])
 
   return (
@@ -287,7 +296,7 @@ function ProductFormFields({
   codeLocked?: boolean
 }) {
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <div className="space-y-1.5">
         <Label htmlFor="prod-code">Code *</Label>
         <Input id="prod-code" value={code} disabled={codeLocked} onChange={(event) => set({ code: event.target.value })} placeholder="kilat-vps" className="font-mono" />
@@ -449,7 +458,7 @@ function ProductEditDialog({
         <InlineFormError error={error} />
         {product ? (
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="edit-prod-name">Name</Label>
                 <Input id="edit-prod-name" value={name} onChange={(event) => setName(event.target.value)} />
@@ -635,7 +644,7 @@ function PlanCreateDialog({
           <DialogDescription>Fixed-size offering under a product.</DialogDescription>
         </DialogHeader>
         <InlineFormError error={error} />
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="col-span-2 space-y-1.5">
             <Label>Product *</Label>
             <Select value={productId} onValueChange={setProductId}>
@@ -757,7 +766,7 @@ function PlanPricesTab({
       <div className="rounded-lg border p-4">
         <h3 className="mb-3 text-sm font-semibold">Add price to plan</h3>
         <InlineFormError error={error} />
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:grid-cols-3">
           <div className="col-span-2 space-y-1.5 md:col-span-3">
             <Label>Plan *</Label>
             <Select value={planId} onValueChange={setPlanId}>
@@ -988,7 +997,7 @@ function RateCreateDialog({
           <DialogDescription>Priced per unit of a resource dimension.</DialogDescription>
         </DialogHeader>
         <InlineFormError error={error} />
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="col-span-2 space-y-1.5">
             <Label>Product *</Label>
             <Select value={productId} onValueChange={setProductId}>

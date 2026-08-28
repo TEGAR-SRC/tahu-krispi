@@ -169,13 +169,24 @@ export default function ObjectStoragePage() {
   }, [orgId])
 
   useEffect(() => {
-    const t = setTimeout(() => void loadServices(), 0)
+    let cancelled = false
+    const t = setTimeout(() => {
+      void (async () => {
+        try {
+          await loadServices()
+        } catch {
+          if (!cancelled) setError(null)
+        }
+      })()
+    }, 0)
     apiGet<Region[]>("/regions")
-      .then(({ data }) => setRegions((data ?? []).filter((r) => r.enabled)))
+      .then(({ data }) => {
+        if (!cancelled) setRegions((data ?? []).filter((r) => r.enabled))
+      })
       .catch(() => {
         // The create wizard degrades to "auto region" when regions fail.
       })
-    return () => clearTimeout(t)
+    return () => { cancelled = true; clearTimeout(t) }
   }, [loadServices])
 
   const loadSelected = useCallback(
@@ -644,7 +655,7 @@ export default function ObjectStoragePage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              className="bg-destructive text-primary-foreground hover:bg-destructive/90"
               disabled={
                 deleting ||
                 deleteConfirmText.trim() !== (deleteTarget?.service.name ?? "")

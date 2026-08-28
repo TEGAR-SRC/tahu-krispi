@@ -180,7 +180,7 @@ export function AccountTab() {
           {field("full_name", "Full name")}
           {field("display_name", "Display name")}
           {field("company_name", "Company")}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {field("country_code", "Country code", "ID")}
             {field("tax_id", "Tax ID")}
           </div>

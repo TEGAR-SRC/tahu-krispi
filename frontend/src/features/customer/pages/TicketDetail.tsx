@@ -112,8 +112,17 @@ export default function CustomerTicketThreadPage() {
   }, [orgId, ticketId])
 
   useEffect(() => {
-    const t = setTimeout(() => void load(), 0)
-    return () => clearTimeout(t)
+    let cancelled = false
+    const t = setTimeout(() => {
+      void (async () => {
+        try {
+          await load()
+        } catch {
+          if (!cancelled) setError(null)
+        }
+      })()
+    }, 0)
+    return () => { cancelled = true; clearTimeout(t) }
   }, [load])
 
   const send = async () => {
@@ -229,7 +238,7 @@ export default function CustomerTicketThreadPage() {
           {/* Header */}
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="min-w-0">
-              <h1 className="truncate text-2xl font-semibold tracking-tight">
+              <h1 className="truncate text-xl font-semibold tracking-tight sm:text-2xl">
                 {ticket?.subject}
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">

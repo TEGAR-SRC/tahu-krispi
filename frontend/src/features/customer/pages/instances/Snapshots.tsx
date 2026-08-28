@@ -371,7 +371,7 @@ function SnapshotListCard({ instanceId }: { instanceId: string | undefined }) {
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
-                className="bg-destructive text-white hover:bg-destructive/90"
+                className="bg-destructive text-primary-foreground hover:bg-destructive/90"
                 onClick={(event) => {
                   event.preventDefault()
                   void remove()
@@ -401,7 +401,7 @@ function SnapshotListCard({ instanceId }: { instanceId: string | undefined }) {
                   <a
                     href={downloadUrl.url}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="min-w-0 flex-1 truncate font-mono text-sm underline-offset-4 hover:underline"
                   >
                     {downloadUrl.url}
@@ -503,7 +503,7 @@ function BackupsCard({ instanceId }: { instanceId: string | undefined }) {
           toast.error("The backend returned no download URL")
           return
         }
-        window.open(url, "_blank", "noopener")
+        window.open(url, "_blank", "noopener,noreferrer")
         toast.success("Download URL opened in a new tab")
       } else {
         const disposition = response.headers.get("content-disposition") ?? ""

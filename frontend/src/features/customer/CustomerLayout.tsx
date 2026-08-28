@@ -69,14 +69,14 @@ function OrgSwitcher() {
           type="button"
           className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <BuildingIcon className="size-4 shrink-0 text-muted-foreground" />
+          <BuildingIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
           <span className="max-w-48 truncate">{label(organization)}</span>
           {organization?.status ? (
             <Badge variant="secondary" className="hidden sm:inline-flex">
               {organization.status}
             </Badge>
           ) : null}
-          <ChevronsUpDownIcon className="size-3.5 shrink-0 text-muted-foreground" />
+          <ChevronsUpDownIcon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-56">
@@ -123,7 +123,7 @@ function CustomerShell() {
               <SidebarMenuButton size="lg" asChild>
                 <Link to="/app">
                   <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                    <TerminalIcon className="size-4" />
+                    <TerminalIcon className="size-4" aria-hidden="true" />
                   </div>
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-medium">Kilat Cloud</span>
@@ -148,7 +148,7 @@ function CustomerShell() {
                       <SidebarMenuItem key={item.url}>
                         <SidebarMenuButton isActive={isActive(item.url)} asChild>
                           <Link to={item.url}>
-                            {Icon ? <Icon /> : null}
+                            {Icon ? <Icon aria-hidden="true" /> : null}
                             <span>{item.title}</span>
                           </Link>
                         </SidebarMenuButton>
@@ -186,11 +186,11 @@ function CustomerShell() {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => navigate("/app/profile")}>
-                    <UserCircleIcon />
+                    <UserCircleIcon aria-hidden="true" />
                     Profile settings
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleLogout}>
-                    <LogOutIcon />
+                    <LogOutIcon aria-hidden="true" />
                     Log out
                   </DropdownMenuItem>
                 </DropdownMenuContent>

@@ -29,11 +29,11 @@ export function SignupForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form>
+          <form onSubmit={(e) => e.preventDefault()}>
             <FieldGroup>
               <Field>
                 <FieldLabel htmlFor="name">Full Name</FieldLabel>
-                <Input id="name" type="text" placeholder="John Doe" required />
+                <Input id="name" type="text" placeholder="John Doe" autoComplete="name" required />
               </Field>
               <Field>
                 <FieldLabel htmlFor="email">Email</FieldLabel>
@@ -41,6 +41,7 @@ export function SignupForm({
                   id="email"
                   type="email"
                   placeholder="m@example.com"
+                  autoComplete="email"
                   required
                 />
               </Field>
@@ -48,13 +49,13 @@ export function SignupForm({
                 <Field className="grid grid-cols-2 gap-4">
                   <Field>
                     <FieldLabel htmlFor="password">Password</FieldLabel>
-                    <Input id="password" type="password" required />
+                    <Input id="password" type="password" autoComplete="new-password" required />
                   </Field>
                   <Field>
                     <FieldLabel htmlFor="confirm-password">
                       Confirm Password
                     </FieldLabel>
-                    <Input id="confirm-password" type="password" required />
+                    <Input id="confirm-password" type="password" autoComplete="new-password" required />
                   </Field>
                 </Field>
                 <FieldDescription>

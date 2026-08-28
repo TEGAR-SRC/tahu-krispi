@@ -459,7 +459,7 @@ function AddRuleDialog({
           <DialogTitle>Add firewall rule</DialogTitle>
           <DialogDescription>PVE rule syntax — source/dest accept CIDRs, IP sets or +setname refs.</DialogDescription>
         </DialogHeader>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label htmlFor="fr-type">Direction *</Label>
             <Select value={type} onValueChange={setType}>

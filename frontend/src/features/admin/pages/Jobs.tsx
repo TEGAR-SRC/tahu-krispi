@@ -299,7 +299,7 @@ export default function AdminJobsPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Keep job</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              className="bg-destructive text-primary-foreground hover:bg-destructive/90"
               onClick={() => {
                 const target = cancelTarget
                 setCancelTarget(null)

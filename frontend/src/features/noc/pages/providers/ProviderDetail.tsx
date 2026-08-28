@@ -115,7 +115,7 @@ export default function NocProviderDetailPage() {
         <>
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl font-semibold tracking-tight">{provider.name}</h1>
+              <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{provider.name}</h1>
               <KindBadge kind={provider.kind} />
             </div>
             <p className="text-sm text-muted-foreground">

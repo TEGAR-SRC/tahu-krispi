@@ -128,9 +128,9 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (*Organization, er
 	var org Organization
 	err = tx.QueryRow(ctx, `
 INSERT INTO organizations(slug, name, country_code, legal_name, tax_id, created_by)
-VALUES ($2,$3,NULLIF($4,''),NULLIF($5,''),NULLIF($6,''),$7)
+VALUES ($1,$2,NULLIF($3::text,''),NULLIF($4::text,''),NULLIF($5::text,''),$6)
 RETURNING id, public_id, name, slug::text, status::text, COALESCE(country_code,''), COALESCE(legal_name,''), COALESCE(tax_id,'')`,
-		uuid.Nil, in.Slug, in.Name, in.CountryCode, in.LegalName, in.TaxID, in.CreatedBy).
+		in.Slug, in.Name, in.CountryCode, in.LegalName, in.TaxID, in.CreatedBy).
 		Scan(&org.ID, &org.PublicID, &org.Name, &org.Slug, &org.Status, &org.Country, &org.LegalName, &org.TaxID)
 	if err != nil {
 		if isUnique(err) {

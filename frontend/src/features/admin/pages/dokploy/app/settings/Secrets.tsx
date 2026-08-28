@@ -464,7 +464,7 @@ function HandleVaultDialog({
               <FieldRow label="Token" error={errorFor("token")}>
                 <Input type="password" value={values.token} onChange={(e) => set("token", e.target.value)} />
               </FieldRow>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FieldRow label="KV Mount" error={errorFor("mount")}>
                   <Input placeholder="secret" value={values.mount} onChange={(e) => set("mount", e.target.value)} />
                 </FieldRow>
@@ -480,7 +480,7 @@ function HandleVaultDialog({
               <FieldRow label="Site URL" error={errorFor("siteUrl")}>
                 <Input value={values.siteUrl} onChange={(e) => set("siteUrl", e.target.value)} />
               </FieldRow>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FieldRow label="Client ID" error={errorFor("clientId")}>
                   <Input value={values.clientId} onChange={(e) => set("clientId", e.target.value)} />
                 </FieldRow>
@@ -488,7 +488,7 @@ function HandleVaultDialog({
                   <Input type="password" value={values.clientSecret} onChange={(e) => set("clientSecret", e.target.value)} />
                 </FieldRow>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FieldRow label="Project ID" error={errorFor("infisicalProjectId")}>
                   <Input value={values.infisicalProjectId} onChange={(e) => set("infisicalProjectId", e.target.value)} />
                 </FieldRow>
@@ -524,7 +524,7 @@ function HandleVaultDialog({
               <FieldRow label="Service Token" error={errorFor("serviceToken")}>
                 <Input type="password" placeholder="dp.st.…" value={values.serviceToken} onChange={(e) => set("serviceToken", e.target.value)} />
               </FieldRow>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FieldRow label="Project (optional)">
                   <Input value={values.dopplerProject} onChange={(e) => set("dopplerProject", e.target.value)} />
                 </FieldRow>
@@ -543,7 +543,7 @@ function HandleVaultDialog({
               <FieldRow label="Tenant ID" error={errorFor("tenantId")}>
                 <Input value={values.tenantId} onChange={(e) => set("tenantId", e.target.value)} />
               </FieldRow>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FieldRow label="Client ID" error={errorFor("azureClientId")}>
                   <Input value={values.azureClientId} onChange={(e) => set("azureClientId", e.target.value)} />
                 </FieldRow>
@@ -556,7 +556,7 @@ function HandleVaultDialog({
 
           {values.providerType === "scaleway" ? (
             <>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FieldRow label="Region" error={errorFor("scalewayRegion")}>
                   <Select value={values.scalewayRegion} onValueChange={(value) => set("scalewayRegion", value)}>
                     <SelectTrigger className="w-full">

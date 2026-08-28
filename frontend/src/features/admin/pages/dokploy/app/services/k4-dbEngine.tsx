@@ -1032,7 +1032,7 @@ function GeneralTab({
                     applicationStatus: value,
                   }),
                 "Application status updated",
-              ).then(reload)
+              ).then(reload).catch(() => {})
             }}
           >
             <SelectTrigger className="w-44">

@@ -63,9 +63,15 @@ interface SecurityEventRow {
 function useMountLoad(load: () => Promise<void>) {
   useEffect(() => {
     const timer = setTimeout(() => {
-      void load()
+      void (async () => {
+        try {
+          await load()
+        } catch {
+          // Error handled inside load
+        }
+      })()
     }, 0)
-    return () => clearTimeout(timer)
+    return () => { clearTimeout(timer) }
   }, [load])
 }
 

@@ -127,8 +127,17 @@ export default function StaffApiKeysPage() {
   }, [page])
 
   useEffect(() => {
-    const t = setTimeout(() => void load(), 0)
-    return () => clearTimeout(t)
+    let cancelled = false
+    const t = setTimeout(() => {
+      void (async () => {
+        try {
+          await load()
+        } catch {
+          if (!cancelled) setError(null)
+        }
+      })()
+    }, 0)
+    return () => { cancelled = true; clearTimeout(t) }
   }, [load])
 
   const rotate = async (row: ApiKeyRow) => {

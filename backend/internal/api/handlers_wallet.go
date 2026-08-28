@@ -132,7 +132,7 @@ func (s *Server) handleWalletTopup(c fiber.Ctx) error {
 		return mw.WriteError(c, err)
 	}
 	// Gateway-neutral deep link; see comment on the handler.
-	checkoutURL := fmt.Sprintf("https://payment.kilat-cloud.com/topup/%s", publicID)
+	checkoutURL := fmt.Sprintf("https://payment.%s/topup/%s", s.cfg.AppDomain, publicID)
 	key := sha256.Sum256([]byte("checkout:" + s.cfg.SecretEncryptionKey))
 	urlCipher, err := crypto.Encrypt(key[:], []byte(checkoutURL))
 	if err != nil {

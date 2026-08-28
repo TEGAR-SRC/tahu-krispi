@@ -230,7 +230,7 @@ export default function AdminInstanceDetailPage() {
         <>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="min-w-0 space-y-1">
-              <h1 className="flex flex-wrap items-center gap-2 text-2xl font-semibold tracking-tight">
+              <h1 className="flex flex-wrap items-center gap-2 text-xl font-semibold tracking-tight sm:text-2xl">
                 {detail.name}
                 <StatusBadge status={detail.status} />
                 {detail.power_status ? (

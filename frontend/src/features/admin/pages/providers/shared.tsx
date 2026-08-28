@@ -76,7 +76,7 @@ export function ProviderShell({
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{title}</h1>
           {description ? (
             <p className="text-sm text-muted-foreground">{description}</p>
           ) : null}
@@ -129,7 +129,7 @@ export function ConfirmDialog({
           <AlertDialogAction
             disabled={busy}
             className={
-              destructive ? "bg-destructive text-white hover:bg-destructive/90" : ""
+              destructive ? "bg-destructive text-primary-foreground hover:bg-destructive/90" : ""
             }
             onClick={onConfirm}
           >

@@ -104,8 +104,17 @@ export default function CustomerTicketsPage() {
   }, [orgId])
 
   useEffect(() => {
-    const t = setTimeout(() => void load(), 0)
-    return () => clearTimeout(t)
+    let cancelled = false
+    const t = setTimeout(() => {
+      void (async () => {
+        try {
+          await load()
+        } catch {
+          if (!cancelled) setError(null)
+        }
+      })()
+    }, 0)
+    return () => { cancelled = true; clearTimeout(t) }
   }, [load])
 
   return (
@@ -122,7 +131,7 @@ export default function CustomerTicketsPage() {
 
       <ErrorBanner error={error} />
 
-      <div className="grid gap-4 lg:grid-cols-[380px_1fr]">
+      <div className="grid gap-4 lg:grid-cols-[minmax(280px,380px)_1fr]">
         {/* Ticket list */}
         <div className="space-y-2">
           {loading ? (
@@ -227,8 +236,17 @@ function TicketThread({ ticketId, onClosed }: { ticketId: string; onClosed: () =
   }, [orgId, ticketId])
 
   useEffect(() => {
-    const t = setTimeout(() => void load(), 0)
-    return () => clearTimeout(t)
+    let cancelled = false
+    const t = setTimeout(() => {
+      void (async () => {
+        try {
+          await load()
+        } catch {
+          if (!cancelled) setError(null)
+        }
+      })()
+    }, 0)
+    return () => { cancelled = true; clearTimeout(t) }
   }, [load])
 
   useEffect(() => {
@@ -522,11 +540,11 @@ function CreateTicketDialog({
               placeholder="Instance unreachable after reboot"
             />
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div className="space-y-1.5">
               <Label htmlFor="tk-category">Category</Label>
               <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger id="tk-category">
+                <SelectTrigger id="tk-category" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -540,7 +558,7 @@ function CreateTicketDialog({
             <div className="space-y-1.5">
               <Label>Priority</Label>
               <Select value={priority} onValueChange={setPriority}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

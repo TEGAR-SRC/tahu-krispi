@@ -98,11 +98,22 @@ export default function StaffNotificationsPage() {
   }, [])
 
   useEffect(() => {
+    let cancelled = false
     const t = setTimeout(() => {
-      void load()
-      void loadPreferences()
+      void (async () => {
+        try {
+          await load()
+        } catch {
+          if (!cancelled) setLoading(false)
+        }
+        try {
+          await loadPreferences()
+        } catch {
+          if (!cancelled) setPrefsLoading(false)
+        }
+      })()
     }, 0)
-    return () => clearTimeout(t)
+    return () => { cancelled = true; clearTimeout(t) }
   }, [load, loadPreferences])
 
   const unreadCount = useMemo(

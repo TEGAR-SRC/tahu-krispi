@@ -254,7 +254,7 @@ function AddResourceDialog({ open, busy, onOpenChange, onSubmit }: AddResourcePr
           <DialogTitle>Add HA resource</DialogTitle>
           <DialogDescription>SID format is vm:&lt;vmid&gt; or ct:&lt;ctid&gt;.</DialogDescription>
         </DialogHeader>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1.5 sm:col-span-2">
             <Label htmlFor="ha-sid">SID *</Label>
             <Input id="ha-sid" value={sid} onChange={(event) => setSid(event.target.value)} placeholder="vm:100" />

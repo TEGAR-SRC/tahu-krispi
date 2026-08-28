@@ -70,7 +70,7 @@ export default function DokployHomePage() {
                 <Card key={stat.label}>
                   <CardHeader>
                     <CardDescription>{stat.label}</CardDescription>
-                    <CardTitle className="text-2xl">{stat.value}</CardTitle>
+                    <CardTitle className="text-lg sm:text-2xl">{stat.value}</CardTitle>
                   </CardHeader>
                 </Card>
               ))

@@ -234,7 +234,7 @@ export default function InstanceResizePage() {
       <InstanceBreadcrumb instanceName={instance.name} section="Resize" />
 
       <div className="space-y-1">
-        <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+        <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight sm:text-2xl">
           <ScalingIcon className="size-6 text-muted-foreground" /> Resize “{instance.name}”
         </h1>
         <p className="text-sm text-muted-foreground">
@@ -244,7 +244,7 @@ export default function InstanceResizePage() {
 
       {/* Current spec */}
       <Card>
-        <CardContent className="grid grid-cols-3 gap-4 px-4 py-4">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4 px-4 py-4">
           <SpecBox icon={<CpuIcon />} label="Current vCPU" value={String(instance.vcpu)} />
           <SpecBox
             icon={<MemoryStickIcon />}
@@ -256,7 +256,7 @@ export default function InstanceResizePage() {
       </Card>
 
       {/* Mode switch */}
-      <div className="grid w-fit grid-cols-2 gap-2">
+      <div className="grid w-fit grid-cols-1 sm:grid-cols-2 gap-2">
         <Button
           type="button"
           variant={mode === "plan" ? "default" : "outline"}
@@ -337,7 +337,7 @@ export default function InstanceResizePage() {
         )
       ) : (
         <TooltipProvider delayDuration={150}>
-          <div className="grid max-w-md grid-cols-3 gap-3">
+          <div className="flex flex-col gap-3 sm:max-w-md sm:grid sm:grid-cols-3">
             <UpgradeOnlyField tooltip="Upgrade only — cannot go below the current spec">
               <Label htmlFor="resize-cpu">vCPU (min {instance.vcpu})</Label>
               <Input
@@ -381,11 +381,11 @@ export default function InstanceResizePage() {
       {/* Billing + live quote */}
       <Card>
         <CardContent className="space-y-4 px-4 py-4">
-          <div className="grid max-w-md grid-cols-2 gap-3">
+          <div className="flex flex-col gap-3 sm:max-w-md sm:grid sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>Currency</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {["IDR", "USD"].map((code) => (
+              <div className="flex gap-2">
+                {["IDR"].map((code) => (
                   <Button
                     key={code}
                     type="button"
@@ -429,7 +429,7 @@ export default function InstanceResizePage() {
           ) : quote ? (
             <div className="space-y-1 text-sm">
               <div className="flex flex-wrap items-baseline gap-2">
-                <span className="text-3xl font-semibold tabular-nums">
+                <span className="text-2xl font-semibold tabular-nums sm:text-3xl">
                   {formatMoney(quote.total, quote.currency)}
                 </span>
                 <span className="text-muted-foreground">

@@ -293,7 +293,7 @@ export default function NocDashboardPage() {
                   </PieChart>
                 </ChartContainer>
                 <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-2xl font-semibold tabular-nums">{instances.length}</span>
+                  <span className="text-lg font-semibold tabular-nums sm:text-2xl">{instances.length}</span>
                   <span className="text-xs text-muted-foreground">sampled instances</span>
                 </div>
               </div>

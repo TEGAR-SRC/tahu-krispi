@@ -161,7 +161,7 @@ export default function InstanceOverviewPage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-semibold tracking-tight">{instance.name}</h1>
+            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{instance.name}</h1>
             <StatusBadge status={instance.status} />
             {instance.power_status && instance.power_status !== instance.status ? (
               <StatusBadge status={instance.power_status} />
@@ -329,7 +329,7 @@ export default function InstanceOverviewPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              className="bg-destructive text-primary-foreground hover:bg-destructive/90"
               disabled={deleting || deleteTyped !== instance.name}
               onClick={(event) => {
                 event.preventDefault()

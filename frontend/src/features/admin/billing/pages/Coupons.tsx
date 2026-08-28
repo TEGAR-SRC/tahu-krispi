@@ -401,7 +401,7 @@ export default function BillingCouponsPage() {
           </DialogHeader>
 
           <div className="grid gap-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="grid gap-2">
                 <Label htmlFor="coupon-code">Code *</Label>
                 <Input
@@ -431,7 +431,7 @@ export default function BillingCouponsPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="grid gap-2">
                 <Label htmlFor="coupon-type">Discount type *</Label>
                 <Select
@@ -464,7 +464,7 @@ export default function BillingCouponsPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="grid gap-2">
                 <Label htmlFor="coupon-currency">Currency</Label>
                 <Input
@@ -501,7 +501,7 @@ export default function BillingCouponsPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="grid gap-2">
                 <Label htmlFor="coupon-max-redemptions">Max redemptions total</Label>
                 <Input
@@ -528,7 +528,7 @@ export default function BillingCouponsPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="grid gap-2">
                 <Label htmlFor="coupon-starts">Valid from</Label>
                 <Input
@@ -564,7 +564,7 @@ export default function BillingCouponsPage() {
                 </p>
               ) : null}
               {form.use_duration ? (
-                <div className="mt-3 grid grid-cols-2 gap-3">
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="grid gap-2">
                     <Label htmlFor="coupon-duration-value">Duration *</Label>
                     <Input

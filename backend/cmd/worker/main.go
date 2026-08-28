@@ -40,7 +40,6 @@ import (
 	"kilat.cloud/backend/internal/platform/postgres"
 	"kilat.cloud/backend/internal/platform/queue"
 	redisclient "kilat.cloud/backend/internal/platform/redis"
-	"kilat.cloud/backend/internal/pricing"
 	"kilat.cloud/backend/internal/provider"
 	"kilat.cloud/backend/internal/provider/onidel"
 	"kilat.cloud/backend/internal/provider/proxmox"
@@ -111,7 +110,7 @@ func main() {
 		rdb:        rdb,
 		mailSender: mailpkg.NewSender(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPassword, cfg.SMTPFrom),
 		prov:       onidelAdapter,
-		computeSvc: compute.NewService(db, onidelAdapter, pricing.NewService(db)),
+		computeSvc: compute.NewServiceWithBaseURL(db, onidelAdapter, cfg.DownloadBaseURL),
 		subSvc:     subscription.NewService(db, cfg.SubscriptionGraceDays),
 		billingSvc: billing.NewService(db, wallet.NewService(db)),
 		auditSvc:   audit.NewService(db),
@@ -1900,7 +1899,7 @@ SELECT id FROM object_storage_backends WHERE enabled ORDER BY created_at LIMIT 1
 		return storageUnavailable(berr)
 	}
 
-	pdfBytes, rerr := renderInvoicePDF(h.PublicID, h.Number, h.OrgName, h.IssuedAt, h.DueAt,
+	pdfBytes, rerr := renderInvoicePDF(a.cfg.AppDomain, h.PublicID, h.Number, h.OrgName, h.IssuedAt, h.DueAt,
 		h.Currency, h.Subtotal, h.Tax, h.Total, items)
 	if rerr != nil {
 		return fmt.Errorf("render invoice pdf: %w", rerr)
@@ -1936,7 +1935,7 @@ UPDATE invoices SET pdf_object_id=$2 WHERE id=$1`, invoiceID, objID); err != nil
 type invoiceItemRow struct{ Desc, Qty, Unit, Subtotal string }
 
 // renderInvoicePDF draws a compact branded A4 invoice into a byte buffer.
-func renderInvoicePDF(publicID, number, orgName, issuedAt, dueAt, currency string,
+func renderInvoicePDF(brandDomain, publicID, number, orgName, issuedAt, dueAt, currency string,
 	subtotal, tax, total float64, items []invoiceItemRow) ([]byte, error) {
 
 	pdf := fpdf.New("P", "mm", "A4", "")
@@ -1948,7 +1947,7 @@ func renderInvoicePDF(publicID, number, orgName, issuedAt, dueAt, currency strin
 	pdf.Ln(13)
 	pdf.SetFont("Helvetica", "", 10)
 	pdf.SetTextColor(110, 110, 110)
-	pdf.Cell(0, 5, "kilat-cloud.com")
+	pdf.Cell(0, 5, brandDomain)
 	pdf.Ln(10)
 	pdf.SetTextColor(0, 0, 0)
 	pdf.SetFont("Helvetica", "B", 15)
@@ -2008,7 +2007,7 @@ func renderInvoicePDF(publicID, number, orgName, issuedAt, dueAt, currency strin
 	pdf.SetY(-32)
 	pdf.SetFont("Helvetica", "", 9)
 	pdf.SetTextColor(130, 130, 130)
-	pdf.CellFormat(0, 5, "Thank you for choosing Kilat Cloud - kilat-cloud.com", "", 0, "C", false, 0, "")
+	pdf.CellFormat(0, 5, "Thank you for choosing Kilat Cloud - "+brandDomain, "", 0, "C", false, 0, "")
 	pdf.Ln(-1)
 	pdf.CellFormat(0, 5, "Document reference "+publicID, "", 0, "C", false, 0, "")
 

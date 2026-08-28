@@ -138,7 +138,7 @@ function OverviewSummaryCards({
         <Card key={card.title}>
           <CardHeader>
             <CardDescription>{card.title}</CardDescription>
-            <CardTitle className="text-2xl">{card.value}</CardTitle>
+            <CardTitle className="text-lg sm:text-2xl">{card.value}</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">{card.description}</CardContent>
         </Card>

@@ -714,7 +714,7 @@ function MeasuredBootUploadDialog({
           <Button
             disabled={!file || busy}
             onClick={() => {
-              if (file) void onUpload(file, description).then(() => close(false))
+              if (file) void onUpload(file, description).then(() => close(false)).catch(() => {})
             }}
           >
             {busy ? <Loader2Icon className="animate-spin" /> : null} Upload

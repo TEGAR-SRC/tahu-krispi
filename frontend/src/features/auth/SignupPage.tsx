@@ -128,7 +128,7 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="flex min-h-svh items-center justify-center p-6 py-10">
+    <div className="flex min-h-svh items-center justify-center p-4 py-6 sm:p-6 sm:py-10">
       <div className="flex w-full max-w-md flex-col gap-6">
         <Card>
           <CardHeader className="text-center">
@@ -140,7 +140,7 @@ export default function SignupPage() {
           <CardContent>
             <FieldGroup>
               {/* OAuth buttons */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Button
                   type="button"
                   variant="outline"
@@ -256,7 +256,7 @@ export default function SignupPage() {
                   </Field>
 
                   {/* Row 5: Locale & Timezone */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Field>
                       <FieldLabel htmlFor="signup-locale">Bahasa</FieldLabel>
                       <Select value={locale} onValueChange={setLocale}>
@@ -307,7 +307,6 @@ export default function SignupPage() {
                       />
                       <button
                         type="button"
-                        tabIndex={-1}
                         className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground focus:outline-none"
                         onClick={() => setShowPassword((p) => !p)}
                         aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
@@ -340,7 +339,6 @@ export default function SignupPage() {
                       />
                       <button
                         type="button"
-                        tabIndex={-1}
                         className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground focus:outline-none"
                         onClick={() => setShowConfirmPassword((p) => !p)}
                         aria-label={

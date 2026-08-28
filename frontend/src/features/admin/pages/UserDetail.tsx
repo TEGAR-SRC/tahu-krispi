@@ -198,7 +198,7 @@ export default function UserDetailPage() {
                 <AlertDialogAction
                   className={
                     CONFIRM_COPY[confirmAction].destructive
-                      ? "bg-destructive text-white hover:bg-destructive/90"
+                      ? "bg-destructive text-primary-foreground hover:bg-destructive/90"
                       : ""
                   }
                   onClick={() => {

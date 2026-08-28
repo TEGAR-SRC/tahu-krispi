@@ -3,14 +3,15 @@
 /** Money with the currency taken from the API field when present. */
 export function formatMoney(amount: number | null | undefined, currency?: string | null): string {
   const value = typeof amount === "number" && Number.isFinite(amount) ? amount : 0
+  const code = currency && currency.length === 3 ? currency : "IDR"
   try {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("id-ID", {
       style: "currency",
-      currency: currency && currency.length === 3 ? currency : "USD",
-      maximumFractionDigits: currency === "IDR" || currency === "VND" ? 0 : 2,
+      currency: code,
+      maximumFractionDigits: code === "IDR" || code === "VND" ? 0 : 2,
     }).format(value)
   } catch {
-    return `${value.toLocaleString()} ${currency ?? ""}`.trim()
+    return `${value.toLocaleString()} ${code}`.trim()
   }
 }
 

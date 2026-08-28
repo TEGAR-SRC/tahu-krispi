@@ -5,4 +5,4 @@
 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS max_hourly_instances integer NOT NULL DEFAULT 5;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS max_instance_monthly_cost numeric(20,4) NOT NULL DEFAULT 25.00;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS limit_currency char(3) NOT NULL DEFAULT 'USD';
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS limit_currency char(3) NOT NULL DEFAULT 'IDR';

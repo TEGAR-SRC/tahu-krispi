@@ -117,7 +117,7 @@ func NewServer(cfg *config.Config, log *logger.Logger, db *pgxpool.Pool, rdb *go
 	mw.ServerErrorLogger = func(code, msg string) {
 		log.Error("server error response", map[string]any{"error": msg, "detail": code})
 	}
-	s.computeSvc = compute.NewService(db, onidelAdapter, s.pricingSvc)
+	s.computeSvc = compute.NewServiceWithBaseURL(db, onidelAdapter, cfg.DownloadBaseURL)
 	app := fiber.New(fiber.Config{
 		AppName:      "kilat-cloud-backend",
 		ReadTimeout:  30 * time.Second,
@@ -135,6 +135,15 @@ func NewServer(cfg *config.Config, log *logger.Logger, db *pgxpool.Pool, rdb *go
 	app.Use(recover.New())
 	app.Use(mw.RequestID())
 	app.Use(mw.SecurityHeaders())
+	app.Use(func(c fiber.Ctx) error {
+		start := time.Now()
+		err := c.Next()
+		reqID, _ := c.Locals(mw.RequestIDKey).(string)
+		s.log.Info(fmt.Sprintf("%s %s -> %d (%s) [%s]",
+			c.Method(), c.Path(), c.Response().StatusCode(),
+			time.Since(start).Round(time.Millisecond), reqID), nil)
+		return err
+	})
 	s.app = app
 	s.registerRoutes()
 	s.InstallAttachmentUploadLimits()

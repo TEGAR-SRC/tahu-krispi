@@ -322,7 +322,7 @@ function TicketDetailSheet({
           </SheetDescription>
         </SheetHeader>
 
-        <dl className="grid grid-cols-3 gap-3">
+        <dl className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <DetailField label="Status">
             <StatusBadge status={snapshot.status} />
           </DetailField>
@@ -430,7 +430,7 @@ function TicketDetailSheet({
             <AlertDialogFooter>
               <AlertDialogCancel>Keep open</AlertDialogCancel>
               <AlertDialogAction
-                className="bg-destructive text-white hover:bg-destructive/90"
+                className="bg-destructive text-primary-foreground hover:bg-destructive/90"
                 onClick={() => void closeTicket()}
               >
                 Close ticket

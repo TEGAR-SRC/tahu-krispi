@@ -146,8 +146,17 @@ export default function FinanceOrgWalletPage() {
   }, [orgId, txPage])
 
   useEffect(() => {
-    const t = setTimeout(() => void loadTransactions(), 0)
-    return () => clearTimeout(t)
+    let cancelled = false
+    const t = setTimeout(() => {
+      void (async () => {
+        try {
+          await loadTransactions()
+        } catch {
+          if (!cancelled) setTxError(null)
+        }
+      })()
+    }, 0)
+    return () => { cancelled = true; clearTimeout(t) }
   }, [loadTransactions])
 
   const submitAdjust = useCallback(async () => {

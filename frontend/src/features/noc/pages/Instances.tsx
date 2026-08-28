@@ -285,7 +285,7 @@ export default function NocInstancesPage() {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <p className="rounded-md border p-6 text-center text-sm text-muted-foreground">
+        <p className="rounded-md border p-4 text-center text-sm text-muted-foreground sm:p-6">
           No instances match the current filters.
         </p>
       ) : (
@@ -374,7 +374,7 @@ export default function NocInstancesPage() {
 
       {/* ---- Quick-inspect sheet with lifecycle ops ---- */}
       <Sheet open={sheetId !== null} onOpenChange={(open) => !open && setSheetId(null)}>
-        <SheetContent side="right" className="overflow-y-auto sm:max-w-xl">
+        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-xl">
           <SheetHeader>
             <SheetTitle className="flex flex-wrap items-center gap-2">
               Instance quick actions
@@ -404,7 +404,7 @@ export default function NocInstancesPage() {
               </p>
             ) : detail ? (
               <>
-                <section className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                <section className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
                   <InfoLine label="Status" value={<StatusBadge status={detail.status} />} />
                   <InfoLine
                     label="Power"

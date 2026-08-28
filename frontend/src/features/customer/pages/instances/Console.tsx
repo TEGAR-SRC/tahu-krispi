@@ -193,7 +193,7 @@ function SessionDetails({ session }: { session: ConsoleSession }) {
             <a
               href={url}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="block truncate font-mono text-sm underline-offset-4 hover:underline"
             >
               {url}

@@ -52,7 +52,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-svh items-center justify-center p-6">
+    <div className="flex min-h-svh items-center justify-center p-4 sm:p-6">
       <div className="flex w-full max-w-sm flex-col gap-6">
         <Card>
           <CardHeader className="text-center">
@@ -62,7 +62,7 @@ export default function LoginPage() {
           <CardContent>
             <FieldGroup>
               {/* OAuth buttons */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Button
                   type="button"
                   variant="outline"
@@ -148,7 +148,6 @@ export default function LoginPage() {
                       />
                       <button
                         type="button"
-                        tabIndex={-1}
                         className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground focus:outline-none"
                         onClick={() => setShowPassword((prev) => !prev)}
                         aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}

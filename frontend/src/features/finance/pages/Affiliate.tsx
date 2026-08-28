@@ -70,8 +70,17 @@ export default function FinanceAffiliatePage() {
   }, [])
 
   useEffect(() => {
-    const t = setTimeout(() => void load(), 0)
-    return () => clearTimeout(t)
+    let cancelled = false
+    const t = setTimeout(() => {
+      void (async () => {
+        try {
+          await load()
+        } catch {
+          if (!cancelled) setLoading(false)
+        }
+      })()
+    }, 0)
+    return () => { cancelled = true; clearTimeout(t) }
   }, [load])
 
   return (
@@ -113,7 +122,7 @@ export default function FinanceAffiliatePage() {
                 <CardDescription className="flex items-center gap-1.5">
                   <PercentIcon className="size-3.5" /> Commission
                 </CardDescription>
-                <CardTitle className="text-2xl tabular-nums">
+                <CardTitle className="text-lg tabular-nums sm:text-2xl">
                   {settings ? `${settings.commission_percent}%` : "—"}
                 </CardTitle>
               </CardHeader>
@@ -128,7 +137,7 @@ export default function FinanceAffiliatePage() {
                 <CardDescription className="flex items-center gap-1.5">
                   <UserPlusIcon className="size-3.5" /> Pending commissions
                 </CardDescription>
-                <CardTitle className="text-2xl tabular-nums">{totals.pending ?? "—"}</CardTitle>
+                <CardTitle className="text-lg tabular-nums sm:text-2xl">{totals.pending ?? "—"}</CardTitle>
               </CardHeader>
               <CardContent className="text-sm text-muted-foreground">
                 Awaiting settlement
@@ -139,7 +148,7 @@ export default function FinanceAffiliatePage() {
                 <CardDescription className="flex items-center gap-1.5">
                   <ReceiptTextIcon className="size-3.5" /> Paid commissions
                 </CardDescription>
-                <CardTitle className="text-2xl tabular-nums">{totals.paid ?? "—"}</CardTitle>
+                <CardTitle className="text-lg tabular-nums sm:text-2xl">{totals.paid ?? "—"}</CardTitle>
               </CardHeader>
               <CardContent className="text-sm text-muted-foreground">
                 {totals.all ?? "—"} commission record(s) in total

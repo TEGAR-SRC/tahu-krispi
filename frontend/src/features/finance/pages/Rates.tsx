@@ -137,8 +137,17 @@ export default function FinanceRatesPage() {
   }, [page])
 
   useEffect(() => {
-    const t = setTimeout(() => void load(), 0)
-    return () => clearTimeout(t)
+    let cancelled = false
+    const t = setTimeout(() => {
+      void (async () => {
+        try {
+          await load()
+        } catch {
+          if (!cancelled) setError(null)
+        }
+      })()
+    }, 0)
+    return () => { cancelled = true; clearTimeout(t) }
   }, [load])
 
   // Rates grouped by product code; within a product, sorted by dimension.
@@ -364,7 +373,7 @@ function RateCreateDialog({
             {formError}
           </p>
         ) : null}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="col-span-2 space-y-1.5">
             <Label>Product *</Label>
             <Select value={productId} onValueChange={setProductId}>

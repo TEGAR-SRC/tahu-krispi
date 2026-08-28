@@ -48,6 +48,7 @@ export function NavProjects({
                   className="aria-expanded:bg-muted"
                 >
                   <MoreHorizontalIcon
+                    aria-hidden="true"
                   />
                   <span className="sr-only">More</span>
                 </SidebarMenuAction>
@@ -58,16 +59,16 @@ export function NavProjects({
                 align={isMobile ? "end" : "start"}
               >
                 <DropdownMenuItem>
-                  <FolderIcon className="text-muted-foreground" />
+                  <FolderIcon className="text-muted-foreground" aria-hidden="true" />
                   <span>View Project</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
-                  <ShareIcon className="text-muted-foreground" />
+                  <ShareIcon className="text-muted-foreground" aria-hidden="true" />
                   <span>Share Project</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
-                  <Trash2Icon className="text-muted-foreground" />
+                  <Trash2Icon className="text-muted-foreground" aria-hidden="true" />
                   <span>Delete Project</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -77,6 +78,7 @@ export function NavProjects({
         <SidebarMenuItem>
           <SidebarMenuButton>
             <MoreHorizontalIcon
+              aria-hidden="true"
             />
             <span>More</span>
           </SidebarMenuButton>

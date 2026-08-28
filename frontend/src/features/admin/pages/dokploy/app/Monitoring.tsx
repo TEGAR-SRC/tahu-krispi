@@ -70,7 +70,7 @@ export default function DokployMonitoringPage() {
           <Button
             variant="outline"
             onClick={() =>
-              void mutate(() => dokploy("GET", "user.getMetricsToken"), "Metrics token loaded", undefined).then((result) => setToken(result.result))
+              void mutate(() => dokploy("GET", "user.getMetricsToken"), "Metrics token loaded", undefined).then((result) => setToken(result.result)).catch(() => {})
             }
           >
             Load metrics token
