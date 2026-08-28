@@ -206,7 +206,7 @@ function CustomerShell() {
           <Separator orientation="vertical" className="mr-1 !h-4" />
           <OrgSwitcher />
         </header>
-        <main className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+        <main className="flex flex-1 flex-col gap-6 overflow-hidden p-4 md:p-6">
           <Outlet />
         </main>
       </SidebarInset>
