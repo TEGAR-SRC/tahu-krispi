@@ -46,6 +46,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { QRCodeSVG } from "qrcode.react"
 import { apiDelete, apiGet, apiPost, ApiError } from "@/lib/api"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { ErrorBanner } from "@/components/shared/ErrorBanner"
@@ -326,14 +327,14 @@ function MfaCard() {
         ) : null}
 
         {setup ? (
-          <div className="space-y-3 rounded-md border p-4">
-            <p className="text-sm font-medium">1. Add this secret to your authenticator app</p>
+          <div className="space-y-4 rounded-md border p-4">
+            <p className="text-sm font-medium">1. Scan this QR code with your authenticator app</p>
+            <div className="flex justify-center rounded-lg bg-white p-4">
+              <QRCodeSVG value={setup.otpauth_url} size={180} />
+            </div>
+            <p className="text-sm font-medium">2. Or copy this secret manually</p>
             <p className="break-all rounded bg-muted px-2 py-1 font-mono text-xs select-all">
               {setup.secret}
-            </p>
-            <p className="text-sm font-medium">2. Or paste the otpauth URI</p>
-            <p className="break-all rounded bg-muted px-2 py-1 font-mono text-xs select-all">
-              {setup.otpauth_url}
             </p>
             <p className="text-sm font-medium">3. Enter the current 6-digit code to confirm</p>
             <div className="flex max-w-xs gap-2">
