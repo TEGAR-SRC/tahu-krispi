@@ -50,12 +50,12 @@ async function passkeyLogin(): Promise<{ access_token: string; refresh_token: st
   }
 
   // 1. Begin
-  const { options, handle } = await apiPost<{
+  const { data } = await apiPost<{
     options: Record<string, unknown>
     handle: string
   }>("/auth/passkey/begin-login")
 
-  const opts = (options.publicKey ?? options) as Record<string, unknown>
+  const opts = (data.options.publicKey ?? data.options) as Record<string, unknown>
   const assertionOptions: PublicKeyCredentialRequestOptions = {
     challenge: b64urlToBytes(String(opts.challenge)),
     timeout: typeof opts.timeout === "number" ? opts.timeout : 60000,
@@ -72,20 +72,24 @@ async function passkeyLogin(): Promise<{ access_token: string; refresh_token: st
   const response = cred.response as AuthenticatorAssertionResponse
 
   // 3. Complete
-  return apiPost("/auth/passkey/login", {
-    handle,
-    credential: {
-      id: cred.id,
-      rawId: bytesToB64url(cred.rawId),
-      type: cred.type,
-      response: {
-        authenticatorData: bytesToB64url(response.authenticatorData),
-        clientDataJSON: bytesToB64url(response.clientDataJSON),
-        signature: bytesToB64url(response.signature),
-        userHandle: response.userHandle ? bytesToB64url(response.userHandle) : undefined,
+  const { data: tokens } = await apiPost<{ access_token: string; refresh_token: string }>(
+    "/auth/passkey/login",
+    {
+      handle: data.handle,
+      credential: {
+        id: cred.id,
+        rawId: bytesToB64url(cred.rawId),
+        type: cred.type,
+        response: {
+          authenticatorData: bytesToB64url(response.authenticatorData),
+          clientDataJSON: bytesToB64url(response.clientDataJSON),
+          signature: bytesToB64url(response.signature),
+          userHandle: response.userHandle ? bytesToB64url(response.userHandle) : undefined,
+        },
       },
     },
-  })
+  )
+  return tokens
 }
 
 export default function LoginPage() {
