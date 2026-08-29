@@ -81,8 +81,8 @@ func NewServer(cfg *config.Config, log *logger.Logger, db *pgxpool.Pool, rdb *go
 	encKey := crypto.DeriveKey("kilat-secret-kek", cfg.SecretEncryptionKey)
 	// WebAuthn Relying Party config derives from the existing public-domain
 	// settings: RPID is the bare registrable domain, origins are where the
-	// console frontend runs navigator.credentials.create().
-	passkeyMgr, err := user.NewPasskeyManager(db, rdb, encKey, cfg.AppDomain, []string{cfg.ConsoleBaseURL})
+	// user/admin consoles run navigator.credentials.create().
+	passkeyMgr, err := user.NewPasskeyManager(db, rdb, encKey, cfg.AppDomain, []string{cfg.ConsoleBaseURL, cfg.AdminConsoleBaseURL})
 	if err != nil {
 		return nil, err
 	}

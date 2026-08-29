@@ -16,10 +16,11 @@ type Config struct {
 	RequestIDHeader string
 
 	// Public domains (kilat-cloud.com)
-	AppDomain        string
-	PublicAPIBaseURL string // https://api.kilat-cloud.com
-	ConsoleBaseURL   string // https://console.kilat-cloud.com
-	DownloadBaseURL  string // https://dl.kilat-cloud.com
+	AppDomain           string
+	PublicAPIBaseURL    string // https://api.kilat-cloud.com
+	ConsoleBaseURL      string // https://console.kilat-cloud.com (user console)
+	AdminConsoleBaseURL string // https://admin.kilat-cloud.com (staff console)
+	DownloadBaseURL     string // https://dl.kilat-cloud.com
 
 	DatabaseURL string
 	RedisURL    string
@@ -87,6 +88,7 @@ func Load() (*Config, error) {
 		AppDomain:                getEnv("APP_DOMAIN", "kilat-cloud.com"),
 		PublicAPIBaseURL:         getEnv("PUBLIC_API_BASE_URL", "https://api.kilat-cloud.com"),
 		ConsoleBaseURL:           getEnv("CONSOLE_BASE_URL", "https://console.kilat-cloud.com"),
+		AdminConsoleBaseURL:      getEnv("ADMIN_CONSOLE_BASE_URL", "https://admin.kilat-cloud.com"),
 		DownloadBaseURL:          getEnv("DOWNLOAD_BASE_URL", "https://dl.kilat-cloud.com"),
 		DatabaseURL:              getEnvRequired("DATABASE_URL"),
 		RedisURL:                 getEnvRequired("REDIS_URL"),
@@ -166,6 +168,7 @@ func (c *Config) CORSOrigins() string {
 	}
 	add(c.PublicAPIBaseURL)
 	add(c.ConsoleBaseURL)
+	add(c.AdminConsoleBaseURL)
 	// AppDomain is bare (kilat-cloud.com); prefix with https:// for valid origin.
 	if c.AppDomain != "" {
 		origins = append(origins, "https://"+c.AppDomain)
