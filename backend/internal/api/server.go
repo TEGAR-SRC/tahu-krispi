@@ -4,9 +4,11 @@ package api
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/cors"
 	"github.com/gofiber/fiber/v3/middleware/recover"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -135,6 +137,13 @@ func NewServer(cfg *config.Config, log *logger.Logger, db *pgxpool.Pool, rdb *go
 	app.Use(recover.New())
 	app.Use(mw.RequestID())
 	app.Use(mw.SecurityHeaders())
+	app.Use(cors.New(cors.Config{
+		AllowOrigins:     strings.Split(s.cfg.CORSOrigins(), ","),
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
+		AllowHeaders:     []string{"Content-Type", "Authorization", "X-Request-ID", "X-Organization-ID"},
+		AllowCredentials: true,
+		MaxAge:           86400,
+	}))
 	app.Use(func(c fiber.Ctx) error {
 		start := time.Now()
 		err := c.Next()

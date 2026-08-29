@@ -68,6 +68,7 @@ type Config struct {
 
 	RateLimitLoginPerMinute  int
 	RateLimitRegisterPerHour int
+	CORSAllowedOrigins       string // comma-separated list; defaults to known Kilat Cloud domains
 
 	OTPDebugEcho bool // development-only: return OTP in API response (no SMS/WhatsApp gateway configured yet)
 	// AutoVerifyEmail activates accounts immediately after registration. Intended for
@@ -121,6 +122,7 @@ func Load() (*Config, error) {
 		SumopodWebhookToken:     getEnv("SUMOPOD_WEBHOOK_TOKEN", ""),
 		RateLimitLoginPerMinute:  getEnvInt("RATE_LIMIT_LOGIN_PER_MINUTE", 10),
 		RateLimitRegisterPerHour: getEnvInt("RATE_LIMIT_REGISTER_PER_HOUR", 20),
+		CORSAllowedOrigins:       getEnv("CORS_ALLOWED_ORIGINS", ""),
 		OTPDebugEcho:             getEnv("OTP_DEBUG_ECHO", "false") == "true",
 		AutoVerifyEmail:          getEnv("AUTO_VERIFY_EMAIL", "false") == "true",
 		SubscriptionGraceDays:    getEnvInt("SUBSCRIPTION_GRACE_DAYS", 3),
@@ -148,6 +150,31 @@ func (c *Config) validate() error {
 		return fmt.Errorf("missing required environment variables: %s", strings.Join(missing, ", "))
 	}
 	return nil
+}
+
+// CORSOrigins returns the configured CORS origins or a safe default
+// covering the known Kilat Cloud domains. Each origin includes its scheme.
+func (c *Config) CORSOrigins() string {
+	if c.CORSAllowedOrigins != "" {
+		return c.CORSAllowedOrigins
+	}
+	origins := []string{}
+	add := func(url string) {
+		if url != "" {
+			origins = append(origins, url)
+		}
+	}
+	add(c.PublicAPIBaseURL)
+	add(c.ConsoleBaseURL)
+	// AppDomain is bare (kilat-cloud.com); prefix with https:// for valid origin.
+	if c.AppDomain != "" {
+		origins = append(origins, "https://"+c.AppDomain)
+	}
+	origins = append(origins, []string{
+		"http://localhost:8080",
+		"http://localhost:5173",
+	}...)
+	return strings.Join(origins, ",")
 }
 
 func getEnv(key, def string) string {
