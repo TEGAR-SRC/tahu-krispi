@@ -26,6 +26,7 @@ const PrivacyPage = lazy(() => import("@/features/auth/PrivacyPage"))
 
 // ---- Lazy pages: customer -----------------------------------------------------
 const CustomerOverview = lazy(() => import("@/features/customer/pages/Overview"))
+const LandingPage = lazy(() => import("@/features/customer/pages/Landing"))
 const CustomerInstances = lazy(() =>
   import("@/features/customer/pages/Instances"),
 )
@@ -182,10 +183,12 @@ function RootRedirect() {
     )
   }
 
+  // Authenticated customers land in the console; everyone else sees the
+  // public marketing landing page at /.
   if (token && role) {
     return <Navigate to={homePathFor(role)} replace />
   }
-  return <Navigate to="/login" replace />
+  return <LandingPage />
 }
 
 function NotFound() {

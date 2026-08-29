@@ -38,6 +38,7 @@ export const adminNav: ConsoleNavSection[] = [
       { title: "Orphan resources", url: "/admin/orphans", icon: BoxesIcon },
       { title: "Tickets", url: "/admin/tickets", icon: LifeBuoyIcon },
       { title: "Audit logs", url: "/admin/audit-logs", icon: ScrollTextIcon },
+      { title: "Landing content", url: "/admin/landing", icon: ScrollTextIcon },
     ],
   },
   {

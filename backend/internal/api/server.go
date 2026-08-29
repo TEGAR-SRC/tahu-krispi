@@ -261,6 +261,9 @@ func (s *Server) registerRoutes() {
 	v1.Get("/instance-types", s.handleListInstanceTypes)
 	v1.Get("/os-templates", s.handleListOSTemplates)
 
+	// Landing / marketing content (public, published sections only).
+	v1.Get("/landing", s.handlePublicLanding)
+
 	// Organizations.
 	v1.Get("/organizations", s.authAny(), s.handleListOrganizations)
 	v1.Post("/organizations", s.authJWT(), s.handleCreateOrganization)
@@ -522,6 +525,11 @@ func (s *Server) registerRoutes() {
 	admin.Get("/storage-backends", s.requireStaff("infra"), s.handleListStorageBackends)
 	admin.Put("/storage-backends/:code", s.requireStaff("infra"), s.handleUpsertStorageBackend)
 	admin.Delete("/storage-backends/:code", s.requireStaff("infra"), s.handleDisableStorageBackend)
+	// Landing / marketing content editor (platform admin + NOC).
+	admin.Get("/landing", s.requireStaff("marketing"), s.handleListLandingSections)
+	admin.Post("/landing", s.requireStaff("marketing"), s.handleCreateLandingSection)
+	admin.Put("/landing/:id", s.requireStaff("marketing"), s.handleUpdateLandingSection)
+	admin.Delete("/landing/:id", s.requireStaff("marketing"), s.handleDeleteLandingSection)
 	admin.Post("/plans/:plan_id/prices", s.requireStaff("billing"), s.adminUpsertPlanPrice)
 	admin.Get("/custom-rates", s.requireStaff("billing"), s.adminListCustomRates)
 	admin.Post("/custom-rates", s.requireStaff("billing"), s.adminUpsertCustomRate)

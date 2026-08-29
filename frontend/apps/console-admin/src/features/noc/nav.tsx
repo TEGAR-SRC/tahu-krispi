@@ -5,6 +5,7 @@ import {
   CloudCogIcon,
   GaugeIcon,
   LifeBuoyIcon,
+  ScrollTextIcon,
   ServerIcon,
   ShieldHalfIcon,
   WorkflowIcon,
@@ -31,6 +32,7 @@ export const nocNav: ConsoleNavSection[] = [
     items: [
       { title: "Tickets", url: "/noc/tickets", icon: LifeBuoyIcon },
       { title: "Security", url: "/noc/security", icon: ShieldHalfIcon },
+      { title: "Landing content", url: "/noc/landing", icon: ScrollTextIcon },
     ],
   },
 ]

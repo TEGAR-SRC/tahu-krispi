@@ -178,11 +178,12 @@ const (
 //	           networks, providers (+sync), provider accounts, storage backends
 //	tickets  — staff ticket queue (reply/assign/close/attachments)
 //	users    — customer accounts (suspend/activate/limits)
+//	marketing — landing / marketing content (hero, features, pricing, faq, blog)
 //	settings — feature flags, app settings, audit logs, grant-admin
 var staffPermissions = map[StaffRole][]string{
 	StaffPlatformAdmin: {"*"},
 	StaffFinance:       {"billing", "affiliate", "users.read"},
-	StaffNOC:           {"infra", "tickets", "users.read"},
+	StaffNOC:           {"infra", "tickets", "users.read", "marketing"},
 }
 
 // StaffCan reports whether the staff role grants the admin area.
