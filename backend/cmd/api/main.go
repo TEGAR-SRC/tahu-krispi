@@ -11,6 +11,7 @@ import (
 	"kilat.cloud/backend/internal/api"
 	"kilat.cloud/backend/internal/platform/config"
 	"kilat.cloud/backend/internal/platform/logger"
+	"kilat.cloud/backend/internal/platform/migrate"
 	"kilat.cloud/backend/internal/platform/postgres"
 	redisclient "kilat.cloud/backend/internal/platform/redis"
 )
@@ -31,6 +32,14 @@ func main() {
 		os.Exit(1)
 	}
 	defer db.Close()
+
+	// Apply any pending schema migrations before serving traffic. Idempotent
+	// and guarded by schema_migrations, so a fresh database is self-healed on
+	// first boot while existing deployments are a no-op.
+	if err := migrate.Run(ctx, cfg.DatabaseURL); err != nil {
+		log.Error("migrations failed", map[string]any{"error": err.Error()})
+		os.Exit(1)
+	}
 
 	rdb, err := redisclient.New(ctx, cfg.RedisURL)
 	if err != nil {
