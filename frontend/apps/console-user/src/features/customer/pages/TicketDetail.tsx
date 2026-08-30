@@ -1,8 +1,12 @@
 // Ticket thread page (/app/tickets/:ticketId): conversation view for one
 // ticket of the active organization, reply with optional attachments (≤10
-// files, 100 MB per file) with upload progress, presigned attachment download
-// and close-with-confirm. The ticket itself is resolved by matching the id in
-// the organization's ticket list because the API has no single-ticket GET.
+// files, 100 MB total, 100 MB per file) with upload progress, presigned
+// attachment download and close-with-confirm. The ticket itself is resolved
+// by matching the id in the organization's ticket list because the API has
+// no single-ticket GET.
+// Chat UI tokens (bubble, scroll, attachment, progress, composer) are kept
+// identical to the staff consoles (admin + NOC) via the same class set and
+// formatting helpers.
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import {
@@ -24,6 +28,7 @@ import {
 } from "@/components/ui/breadcrumb"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Progress } from "@/components/ui/progress"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
@@ -38,10 +43,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { apiGet, apiPost, getToken, ApiError } from "@/lib/api"
+import { API_BASE, apiGet, apiPost, getToken, ApiError } from "@/lib/api"
 import { ErrorBanner } from "@/components/shared/ErrorBanner"
 import { StatusBadge } from "../components"
-import { formatBytes, formatDateTime } from "../format"
 import { orgHeaders, useOrg } from "../useOrg"
 import { uploadMultipart } from "../upload"
 
@@ -74,6 +78,77 @@ interface MessageRow {
 
 const MAX_FILES = 10
 const MAX_FILE_BYTES = 100 * 1024 * 1024
+const MAX_TOTAL_BYTES = 100 * 1024 * 1024
+
+// ---------------------------------------------------------------------------
+// Chat visual tokens – MUST stay in sync with console-admin TicketChat.tsx
+// ---------------------------------------------------------------------------
+const MESSAGE_BASE_CLASS = "rounded-lg border p-3"
+const ATTACHMENT_LIST_CLASS = "mt-2 space-y-1 border-t pt-2"
+const FILE_PILL_CLASS =
+  "flex min-w-0 items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs"
+const COMPOSER_CLASS = "space-y-2 rounded-lg border p-3"
+
+function messageVariantClass(authorType: string): string {
+  const t = authorType.toLowerCase()
+  if (t === "internal_note") return "border-amber-500/30 bg-amber-500/5"
+  if (t === "staff" || t === "support") return "border-primary/20 bg-primary/5"
+  if (t === "customer") return "bg-muted/50"
+  return ""
+}
+
+function authorLabel(authorType: string): string {
+  const t = authorType.toLowerCase()
+  if (t === "customer") return "You"
+  if (t === "staff" || t === "support") return "Support"
+  if (t === "internal_note") return "internal note"
+  return authorType || "—"
+}
+
+function parseApiDate(raw?: string | null): Date | null {
+  if (!raw) return null
+  const text = raw.trim()
+  const match =
+    /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2}(?:\.\d+)?)([+-]\d{2}(?::?\d{2})?|Z)?$/.exec(
+      text,
+    )
+  if (!match) {
+    const fallback = new Date(text)
+    return Number.isNaN(fallback.getTime()) ? null : fallback
+  }
+  const [, datePart, timePart, rawOffset] = match
+  let offset = ""
+  if (rawOffset && rawOffset !== "Z") {
+    const sign = rawOffset.startsWith("-") ? "-" : "+"
+    const digits = rawOffset.replace(/[+-]/g, "").replace(":", "")
+    offset = `${sign}${digits.slice(0, 2)}:${digits.slice(2, 4) || "00"}`
+  }
+  const [hms, fraction] = timePart.split(".")
+  const millis = fraction ? `.${fraction.slice(0, 3).padEnd(3, "0")}` : ""
+  const parsed = new Date(`${datePart}T${hms}${millis}${offset || "Z"}`)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
+function formatChatDateTime(raw?: string | null): string {
+  const parsed = parseApiDate(raw)
+  if (parsed) return parsed.toLocaleString()
+  if (!raw) return "—"
+  const fallback = new Date(raw)
+  return Number.isNaN(fallback.getTime()) ? raw : fallback.toLocaleString()
+}
+
+function formatChatBytes(bytes?: number | null): string {
+  if (bytes === null || bytes === undefined || Number.isNaN(bytes)) return "—"
+  if (bytes <= 0) return "0 B"
+  const units = ["B", "KiB", "MiB", "GiB", "TiB"]
+  let value = bytes
+  let unit = 0
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024
+    unit += 1
+  }
+  return `${value.toFixed(unit === 0 ? 0 : 1)} ${units[unit]}`
+}
 
 export default function CustomerTicketThreadPage() {
   const { ticketId = "" } = useParams()
@@ -125,6 +200,27 @@ export default function CustomerTicketThreadPage() {
     return () => { cancelled = true; clearTimeout(t) }
   }, [load])
 
+  const pickFiles = useCallback((selected: File[]) => {
+    if (selected.length === 0) return
+    setFiles((current) => {
+      const merged = [...current, ...selected].slice(0, MAX_FILES)
+      if (current.length + selected.length > MAX_FILES) {
+        toast.error(`At most ${MAX_FILES} files per message`)
+      }
+      for (const f of merged) {
+        if (f.size > MAX_FILE_BYTES) {
+          toast.error(`"${f.name}" exceeds the 100 MB per-file cap`)
+          return current
+        }
+      }
+      if (merged.reduce((sum, f) => sum + f.size, 0) > MAX_TOTAL_BYTES) {
+        toast.error("Attachments exceed the 100 MB total size cap")
+        return current
+      }
+      return merged
+    })
+  }, [])
+
   const send = async () => {
     if (!body.trim()) {
       toast.error("Write a reply first")
@@ -139,6 +235,10 @@ export default function CustomerTicketThreadPage() {
         toast.error(`"${file.name}" exceeds the 100 MB per-file cap`)
         return
       }
+    }
+    if (files.reduce((sum, f) => sum + f.size, 0) > MAX_TOTAL_BYTES) {
+      toast.error("Attachments exceed the 100 MB total size cap")
+      return
     }
     setPercent(0)
     try {
@@ -181,19 +281,32 @@ export default function CustomerTicketThreadPage() {
   const downloadAttachment = async (messageId: string, attachment: AttachmentView) => {
     try {
       const response = await fetch(
-        `/api/v1/tickets/${ticketId}/messages/${messageId}/attachments/${attachment.id}`,
+        `${API_BASE}/tickets/${ticketId}/messages/${messageId}/attachments/${attachment.id}`,
         { headers: { Authorization: `Bearer ${getToken() ?? ""}` } },
       )
       if (!response.ok) throw new Error(`Download failed (${response.status})`)
-      // Endpoint answers either a platform envelope {data:{url}} or a bare
-      // {url}; unwrap both before opening.
-      const payload = (await response.json()) as {
-        url?: string
-        data?: { url?: string }
+      const contentType = response.headers.get("content-type") ?? ""
+      if (contentType.includes("application/json")) {
+        const payload = (await response.json()) as {
+          url?: string
+          data?: { url?: string }
+        }
+        const url = payload.data?.url ?? payload.url
+        if (!url) throw new Error("No download link returned")
+        window.open(url, "_blank", "noopener,noreferrer")
+        return
       }
-      const url = payload.data?.url ?? payload.url
-      if (!url) throw new Error("No download link returned")
-      window.open(url, "_blank", "noopener,noreferrer")
+      const blob = await response.blob()
+      const disposition = response.headers.get("content-disposition") ?? ""
+      const match = /filename="?([^";]+)"?/.exec(disposition)
+      const objectUrl = URL.createObjectURL(blob)
+      const anchor = document.createElement("a")
+      anchor.href = objectUrl
+      anchor.download = match?.[1] ?? attachment.filename
+      document.body.appendChild(anchor)
+      anchor.click()
+      anchor.remove()
+      URL.revokeObjectURL(objectUrl)
     } catch (cause) {
       toast.error(cause instanceof Error ? cause.message : "Attachment download failed")
     }
@@ -245,7 +358,7 @@ export default function CustomerTicketThreadPage() {
                 #{ticket?.ticket_number ?? ticketId.slice(0, 8)}
                 {ticket?.category ? ` · ${ticket.category}` : ""}
                 {ticket?.priority ? ` · ${ticket.priority}` : ""}
-                {ticket?.created_at ? ` · opened ${formatDateTime(ticket.created_at)}` : ""}
+                {ticket?.created_at ? ` · opened ${formatChatDateTime(ticket.created_at)}` : ""}
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-2">
@@ -290,19 +403,17 @@ export default function CustomerTicketThreadPage() {
                     messages.map((message) => (
                       <div
                         key={message.id}
-                        className={`rounded-lg border p-3 ${
-                          message.author_type === "customer" ? "bg-muted/50" : ""
-                        }`}
+                        className={`${MESSAGE_BASE_CLASS} ${messageVariantClass(message.author_type)}`}
                       >
                         <div className="mb-1.5 flex items-center gap-2 text-xs text-muted-foreground">
                           <span className="font-medium capitalize text-foreground">
-                            {message.author_type === "customer" ? "You" : "Support"}
+                            {authorLabel(message.author_type)}
                           </span>
-                          <span>{formatDateTime(message.created_at)}</span>
+                          <span>{formatChatDateTime(message.created_at)}</span>
                         </div>
                         <p className="whitespace-pre-wrap text-sm">{message.body}</p>
                         {(message.attachments?.length ?? 0) > 0 ? (
-                          <ul className="mt-2 space-y-1 border-t pt-2">
+                          <ul className={ATTACHMENT_LIST_CLASS}>
                             {(message.attachments ?? []).map((attachment) => (
                               <li key={attachment.id}>
                                 <button
@@ -312,8 +423,8 @@ export default function CustomerTicketThreadPage() {
                                     void downloadAttachment(message.id, attachment)
                                   }
                                 >
-                                  <PaperclipIcon className="size-3" />
-                                  {attachment.filename} ({formatBytes(attachment.size_bytes)})
+                                  <PaperclipIcon className="size-3 shrink-0" />
+                                  {attachment.filename} ({formatChatBytes(attachment.size_bytes)})
                                 </button>
                               </li>
                             ))}
@@ -331,7 +442,7 @@ export default function CustomerTicketThreadPage() {
                   questions.
                 </p>
               ) : (
-                <div className="space-y-2 rounded-md border p-3">
+                <div className={COMPOSER_CLASS}>
                   <Textarea
                     rows={3}
                     value={body}
@@ -343,15 +454,16 @@ export default function CustomerTicketThreadPage() {
                       {files.map((file, index) => (
                         <li
                           key={`${file.name}-${index}`}
-                          className="flex min-w-0 items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs"
+                          className={FILE_PILL_CLASS}
                         >
-                          <PaperclipIcon className="size-3" />
-                          {file.name} ({formatBytes(file.size)})
+                          <PaperclipIcon className="size-3 shrink-0" />
+                          {file.name} ({formatChatBytes(file.size)})
                           <button
                             type="button"
                             aria-label={`Remove ${file.name}`}
+                            disabled={percent !== null}
                             onClick={() => setFiles(files.filter((_, i) => i !== index))}
-                            className="rounded-full p-0.5 hover:bg-background"
+                            className="rounded-full p-0.5 hover:bg-background disabled:opacity-50"
                           >
                             <XIcon className="size-3" />
                           </button>
@@ -360,19 +472,23 @@ export default function CustomerTicketThreadPage() {
                     </ul>
                   ) : null}
                   {percent !== null ? (
-                    <p className="text-xs tabular-nums text-muted-foreground">
-                      Uploading… {percent}%
-                    </p>
+                    <div className="flex min-w-0 items-center gap-2 text-xs">
+                      <span className="text-muted-foreground">Uploading…</span>
+                      <Progress value={percent} className="h-1 flex-1" />
+                      <span className="w-10 shrink-0 text-right tabular-nums text-muted-foreground">
+                        {percent}%
+                      </span>
+                    </div>
                   ) : null}
-                  <div className="flex min-w-0 items-center justify-between gap-2">
-                    <div>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex min-w-0 flex-wrap items-center gap-3">
                       <Input
                         ref={fileInputRef}
                         type="file"
                         multiple
                         accept="image/*,video/*,text/*,.pdf,.zip,.log"
                         className="hidden"
-                        onChange={(event) => setFiles(Array.from(event.target.files ?? []))}
+                        onChange={(event) => pickFiles(Array.from(event.target.files ?? []))}
                       />
                       <Button
                         type="button"
@@ -383,12 +499,15 @@ export default function CustomerTicketThreadPage() {
                       >
                         <PaperclipIcon /> Attach files
                       </Button>
+                      <span className="text-xs text-muted-foreground">
+                        ≤ {MAX_FILES} files, 100 MB total
+                      </span>
                     </div>
-                    <Button onClick={() => void send()} disabled={percent !== null}>
+                    <Button size="sm" onClick={() => void send()} disabled={percent !== null || !body.trim()}>
                       {percent !== null ? (
                         <Loader2Icon className="animate-spin" />
                       ) : (
-                        <SendIcon />
+                        <SendIcon className="size-4" />
                       )}
                       Send
                     </Button>

@@ -7,7 +7,7 @@
 //   GET /v1/admin/tickets/:ticket_id/messages/:message_id/attachments/
 //     :attachment_id — answers JSON {data:{url}} presigned link or streams the
 //     raw bytes depending on the storage backend.
-import { getToken } from "@/lib/api"
+import { API_BASE, getToken } from "@/lib/api"
 
 /** Server-enforced reply limits, mirrored client-side before uploading. */
 export const MAX_REPLY_FILES = 10
@@ -98,7 +98,7 @@ export function uploadStaffTicketReply(
     const xhr = new XMLHttpRequest()
     xhr.open(
       "POST",
-      `/api/v1/admin/tickets/${encodeURIComponent(ticketId)}/reply/attachments`,
+      `${API_BASE}/admin/tickets/${encodeURIComponent(ticketId)}/reply/attachments`,
     )
     xhr.responseType = "text"
     const token = getToken()
@@ -157,7 +157,7 @@ export async function downloadStaffTicketAttachment(
   target: DownloadTarget,
 ): Promise<void> {
   const response = await fetch(
-    `/api/v1/admin/tickets/${encodeURIComponent(ticketId)}/messages/${encodeURIComponent(target.messageId)}/attachments/${encodeURIComponent(target.attachmentId)}`,
+    `${API_BASE}/admin/tickets/${encodeURIComponent(ticketId)}/messages/${encodeURIComponent(target.messageId)}/attachments/${encodeURIComponent(target.attachmentId)}`,
     { headers: { Authorization: `Bearer ${getToken() ?? ""}` } },
   )
   if (!response.ok) {

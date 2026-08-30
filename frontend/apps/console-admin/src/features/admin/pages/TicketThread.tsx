@@ -6,14 +6,14 @@
 // replies may carry up to 10 attachments (100 MB total) posted multipart to
 // POST /admin/tickets/:ticket_id/reply/attachments with per-file progress,
 // and message attachments download through the staff attachment endpoint.
+// Chat UI tokens are identical to console-user and NOC.
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { toast } from "sonner"
-import { ArrowLeftIcon, Loader2Icon, PaperclipIcon, XIcon } from "lucide-react"
+import { ArrowLeftIcon, Loader2Icon, PaperclipIcon, SendIcon, XIcon } from "lucide-react"
 import { apiGet, apiPost, ApiError } from "@/lib/api"
 import {
   downloadStaffTicketAttachment,
-  formatBytes,
   MAX_REPLY_FILES,
   MAX_TOTAL_BYTES,
   uploadStaffTicketReply,
@@ -32,10 +32,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Select,
   SelectContent,
@@ -58,6 +60,45 @@ interface TicketMessage {
   body: string
   created_at: string
   attachments?: AttachmentView[]
+}
+
+// ---------------------------------------------------------------------------
+// Chat visual tokens – MUST stay in sync with console-user & NOC chat
+// ---------------------------------------------------------------------------
+const MESSAGE_BASE_CLASS = "rounded-lg border p-3"
+const ATTACHMENT_LIST_CLASS = "mt-2 space-y-1 border-t pt-2"
+const FILE_PILL_CLASS =
+  "flex min-w-0 items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs"
+const COMPOSER_CLASS = "space-y-2 rounded-lg border p-3"
+
+function messageVariantClass(authorType: string): string {
+  const t = authorType.toLowerCase()
+  if (t === "internal_note") return "border-amber-500/30 bg-amber-500/5"
+  if (t === "staff" || t === "support") return "border-primary/20 bg-primary/5"
+  if (t === "customer") return "bg-muted/50"
+  return ""
+}
+
+function authorLabel(authorType: string): string {
+  const t = authorType.toLowerCase()
+  if (t === "internal_note") return "internal note"
+  if (t === "customer") return "customer"
+  if (t === "staff") return "staff"
+  if (t === "support") return "Support"
+  return authorType || "—"
+}
+
+function formatChatBytes(bytes?: number | null): string {
+  if (bytes === null || bytes === undefined || Number.isNaN(bytes)) return "—"
+  if (bytes <= 0) return "0 B"
+  const units = ["B", "KiB", "MiB", "GiB", "TiB"]
+  let value = bytes
+  let unit = 0
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024
+    unit += 1
+  }
+  return `${value.toFixed(unit === 0 ? 0 : 1)} ${units[unit]}`
 }
 
 export default function TicketThreadPage() {
@@ -191,6 +232,12 @@ function Conversation({
     if (files.length + selected.length > MAX_REPLY_FILES) {
       toast.error(`At most ${MAX_REPLY_FILES} files per reply`)
     }
+    for (const f of merged) {
+      if (f.size > 100 * 1024 * 1024) {
+        toast.error(`"${f.name}" exceeds the 100 MB per-file cap`)
+        return
+      }
+    }
     if (merged.reduce((sum, file) => sum + file.size, 0) > MAX_TOTAL_BYTES) {
       toast.error("Attachments exceed the 100 MB total size cap")
       return
@@ -282,175 +329,179 @@ function Conversation({
   return (
     <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       {/* Conversation thread */}
-      <section className="space-y-2 rounded-md border p-4">
-        <h2 className="text-sm font-semibold">Conversation</h2>
-        {messagesError ? (
-          <ErrorBanner error={messagesError} />
-        ) : messages === null ? (
-          <div className="space-y-2">
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-12 w-4/5" />
-            <Skeleton className="h-12 w-2/3" />
-          </div>
-        ) : messages.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No messages yet.</p>
-        ) : (
-          <ol className="space-y-2">
-            {messages.map((message) => (
-              <li
-                key={message.id}
-                className={`rounded-md border p-3 ${
-                  message.author_type === "staff"
-                    ? "border-primary/20 bg-primary/5"
-                    : message.author_type === "internal_note"
-                      ? "border-amber-500/30 bg-amber-500/5"
-                      : ""
-                }`}
-              >
-                <p className="mb-1 flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                  <span className="font-medium capitalize">
-                    {message.author_type === "internal_note"
-                      ? "internal note"
-                      : message.author_type}
-                  </span>
-                  <span>{formatDateTime(message.created_at)}</span>
-                </p>
-                <p className="whitespace-pre-wrap text-sm">{message.body}</p>
-                {(message.attachments?.length ?? 0) > 0 ? (
-                  <ul className="mt-2 space-y-0.5 border-t pt-2">
-                    {(message.attachments ?? []).map((attachment) => (
-                      <li key={attachment.id}>
-                        <button
-                          type="button"
-                          className="flex min-w-0 items-center gap-1.5 text-xs text-primary hover:underline disabled:opacity-50"
-                          onClick={() =>
-                            void downloadAttachment(message.id, attachment)
-                          }
-                        >
-                          <PaperclipIcon className="size-3 shrink-0" />
-                          {attachment.filename} ({formatBytes(attachment.size_bytes)})
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </li>
-            ))}
-          </ol>
-        )}
-      </section>
+      <Card>
+        <CardContent className="space-y-3 pt-6">
+          <h2 className="text-sm font-semibold">Conversation</h2>
+          {messagesError ? (
+            <ErrorBanner error={messagesError} />
+          ) : messages === null ? (
+            <div className="space-y-2">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-4/5" />
+              <Skeleton className="h-12 w-2/3" />
+            </div>
+          ) : (
+            <ScrollArea className="-mx-1 max-h-[52vh] px-1">
+              <div className="space-y-3 pr-2">
+                {messages.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-muted-foreground">No messages yet.</p>
+                ) : (
+                  messages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`${MESSAGE_BASE_CLASS} ${messageVariantClass(message.author_type)}`}
+                    >
+                      <div className="mb-1.5 flex items-center gap-2 text-xs text-muted-foreground">
+                        <span className="font-medium capitalize text-foreground">
+                          {authorLabel(message.author_type)}
+                        </span>
+                        <span>{formatDateTime(message.created_at)}</span>
+                      </div>
+                      <p className="whitespace-pre-wrap text-sm">{message.body}</p>
+                      {(message.attachments?.length ?? 0) > 0 ? (
+                        <ul className={ATTACHMENT_LIST_CLASS}>
+                          {(message.attachments ?? []).map((attachment) => (
+                            <li key={attachment.id}>
+                              <button
+                                type="button"
+                                className="flex min-w-0 items-center gap-1.5 text-xs text-primary hover:underline"
+                                onClick={() =>
+                                  void downloadAttachment(message.id, attachment)
+                                }
+                              >
+                                <PaperclipIcon className="size-3 shrink-0" />
+                                {attachment.filename} ({formatChatBytes(attachment.size_bytes)})
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </div>
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Reply form */}
-      <section className="space-y-2 rounded-md border p-4">
-        <h2 className="text-sm font-semibold">Reply as staff</h2>
-        <Textarea
-          rows={3}
-          placeholder="Write a reply…"
-          value={replyBody}
-          onChange={(event) => setReplyBody(event.target.value)}
-        />
-        {files.length > 0 ? (
-          <ul className="flex flex-wrap gap-1.5">
-            {files.map((file, index) => (
-              <li
-                key={`${file.name}-${index}`}
-                className="flex min-w-0 items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs"
-              >
-                <PaperclipIcon className="size-3" />
-                {file.name} ({formatBytes(file.size)})
-                <button
-                  type="button"
-                  aria-label={`Remove ${file.name}`}
-                  disabled={sending}
-                  onClick={() => setFiles(files.filter((_, i) => i !== index))}
-                  className="rounded-full p-0.5 hover:bg-background"
-                >
-                  <XIcon className="size-3" />
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : null}
-        {filePercents !== null ? (
-          <ul className="space-y-1">
-            {files.map((file, index) => (
-              <li key={`${file.name}-${index}`} className="flex min-w-0 items-center gap-2 text-xs">
-                <span className="min-w-0 w-40 truncate text-muted-foreground">{file.name}</span>
-                <Progress value={filePercents[index] ?? 0} className="h-1 flex-1" />
-                <span className="w-10 shrink-0 text-right tabular-nums text-muted-foreground">
-                  {filePercents[index] ?? 0}%
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : null}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <label className="flex min-w-0 items-center gap-2 text-sm">
-              <Checkbox
-                checked={internalNote}
-                onCheckedChange={(checked) => setInternalNote(checked === true)}
-              />
-              Internal note
-            </label>
-            <Input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept="image/*,video/*,text/*,.pdf,.zip,.log"
-              className="hidden"
-              onChange={(event) => pickFiles(Array.from(event.target.files ?? []))}
+      <Card>
+        <CardContent className="space-y-3 pt-6">
+          <div className={COMPOSER_CLASS}>
+            <Label className="text-sm font-medium">Reply as staff</Label>
+            <Textarea
+              rows={3}
+              placeholder="Write a reply…"
+              value={replyBody}
+              onChange={(event) => setReplyBody(event.target.value)}
             />
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              disabled={sending}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <PaperclipIcon /> Attach files
-            </Button>
-            <span className="text-xs text-muted-foreground">≤ {MAX_REPLY_FILES} files, 100 MB total</span>
+            {files.length > 0 ? (
+              <ul className="flex flex-wrap gap-1.5">
+                {files.map((file, index) => (
+                  <li
+                    key={`${file.name}-${index}`}
+                    className={FILE_PILL_CLASS}
+                  >
+                    <PaperclipIcon className="size-3 shrink-0" />
+                    {file.name} ({formatChatBytes(file.size)})
+                    <button
+                      type="button"
+                      aria-label={`Remove ${file.name}`}
+                      disabled={sending}
+                      onClick={() => setFiles(files.filter((_, i) => i !== index))}
+                      className="rounded-full p-0.5 hover:bg-background disabled:opacity-50"
+                    >
+                      <XIcon className="size-3" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            {filePercents !== null ? (
+              <ul className="space-y-1">
+                {files.map((file, index) => (
+                  <li key={`${file.name}-${index}`} className="flex min-w-0 items-center gap-2 text-xs">
+                    <span className="min-w-0 w-40 truncate text-muted-foreground">{file.name}</span>
+                    <Progress value={filePercents[index] ?? 0} className="h-1 flex-1" />
+                    <span className="w-10 shrink-0 text-right tabular-nums text-muted-foreground">
+                      {filePercents[index] ?? 0}%
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex min-w-0 flex-wrap items-center gap-3">
+                <label className="flex min-w-0 items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={internalNote}
+                    onCheckedChange={(checked) => setInternalNote(checked === true)}
+                  />
+                  Internal note
+                </label>
+                <Input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/*,video/*,text/*,.pdf,.zip,.log"
+                  className="hidden"
+                  onChange={(event) => pickFiles(Array.from(event.target.files ?? []))}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={sending}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <PaperclipIcon /> Attach files
+                </Button>
+                <span className="text-xs text-muted-foreground">≤ {MAX_REPLY_FILES} files, 100 MB total</span>
+              </div>
+              <Button size="sm" disabled={sending || !replyBody.trim()} onClick={() => void sendReply()}>
+                {sending ? <Loader2Icon className="animate-spin" /> : <SendIcon className="size-4" />}
+                {sending ? "Sending…" : internalNote ? "Add note" : "Send reply"}
+              </Button>
+            </div>
           </div>
-          <Button size="sm" disabled={sending} onClick={() => void sendReply()}>
-            {sending ? <Loader2Icon className="animate-spin" /> : null}
-            {sending ? "Sending…" : internalNote ? "Add note" : "Send reply"}
-          </Button>
-        </div>
-      </section>
+        </CardContent>
+      </Card>
 
       {/* Assignment + close */}
-      <section className="grid w-full max-w-full min-w-0 gap-3 rounded-md border p-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label htmlFor="ticket-thread-assignee">Assign to</Label>
-          <Select value={assignTo} onValueChange={setAssignTo}>
-            <SelectTrigger id="ticket-thread-assignee">
-              <SelectValue
-                placeholder={ticket.assigned_to ? "reassign…" : "pick staff…"}
-              />
-            </SelectTrigger>
-            <SelectContent>
-              {assignees.map((user) => (
-                <SelectItem key={user.id} value={user.id}>
-                  {user.email}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button variant="outline" size="sm" onClick={() => void assignTicket()}>
-            Assign
-          </Button>
-        </div>
-        <div className="space-y-1.5 sm:text-right sm:self-end">
-          {ticket.status !== "closed" ? (
-            <Button variant="destructive" size="sm" onClick={() => setCloseOpen(true)}>
-              Close ticket
+      <Card>
+        <CardContent className="grid w-full max-w-full min-w-0 gap-3 pt-6 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="ticket-thread-assignee">Assign to</Label>
+            <Select value={assignTo} onValueChange={setAssignTo}>
+              <SelectTrigger id="ticket-thread-assignee">
+                <SelectValue
+                  placeholder={ticket.assigned_to ? "reassign…" : "pick staff…"}
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {assignees.map((user) => (
+                  <SelectItem key={user.id} value={user.id}>
+                    {user.email}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button variant="outline" size="sm" onClick={() => void assignTicket()}>
+              Assign
             </Button>
-          ) : (
-            <p className="text-sm text-muted-foreground">This ticket is closed.</p>
-          )}
-        </div>
-      </section>
+          </div>
+          <div className="space-y-1.5 sm:text-right sm:self-end">
+            {ticket.status !== "closed" ? (
+              <Button variant="destructive" size="sm" onClick={() => setCloseOpen(true)}>
+                Close ticket
+              </Button>
+            ) : (
+              <p className="text-sm text-muted-foreground">This ticket is closed.</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       <AlertDialog open={closeOpen} onOpenChange={setCloseOpen}>
         <AlertDialogContent>
