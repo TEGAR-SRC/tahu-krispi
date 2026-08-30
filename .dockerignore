@@ -1,0 +1,35 @@
+# Root .dockerignore — build context is the repo root (backend Dockerfile uses
+# context ".."). Keep secrets and heavy dirs out of the Docker build context.
+
+# Secrets
+.env
+.env.*
+*.env
+!*.env.example
+!.env.production
+!**/.env.production
+
+# Build artifacts / binaries
+**/api
+**/worker
+*.log
+tmp/
+**/tmp-*
+
+# Node (frontend not containerized, but excluded from context anyway)
+node_modules
+**/node_modules
+**/dist
+**/.vite
+
+# Go
+vendor/
+
+# Git & editor
+.git
+.gitignore
+.vscode
+.DS_Store
+
+# Backend scripts that aren't needed at build time
+backend/scripts

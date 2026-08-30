@@ -1,0 +1,111 @@
+# Kilat Cloud Backend — Docker deployment
+# Builds the API image from backend/Dockerfile and runs it with PostgreSQL
+# and Redis side-by-side. The API auto-migrates on startup.
+#
+# Usage:
+#   docker compose -f docker-compose.yml build
+#   docker compose -f docker-compose.yml up -d
+#
+# Point the API at these services via the DATABASE_URL / REDIS_URL below.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: kilat-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-kilat}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kilat}
+      POSTGRES_DB: ${POSTGRES_DB:-kilat_cloud}
+    ports:
+      - "${POSTGRES_PORT:-54329}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./scripts/initdb-extensions.sql:/docker-entrypoint-initdb.d/00-extensions.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kilat} -d ${POSTGRES_DB:-kilat_cloud}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    container_name: kilat-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-54389}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    container_name: kilat-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      APP_PORT: ${APP_PORT:-8080}
+      APP_DOMAIN: ${APP_DOMAIN:-kilat-cloud.com}
+      PUBLIC_API_BASE_URL: ${PUBLIC_API_BASE_URL:-https://api.kilat-cloud.com}
+      CONSOLE_BASE_URL: ${CONSOLE_BASE_URL:-https://console.kilat-cloud.com}
+      ADMIN_CONSOLE_BASE_URL: ${ADMIN_CONSOLE_BASE_URL:-https://admin.kilat-cloud.com}
+      DOWNLOAD_BASE_URL: ${DOWNLOAD_BASE_URL:-https://dl.kilat-cloud.com}
+      DATABASE_URL: postgres://${POSTGRES_USER:-kilat}:${POSTGRES_PASSWORD:-kilat}@postgres:5432/${POSTGRES_DB:-kilat_cloud}?sslmode=disable
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
+      SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY:?set SECRET_ENCRYPTION_KEY}
+      PAYMENT_WEBHOOK_SECRET: ${PAYMENT_WEBHOOK_SECRET:-}
+      PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-sumopod}
+      SUMOPOD_API_KEY: ${SUMOPOD_API_KEY:-}
+      SUMOPOD_BASE_URL: ${SUMOPOD_BASE_URL:-https://api-pay.sumopod.com}
+      SUMOPOD_WEBHOOK_SECRET: ${SUMOPOD_WEBHOOK_SECRET:-}
+      SUMOPOD_WEBHOOK_TOKEN: ${SUMOPOD_WEBHOOK_TOKEN:-}
+      ADMIN_API_DOMAIN: ${ADMIN_API_DOMAIN:-https://api-admin.kilat-cloud.com}
+      USER_API_DOMAIN: ${USER_API_DOMAIN:-https://api-user.kilat-cloud.com}
+      LANDING_API_DOMAIN: ${LANDING_API_DOMAIN:-https://api-landing.kilat-cloud.com}
+      DOCS_API_DOMAIN: ${DOCS_API_DOMAIN:-https://api-docs.kilat-cloud.com}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://admin.kilat-cloud.com,https://console.kilat-cloud.com,https://kilat-cloud.com}
+      # Object storage (S3/R2). Leave empty to disable file endpoints.
+      R2_ENDPOINT: ${R2_ENDPOINT:-}
+      R2_ACCESS_KEY: ${R2_ACCESS_KEY:-}
+      R2_SECRET_KEY: ${R2_SECRET_KEY:-}
+      R2_BUCKET: ${R2_BUCKET:-}
+      # SMTP (leave SMTP_HOST empty to park email jobs).
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-noreply@kilat-cloud.com}
+    ports:
+      - "${API_PORT:-8080}:8080"
+    command: ["api"]
+
+  # One-off migration runner (auto-migrate already runs on api startup, but
+  # this is available for manual `docker compose run --rm migrate`).
+  migrate:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    container_name: kilat-migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-kilat}:${POSTGRES_PASSWORD:-kilat}@postgres:5432/${POSTGRES_DB:-kilat_cloud}?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET:-}
+      SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY:-}
+      PAYMENT_WEBHOOK_SECRET: ${PAYMENT_WEBHOOK_SECRET:-}
+    command: ["migrate"]
+    profiles: ["migrate"]
+
+volumes:
+  pgdata:

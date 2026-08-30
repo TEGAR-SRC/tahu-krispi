@@ -71,6 +71,32 @@ make worker         # job worker
 
 Required env vars (fail-fast): `DATABASE_URL`, `REDIS_URL`, `JWT_SECRET`, `SECRET_ENCRYPTION_KEY`.
 
+### Docker deployment
+
+The backend ships a multi-stage Dockerfile (`backend/Dockerfile`, static no-cgo
+binary) plus a compose file that runs API + PostgreSQL + Redis together. The
+API auto-migrates on startup, so a fresh deploy is self-healing.
+
+```bash
+# 1) prepare env for compose (postgres/redis + app secrets)
+cp backend/compose.env.example backend/compose.env   # edit JWT_SECRET, SECRET_ENCRYPTION_KEY, ...
+
+# 2) build & run (API + postgres + redis)
+docker compose -f backend/docker-compose.yml --env-file backend/compose.env up -d --build
+
+# 3) optional manual migration
+docker compose -f backend/docker-compose.yml --env-file backend/compose.env \
+  --profile migrate run --rm migrate
+```
+
+Build context is the repo root:
+
+```bash
+docker build -f backend/Dockerfile -t kilat-backend:latest .
+```
+
+The image defaults to the API server; override `CMD` for `worker` / `migrate`.
+
 ### Development conveniences (never enable in production)
 
 - `AUTO_VERIFY_EMAIL=true` — marks e-mail verified at registration when SMTP is not configured.
