@@ -102,10 +102,17 @@ function CustomerShell() {
   const navigate = useNavigate()
   const { claims, logout } = useAuth()
 
-  const isActive = (url: string) => {
-    if (location.pathname === url) return true
-    return url !== "/" && location.pathname.startsWith(`${url}/`)
-  }
+  // Only the longest matching nav item is active — prevents parent + child both active.
+  const flatCustomerItems = customerNav.flatMap((s) => s.items)
+  const activeCustomerItem = (() => {
+    const candidates = flatCustomerItems.filter(
+      (item) => location.pathname === item.url || (item.url !== "/" && location.pathname.startsWith(`${item.url}/`)),
+    )
+    if (candidates.length === 0) return null
+    candidates.sort((a, b) => b.url.length - a.url.length)
+    return candidates[0]
+  })()
+  const isActive = (item: (typeof flatCustomerItems)[number]) => item === activeCustomerItem
 
   const handleLogout = () => {
     logout()
@@ -145,8 +152,8 @@ function CustomerShell() {
                   {section.items.map((item) => {
                     const Icon = item.icon
                     return (
-                      <SidebarMenuItem key={item.url}>
-                        <SidebarMenuButton isActive={isActive(item.url)} asChild>
+                      <SidebarMenuItem key={`${item.url}-${item.title}`}>
+                        <SidebarMenuButton isActive={isActive(item)} asChild>
                           <Link to={item.url}>
                             {Icon ? <Icon aria-hidden="true" /> : null}
                             <span>{item.title}</span>
