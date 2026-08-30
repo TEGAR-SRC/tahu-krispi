@@ -219,6 +219,7 @@ func (s *Server) registerRoutes() {
 	v1.Post("/auth/email/verify", s.handleVerifyEmail)
 	v1.Post("/auth/email/resend", authLimiter, s.handleResendEmailVerification)
 	v1.Post("/auth/email/resend-public", authLimiter, s.handleResendPublicEmailVerification)
+	v1.Get("/auth/email/status", authLimiter, s.handleCheckEmailStatus)
 
 	v1.Get("/me", s.authAny(), s.handleMe)
 	v1.Patch("/me/profile", s.authJWT(), s.handleUpdateProfile)

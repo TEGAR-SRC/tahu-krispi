@@ -510,6 +510,24 @@ func (s *Service) ResendVerificationByEmail(ctx context.Context, email string) e
 	return s.sendVerificationEmail(ctx, normalized, userID)
 }
 
+// CheckEmailStatus returns whether the email exists and whether it is verified without sending any email.
+func (s *Service) CheckEmailStatus(ctx context.Context, email string) (exists bool, verified bool, err error) {
+	normalized := v.NormalizeEmail(email)
+	if err := v.ValidateEmail(normalized); err != nil {
+		return false, false, apperrors.WithFields(apperrors.New(apperrors.CodeValidation, err.Error()), map[string]string{"email": err.Error()})
+	}
+	var emailStatus string
+	err = s.db.QueryRow(ctx, `SELECT email_status::text FROM users WHERE lower(email::text)=$1 AND deleted_at IS NULL`, normalized).
+		Scan(&emailStatus)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return false, false, nil
+		}
+		return false, false, err
+	}
+	return true, emailStatus == "verified", nil
+}
+
 func boolTime(b bool) any {
 	if b {
 		return time.Now()

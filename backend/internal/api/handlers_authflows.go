@@ -150,6 +150,24 @@ func (s *Server) handleResendPublicEmailVerification(c fiber.Ctx) error {
 	return mw.JSON(c, 200, fiber.Map{"status": "verification_sent"}, nil)
 }
 
+func (s *Server) handleCheckEmailStatus(c fiber.Ctx) error {
+	email := c.Query("email")
+	if email == "" {
+		// also accept ?email= in JSON body for flexibility
+		var body resendPublicInput
+		_ = c.Bind().Body(&body)
+		email = body.Email
+	}
+	if email == "" {
+		return mw.WriteError(c, vErrField("email", "required"))
+	}
+	exists, verified, err := s.userSvc.CheckEmailStatus(c.Context(), email)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, fiber.Map{"exists": exists, "verified": verified, "email": email}, nil)
+}
+
 func isAlreadyVerifiedErr(err error) bool {
 	if err == nil {
 		return false

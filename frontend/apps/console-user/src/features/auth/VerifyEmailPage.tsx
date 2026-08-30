@@ -7,7 +7,8 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui
 import { Input } from "@/components/ui/input"
 import { ErrorBanner } from "@/components/shared/ErrorBanner"
 import { Spinner } from "@/components/ui/spinner"
-import { ApiError, apiPost } from "@/lib/api"
+import { CheckCircle2Icon } from "lucide-react"
+import { ApiError, apiGet, apiPost } from "@/lib/api"
 import { homePathFor, useAuth } from "@/lib/auth"
 
 export default function VerifyEmailPage() {
@@ -59,6 +60,7 @@ export default function VerifyEmailPage() {
     } catch (cause) {
       if (cause instanceof ApiError && cause.code === "CONFLICT") {
         toast.success("Email sudah terverifikasi — silakan login")
+        setVerified(true)
         setError(null)
         return
       }
@@ -67,6 +69,28 @@ export default function VerifyEmailPage() {
       setResending(false)
     }
   }
+
+  // Auto-check jika ?email= ada tanpa token: tampilkan centang jika sudah verified
+  useEffect(() => {
+    if (emailToken || verified || verifying) return
+    const checkEmail = (queryEmail || emailInput).trim()
+    if (!checkEmail) return
+    let cancelled = false
+    apiGet<{ verified: boolean; exists: boolean }>("/auth/email/status", { query: { email: checkEmail } })
+      .then(({ data }) => {
+        if (!cancelled && data.verified) setVerified(true)
+      })
+      .catch(() => {
+        // ignore — biarkan user klik Kirim ulang untuk cek via CONFLICT
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [queryEmail, emailToken, verified, verifying, emailInput])
+
+  useEffect(() => {
+    setEmailInput(queryEmail)
+  }, [queryEmail])
 
   const goHome = () => {
     navigate(role ? homePathFor(role) : "/login", { replace: true })
@@ -91,10 +115,12 @@ export default function VerifyEmailPage() {
                 </FieldDescription>
               ) : verified ? (
                 <>
-                  <FieldDescription className="rounded-md border bg-muted/40 p-3 text-center">
-                    Your email address has been verified.
-                  </FieldDescription>
-                  <Button onClick={goHome}>Continue</Button>
+                  <div className="flex flex-col items-center gap-3 rounded-md border bg-green-50 p-4 text-center dark:bg-green-950/20">
+                    <CheckCircle2Icon className="size-10 text-green-600" />
+                    <p className="font-medium text-green-700 dark:text-green-400">Email sudah terverifikasi ✓</p>
+                    <p className="text-sm text-muted-foreground">Akun kamu sudah aktif. Silakan masuk untuk melanjutkan.</p>
+                  </div>
+                  <Button onClick={goHome}>Masuk sekarang</Button>
                 </>
               ) : (
                 <>
