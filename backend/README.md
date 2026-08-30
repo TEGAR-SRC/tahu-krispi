@@ -138,10 +138,28 @@ VPC/firewall/IP-list CRUD, tickets/notifications/webhooks, audit logs, dashboard
 - `POST /v1/auth/register` → personal org + wallet created transactionally
 - `POST /v1/auth/login` → access token (15 min) + rotating refresh token; MFA challenge when enabled
 - MFA: TOTP (secret AES-GCM encrypted at rest), recovery codes (hashed), WebAuthn passkeys
-  (register/list/remove); every security-relevant event is written to the audit log
+  (register/list/remove); per-account lockout (5 failures → 15 min) on 2FA verification; disabling TOTP
+  requires the current code; every security-relevant event is written to the audit log
 - Session revocation: single (`logout`), all devices (`logout-all`), automatic on password change/reset
 - Org context via `X-Organization-ID` header; RBAC permission checked per endpoint
+- **RBAC 4 roles**: `admin`, `noc`, `finance`, `customer` (see `internal/iam`)
 - Machine auth via `X-API-Key` with scoped keys
+
+## Audience scoping & API domains
+
+The backend derives the **audience** from the request **Host header** and only serves each
+console its own endpoints (`internal/api/middleware_audience.go`):
+
+| Audience | Host | Serves |
+|----------|------|--------|
+| `admin` | `api-admin.kilat-cloud.com` | `/v1/admin/*` + staff surfaces |
+| `user` | `api-user.kilat-cloud.com` | customer endpoints |
+| `landing` | `api-landing.kilat-cloud.com` | public marketing + media |
+| `docs` | `api-docs.kilat-cloud.com` | public docs + media |
+| `all` | `api.kilat-cloud.com` / localhost | everything |
+
+Configure via `ADMIN_API_DOMAIN`, `USER_API_DOMAIN`, `LANDING_API_DOMAIN`, `DOCS_API_DOMAIN`.
+Real authorization remains JWT + RBAC; audience scoping is an additional isolation layer.
 
 ## Conventions
 
