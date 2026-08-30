@@ -7,11 +7,13 @@
   "scripts": {
     "dev:admin": "npm run dev -w apps/console-admin",
     "dev:user": "npm run dev -w apps/console-user",
+    "dev:landing": "npm run dev -w apps/console-landing",
     "build:admin": "npm run build -w apps/console-admin",
     "build:user": "npm run build -w apps/console-user",
-    "build": "npm run build -w apps/console-admin && npm run build -w apps/console-user",
-    "typecheck": "npm run typecheck -w apps/console-admin && npm run typecheck -w apps/console-user",
-    "lint": "npm run lint -w apps/console-admin && npm run lint -w apps/console-user"
+    "build:landing": "npm run build -w apps/console-landing",
+    "build": "npm run build -w apps/console-admin && npm run build -w apps/console-user && npm run build -w apps/console-landing",
+    "typecheck": "npm run typecheck -w apps/console-admin && npm run typecheck -w apps/console-user && npm run typecheck -w apps/console-landing",
+    "lint": "npm run lint -w apps/console-admin && npm run lint -w apps/console-user && npm run lint -w apps/console-landing"
   },
   "devDependencies": {
     "@eslint/js": "^10",

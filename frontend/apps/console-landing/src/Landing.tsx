@@ -1,11 +1,9 @@
-// Public marketing landing page. Renders sections fetched from the public
-// GET /landing endpoint. Content is managed by staff (admin/NOC) in the
-// console-admin app under Landing Content.
+// Public marketing landing page — a standalone project. Renders published
+// sections from the public GET /landing endpoint. Content is managed by
+// staff (admin/NOC) in the console-admin app under Landing Content.
 import { useEffect, useState } from "react"
-import { Link } from "react-router-dom"
-import { Button } from "@/components/ui/button"
-import { Spinner } from "@/components/ui/spinner"
-import { apiGet } from "@/lib/api"
+import { Spinner } from "./components/ui/spinner"
+import { apiGet } from "./lib/api"
 
 interface LandingSection {
   id: string
@@ -54,12 +52,18 @@ function renderSection(section: LandingSection) {
             ) : null}
             {section.body ? <p className="max-w-2xl text-muted-foreground">{section.body}</p> : null}
             <div className="mt-4 flex flex-wrap justify-center gap-3">
-              <Button asChild size="lg">
-                <Link to="/signup">Get started</Link>
-              </Button>
-              <Button asChild variant="outline" size="lg">
-                <Link to="/login">Sign in</Link>
-              </Button>
+              <a
+                href="https://console.kilat-cloud.com/signup"
+                className="inline-flex h-11 items-center justify-center rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              >
+                Get started
+              </a>
+              <a
+                href="https://console.kilat-cloud.com/login"
+                className="inline-flex h-11 items-center justify-center rounded-md border border-input bg-background px-6 text-sm font-medium hover:bg-accent"
+              >
+                Sign in
+              </a>
             </div>
           </div>
         </section>
@@ -181,21 +185,30 @@ export default function LandingPage() {
       <header className="flex w-full items-center justify-between border-b px-6 py-4">
         <span className="text-lg font-semibold">Kilat Cloud</span>
         <div className="flex items-center gap-2">
-          <Button asChild variant="ghost" size="sm">
-            <Link to="/login">Sign in</Link>
-          </Button>
-          <Button asChild size="sm">
-            <Link to="/signup">Get started</Link>
-          </Button>
+          <a
+            href="https://console.kilat-cloud.com/login"
+            className="inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium hover:bg-accent"
+          >
+            Sign in
+          </a>
+          <a
+            href="https://console.kilat-cloud.com/signup"
+            className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            Get started
+          </a>
         </div>
       </header>
       {ordered.length === 0 ? (
         <div className="flex flex-col items-center gap-4 py-32 text-center">
           <h1 className="text-4xl font-bold">Kilat Cloud</h1>
           <p className="text-muted-foreground">Cloud infrastructure for everyone.</p>
-          <Button asChild>
-            <Link to="/signup">Get started</Link>
-          </Button>
+          <a
+            href="https://console.kilat-cloud.com/signup"
+            className="inline-flex h-11 items-center justify-center rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            Get started
+          </a>
         </div>
       ) : (
         ordered.map((section) => <div key={section.id}>{renderSection(section)}</div>)
