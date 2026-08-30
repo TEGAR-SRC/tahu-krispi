@@ -396,7 +396,10 @@ VALUES ($1,'subscription.unsuspend','subscription',$2)`, orgID, id)
 // at start; one_time has no period end (nil).
 func computePeriodEnd(start time.Time, billingPeriod string) (*time.Time, error) {
 	switch billingPeriod {
-	case "hourly", "daily":
+	case "hourly":
+		e := start.Add(1 * time.Hour)
+		return &e, nil
+	case "daily":
 		e := start.Add(24 * time.Hour)
 		return &e, nil
 	case "monthly":

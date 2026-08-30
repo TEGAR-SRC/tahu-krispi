@@ -348,8 +348,11 @@ func (s *Server) findOrCreateOAuthUser(ctx context.Context, provider string, p *
 	if err != nil && err != pgx.ErrNoRows {
 		return uuid.Nil, err
 	}
-	// 2. Existing local user with same email? Link them.
-	err = s.db.QueryRow(ctx, `SELECT id FROM app.users WHERE lower(email::text)=lower($1) AND deleted_at IS NULL`, p.Email).Scan(&userID)
+	// 2. Existing local user with same email? Link them, but only when the
+	//    local account's email is verified. Otherwise an attacker who controls
+	//    an OAuth provider account with the victim's (unverified) email would
+	//    take over a Kilat account the victim never claimed/verified.
+	err = s.db.QueryRow(ctx, `SELECT id FROM app.users WHERE lower(email::text)=lower($1) AND deleted_at IS NULL AND email_status='verified'`, p.Email).Scan(&userID)
 	if err == nil {
 		_, err = s.db.Exec(ctx, `INSERT INTO app.oauth_accounts(provider, provider_user_id, user_id, provider_email) VALUES ($1,$2,$3,$4) ON CONFLICT (provider, provider_user_id) DO UPDATE SET provider_email=EXCLUDED.provider_email`,
 			provider, p.ProviderUserID, userID, p.Email)

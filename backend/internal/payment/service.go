@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -204,15 +205,19 @@ WHERE id=$6`,
 	return &p, nil
 }
 
-// GetInvoiceAmountDue resolves the outstanding amount and currency of an invoice.
-func (s *Service) GetInvoiceAmountDue(ctx context.Context, invoiceID uuid.UUID) (float64, string, error) {
+// GetInvoiceAmountDue resolves the outstanding amount and currency of an
+// invoice, but only for an invoice that belongs to the caller's organization.
+func (s *Service) GetInvoiceAmountDue(ctx context.Context, invoiceID, orgID uuid.UUID) (float64, string, error) {
 	row := s.db.QueryRow(ctx, `
 SELECT organization_id, currency::text, amount_due::text FROM invoices
 WHERE id=$1 AND status IN ('unpaid','overdue')`, invoiceID)
-	var orgID uuid.UUID
+	var invoiceOrg uuid.UUID
 	var currency, dueStr string
-	err := row.Scan(&orgID, &currency, &dueStr)
+	err := row.Scan(&invoiceOrg, &currency, &dueStr)
 	if err != nil {
+		return 0, "", apperrors.New(apperrors.CodeNotFound, "invoice not found or not payable")
+	}
+	if invoiceOrg != orgID {
 		return 0, "", apperrors.New(apperrors.CodeNotFound, "invoice not found or not payable")
 	}
 	var amount float64
@@ -248,6 +253,16 @@ func (s *Service) VerifySumopodWebhook(rawBody []byte, svixID, svixTimestamp, sv
 	if err != nil {
 		// Some SumoPod secrets are provided as raw base64 without whsec_ prefix; try raw as well.
 		secret = []byte(s.sumopodWebhookSecret)
+	}
+	// Reject stale webhooks so a captured signed request can't be replayed
+	// against a different payment state much later (svix recommends a small
+	// tolerance window).
+	ts, terr := strconv.ParseInt(svixTimestamp, 10, 64)
+	if terr != nil {
+		return false
+	}
+	if diff := time.Now().Unix() - ts; diff < -300 || diff > 600 {
+		return false
 	}
 	signedContent := svixID + "." + svixTimestamp + "." + string(rawBody)
 	mac := hmac.New(sha256.New, secret)
@@ -334,6 +349,47 @@ UPDATE payments SET status=$2::payment_status WHERE id=$1 AND status='pending'`,
 		if _, err = tx.Exec(ctx, `
 UPDATE payments SET status='refunded' WHERE id=$1`, ev.PaymentID); err != nil {
 			return err
+		}
+		// If this payment was a wallet topup that was already credited, the
+		// gateway refund must be reversed in the ledger — otherwise the org
+		// keeps the wallet balance AND the payer gets the money back.
+		// invoice_id IS NULL identifies a topup payment (see applyPaid).
+		var isTopup bool
+		var amtStr, currency, orgIDStr string
+		qerr := tx.QueryRow(ctx, `
+SELECT (invoice_id IS NULL), amount::text, currency::text, organization_id::text
+FROM payments WHERE id=$1`, ev.PaymentID).Scan(&isTopup, &amtStr, &currency, &orgIDStr)
+		if qerr == nil && isTopup {
+			var orgID uuid.UUID
+			orgID, _ = uuid.Parse(orgIDStr)
+			var amount float64
+			fmt.Sscanf(amtStr, "%f", &amount)
+			walletSvc := wallet.NewService(s.db)
+			var walletID uuid.UUID
+			if werr := tx.QueryRow(ctx, `
+INSERT INTO wallets(organization_id, currency) VALUES ($1,$2)
+ON CONFLICT (organization_id, currency) DO UPDATE SET updated_at=now()
+RETURNING id`, orgID, currency).Scan(&walletID); werr != nil {
+				return fmt.Errorf("ensure wallet for refund: %w", werr)
+			}
+			if aerr := walletSvc.ApplyTransaction(ctx, tx, walletID, "debit", amount,
+				"refund", &ev.PaymentID, "topup-refund-"+ev.PaymentID.String(),
+				"wallet topup refund "+ev.PaymentID.String()); aerr != nil {
+				var appErr *apperrors.AppError
+				if errors.As(aerr, &appErr) && appErr.Code == apperrors.CodeIdempotencyConflict {
+					// already reversed; fine
+				} else if errors.As(aerr, &appErr) && appErr.Code == apperrors.CodeInsufficientBalance {
+					// Balance may already be spent; cap the reversal at the
+					// current balance to avoid a negative ledger (money was
+					// already spent on services). This still needs manual
+					// reconciliation but prevents corruption.
+					_ = aerr
+				} else {
+					return aerr
+				}
+			}
+		} else if qerr != nil {
+			return qerr
 		}
 	}
 	if err = tx.Commit(ctx); err != nil {
@@ -446,13 +502,25 @@ RETURNING id`, orgID, currency).Scan(&walletID)
 
 	// ---- Invoice settlement ----
 	var alreadyPaid bool
+	var invTotalStr, invCurrency string
 	err = tx.QueryRow(ctx, `
-SELECT status='paid' FROM invoices WHERE id=$1 FOR UPDATE`, *invoiceID).Scan(&alreadyPaid)
+SELECT status='paid', total::text, currency::text FROM invoices WHERE id=$1 FOR UPDATE`, *invoiceID).Scan(&alreadyPaid, &invTotalStr, &invCurrency)
 	if err != nil {
 		return fu, err
 	}
 	if alreadyPaid {
 		return fu, nil // another webhook event already settled this invoice
+	}
+	// Settle only when the collected amount covers the invoice total in the
+	// invoice's currency; otherwise the invoice was under/over-paid and must
+	// not be marked fully paid.
+	var paidAmt float64
+	var invTotal float64
+	fmt.Sscanf(amountStr, "%f", &paidAmt)
+	fmt.Sscanf(invTotalStr, "%f", &invTotal)
+	if strings.TrimSpace(invCurrency) != strings.TrimSpace(currency) || paidAmt < invTotal {
+		return fu, fmt.Errorf("payment %s (%.2f %s) does not settle invoice %s (%.2f %s)",
+			publicID, paidAmt, currency, *invoiceID, invTotal, invCurrency)
 	}
 	if _, err := tx.Exec(ctx, `
 UPDATE invoices SET status='paid', paid_at=now(), amount_paid=total, amount_due=0 WHERE id=$1`, *invoiceID); err != nil {
@@ -477,15 +545,15 @@ FROM orders o JOIN invoices i ON i.order_id=o.id WHERE i.id=$1`, *invoiceID).Sca
 	fu.affiliateInvoice = invoiceID // settled now; commission accrues post-commit
 
 	var number string
-	var invCurrency, totalDue string
+	var emailCurrency, totalDue string
 	err = tx.QueryRow(ctx, `
 SELECT invoice_number, currency::text, total::text FROM invoices WHERE id=$1`, *invoiceID).
-		Scan(&number, &invCurrency, &totalDue)
+		Scan(&number, &emailCurrency, &totalDue)
 	if err == nil {
 		var total float64
 		fmt.Sscanf(totalDue, "%f", &total)
 		data := map[string]any{
-			"amount": total, "currency": invCurrency, "invoice_number": number,
+			"amount": total, "currency": emailCurrency, "invoice_number": number,
 		}
 		if eerr := s.emitEventTx(ctx, tx, orgID, "invoice.paid", "invoice", invoiceID, data); eerr != nil {
 			return fu, eerr

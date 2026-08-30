@@ -3,14 +3,21 @@ package compute
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/rand"
+	"crypto/sha256"
 )
 
-// encryptURLText encrypts a URL using AES-256-GCM with a 32-byte key.
+// encryptURLText encrypts a URL using AES-256-GCM with a random per-message
+// nonce (prepended to the ciphertext) and a key derived from the caller's
+// secret via SHA-256. A fixed zero nonce is never reused.
 func encryptURLText(url string, key []byte) ([]byte, error) {
-	if len(key) < 32 {
-		key = append(key, make([]byte, 32)...)[:32]
+	if len(key) == 0 {
+		key = []byte("kilat-cloud-snapshot-key")
 	}
-	block, err := aes.NewCipher(key[:32])
+	// Derive a stable 32-byte key so the org UUID is never used directly as a
+	// key material (it is public).
+	derived := sha256.Sum256(key)
+	block, err := aes.NewCipher(derived[:])
 	if err != nil {
 		return nil, err
 	}
@@ -18,5 +25,9 @@ func encryptURLText(url string, key []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return gcm.Seal(nil, make([]byte, gcm.NonceSize()), []byte(url), nil), nil
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err := rand.Read(nonce); err != nil {
+		return nil, err
+	}
+	return gcm.Seal(nonce, nonce, []byte(url), nil), nil
 }

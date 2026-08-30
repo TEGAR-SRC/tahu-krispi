@@ -249,25 +249,30 @@ FROM order_items WHERE order_id=$1`, orderID)
 }
 
 // PayInvoiceWithWallet settles an invoice using the organization's wallet.
-func (s *Service) PayInvoiceWithWallet(ctx context.Context, invoiceID, userID uuid.UUID) error {
+// orgID is the authenticated caller's organization; the invoice must belong to
+// it, otherwise an org could settle (and spend the wallet of) a foreign invoice.
+func (s *Service) PayInvoiceWithWallet(ctx context.Context, invoiceID, orgID, userID uuid.UUID) error {
 	tx, err := s.db.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback(ctx)
-	var orgID uuid.UUID
+	var invoiceOrgID uuid.UUID
 	var currency string
 	var amountDueStr string
 	var status string
 	err = tx.QueryRow(ctx, `
 SELECT organization_id, currency::text, amount_due::text, status::text
 FROM invoices WHERE id=$1 AND status IN ('unpaid','overdue') FOR UPDATE`,
-		invoiceID).Scan(&orgID, &currency, &amountDueStr, &status)
+		invoiceID).Scan(&invoiceOrgID, &currency, &amountDueStr, &status)
 	if err == pgx.ErrNoRows {
 		return apperrors.New(apperrors.CodeNotFound, "invoice not found")
 	}
 	if err != nil {
 		return err
+	}
+	if invoiceOrgID != orgID {
+		return apperrors.New(apperrors.CodeNotFound, "invoice not found")
 	}
 	var amountDue float64
 	fmt.Sscanf(amountDueStr, "%f", &amountDue)
@@ -395,7 +400,7 @@ func isUnique(err error) bool {
 		return false
 	}
 	s := err.Error()
-	target := "orders_organization_id_key"
+	target := "orders_organization_id_idempotency_key"
 	n := len(target)
 	for i := 0; i+n <= len(s); i++ {
 		if s[i:i+n] == target {

@@ -39,6 +39,16 @@ func (s *Server) idempotency() fiber.Handler {
 		bodyHash := sha256.Sum256(c.Body())
 		requestHash := hex.EncodeToString(bodyHash[:])
 		scope := c.Method() + " " + c.Route().Path
+		// Scope must be unique per actor, not just per route, otherwise one
+		// user's Idempotency-Key collides with another user's on the same
+		// route (cross-tenant response leak). auth must run before idem so
+		// these locals are populated.
+		if orgID != nil {
+			scope += "|org=" + orgID.String()
+		}
+		if userID != nil {
+			scope += "|user=" + userID.String()
+		}
 		ctx, cancel := context.WithTimeout(c.Context(), 5*time.Second)
 		defer cancel()
 
@@ -89,6 +99,13 @@ VALUES ($1,$2,$3,$4,$5,$6, now()+interval '24 hours') ON CONFLICT (scope, key) D
 		}
 
 		if err := c.Next(); err != nil {
+			// The handler failed. Release the reservation so the client can
+			// retry with the same key; a failed request must never be
+			// cached/replayed as a fabricated success (an empty row currently
+			// replays as 200 {}).
+			relCtx, relCancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer relCancel()
+			_, _ = s.db.Exec(relCtx, `DELETE FROM idempotency_keys WHERE scope=$1 AND key=$2`, scope, key)
 			return err
 		}
 

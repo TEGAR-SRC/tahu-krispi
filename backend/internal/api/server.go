@@ -238,7 +238,7 @@ func (s *Server) registerRoutes() {
 
 	// API keys.
 	v1.Get("/api-keys", s.authAny(), s.handleListAPIKeys)
-	v1.Post("/api-keys", idem, s.authAny(), s.handleCreateAPIKey)
+	v1.Post("/api-keys", s.authAny(), idem, s.handleCreateAPIKey)
 	v1.Get("/api-keys/:key_id", s.authAny(), s.handleGetAPIKey)
 	v1.Patch("/api-keys/:key_id", s.authAny(), s.handleUpdateAPIKey)
 	v1.Delete("/api-keys/:key_id", s.authAny(), s.handleRevokeAPIKey)
@@ -294,20 +294,20 @@ func (s *Server) registerRoutes() {
 	v1.Post("/pricing/quote", s.authAny(), s.handleQuote)
 
 	// Billing.
-	v1.Post("/orders", idem, s.authAny(), s.withOrg(s.handleCreateOrder))
+	v1.Post("/orders", s.authAny(), idem, s.withOrg(s.handleCreateOrder))
 	v1.Get("/orders", s.authAny(), s.withOrg(s.handleListOrders))
 	v1.Get("/orders/:order_id", s.authAny(), s.withOrg(s.handleGetOrder))
 	v1.Post("/orders/:order_id/cancel", s.authAny(), s.withOrg(s.handleCancelOrder))
 	v1.Get("/invoices", s.authAny(), s.withOrg(s.handleListInvoices))
 	v1.Get("/invoices/:invoice_id", s.authAny(), s.withOrg(s.handleGetInvoice))
 	v1.Post("/invoices/:invoice_id/pay-wallet", s.authAny(), s.withOrg(s.handlePayInvoiceWithWallet))
-	v1.Post("/invoices/:invoice_id/payments", idem, s.authAny(), s.withOrg(s.handleCreatePayment))
+	v1.Post("/invoices/:invoice_id/payments", s.authAny(), idem, s.withOrg(s.handleCreatePayment))
 	v1.Post("/payments/webhook", s.handlePaymentWebhook)
 
 	// Wallet.
 	v1.Get("/wallet", s.authAny(), s.withOrg(s.handleWalletBalance))
 	v1.Get("/wallet/transactions", s.authAny(), s.withOrg(s.handleWalletTransactions))
-	v1.Post("/wallet/topup", idem, s.authAny(), s.withOrg(s.handleWalletTopup))
+	v1.Post("/wallet/topup", s.authAny(), idem, s.withOrg(s.handleWalletTopup))
 
 	// Subscriptions.
 	v1.Get("/subscriptions", s.authAny(), s.withOrg(s.handleListSubscriptions))
@@ -317,14 +317,14 @@ func (s *Server) registerRoutes() {
 	// Instances.
 	v1.Get("/instances", s.authAny(), s.withOrg(s.handleListInstances))
 	v1.Get("/instances/:id", s.authAny(), s.withOrg(s.handleGetInstance))
-	v1.Post("/instances", idem, s.authAny(), s.withOrg(s.handleProvisionInstance))
+	v1.Post("/instances", s.authAny(), idem, s.withOrg(s.handleProvisionInstance))
 	v1.Patch("/instances/:id", s.authAny(), s.withOrg(s.handleUpdateInstance))
 	v1.Delete("/instances/:id", s.authAny(), s.withOrg(s.handleTerminateInstance))
 	v1.Post("/instances/:id/start", s.authAny(), s.withOrg(s.handleStartInstance))
 	v1.Post("/instances/:id/stop", s.authAny(), s.withOrg(s.handleStopInstance))
 	v1.Post("/instances/:id/reboot", s.authAny(), s.withOrg(s.handleRebootInstance))
 	v1.Post("/instances/:id/resize", s.authAny(), s.withOrg(s.handleResizeInstance))
-	v1.Post("/instances/:id/snapshot", idem, s.authAny(), s.withOrg(s.handleCreateSnapshot))
+	v1.Post("/instances/:id/snapshot", s.authAny(), idem, s.withOrg(s.handleCreateSnapshot))
 	v1.Post("/instances/:id/restore-snapshot", s.authAny(), s.withOrg(s.handleRestoreSnapshot))
 	v1.Post("/instances/:id/restore-backup", s.authAny(), s.withOrg(s.handleRestoreBackup))
 	v1.Post("/instances/:id/vnc", s.authAny(), s.withOrg(s.handleVNCSession))
@@ -397,7 +397,7 @@ func (s *Server) registerRoutes() {
 	v1.Post("/ip-lists/:list_id/entries", s.authAny(), s.withOrg(s.handleAddIPListEntry))
 	v1.Delete("/ip-lists/:list_id/entries/:entry_id", s.authAny(), s.withOrg(s.handleDeleteIPListEntry))
 	v1.Get("/reserved-ips", s.authAny(), s.withOrg(s.handleListReservedIPs))
-	v1.Post("/reserved-ips", idem, s.authAny(), s.withOrg(s.handleCreateReservedIP))
+	v1.Post("/reserved-ips", s.authAny(), idem, s.withOrg(s.handleCreateReservedIP))
 	v1.Post("/reserved-ips/convert", s.authAny(), s.withOrg(s.handleConvertReservedIP))
 	v1.Delete("/reserved-ips/:rip_id", s.authAny(), s.withOrg(s.handleDeleteReservedIP))
 	v1.Patch("/reserved-ips/:rip_id", s.authAny(), s.withOrg(s.handlePatchReservedIP))
@@ -408,7 +408,7 @@ func (s *Server) registerRoutes() {
 	v1.Post("/instances/:id/disable-bgp", s.authAny(), s.withOrg(s.handleDisableBGP))
 
 	// Storage.
-	v1.Post("/object-storage", idem, s.authAny(), s.withOrg(s.handleCreateStorageService))
+	v1.Post("/object-storage", s.authAny(), idem, s.withOrg(s.handleCreateStorageService))
 	v1.Delete("/object-storage/:service_id", s.authAny(), s.withOrg(s.handleDeleteStorageService))
 	v1.Get("/object-storage", s.authAny(), s.withOrg(s.handleListStorageServices))
 	v1.Get("/object-storage/:service_id", s.authAny(), s.withOrg(s.handleGetStorageServiceDetail))

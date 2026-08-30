@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"io"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -94,8 +95,11 @@ func Sign(payload []byte, secret string) string {
 }
 
 func encryptSecret(plaintext string, keySeed []byte) ([]byte, error) {
-	key := make([]byte, 32)
-	copy(key, keySeed)
+	// Derive a stable 32-byte key and use a random per-message nonce so the
+	// org UUID is never used directly as key material and the nonce is never
+	// reused across secrets (avoids AES-GCM nonce reuse / known-key flaws).
+	sum := sha256.Sum256(keySeed)
+	key := sum[:]
 	block, err := aesNewCipher(key)
 	if err != nil {
 		return nil, err
@@ -104,5 +108,9 @@ func encryptSecret(plaintext string, keySeed []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return gcm.Seal(nil, make([]byte, gcm.NonceSize()), []byte(plaintext), nil), nil
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+		return nil, err
+	}
+	return gcm.Seal(nonce, nonce, []byte(plaintext), nil), nil
 }

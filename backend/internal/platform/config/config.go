@@ -184,10 +184,14 @@ func (c *Config) CORSOrigins() string {
 	if c.AppDomain != "" {
 		origins = append(origins, "https://"+c.AppDomain)
 	}
-	origins = append(origins, []string{
-		"http://localhost:8080",
-		"http://localhost:5173",
-	}...)
+	// Localhost origins are useful for local development only; never expose
+	// them as allowed origins in production.
+	if c.AppEnv != "production" {
+		origins = append(origins, []string{
+			"http://localhost:8080",
+			"http://localhost:5173",
+		}...)
+	}
 	return strings.Join(origins, ",")
 }
 

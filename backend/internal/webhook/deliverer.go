@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -172,11 +173,12 @@ func minInt(a, b int) int {
 	return b
 }
 
-// decryptSecret reverses encryptSecret from service.go: AES-256-GCM whose key
-// is the seed padded with zeros to 32 bytes and a fixed all-zero nonce.
+// decryptSecret reverses encryptSecret from service.go: AES-256-GCM with a
+// key derived from the seed via SHA-256 and the random nonce prepended to the
+// ciphertext.
 func decryptSecret(ciphertext, keySeed []byte) (string, error) {
-	key := make([]byte, 32)
-	copy(key, keySeed)
+	sum := sha256.Sum256(keySeed)
+	key := sum[:]
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return "", err
@@ -185,7 +187,11 @@ func decryptSecret(ciphertext, keySeed []byte) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	plain, err := gcm.Open(nil, make([]byte, gcm.NonceSize()), ciphertext, nil)
+	ns := gcm.NonceSize()
+	if len(ciphertext) < ns {
+		return "", fmt.Errorf("webhook secret: ciphertext too short")
+	}
+	plain, err := gcm.Open(nil, ciphertext[:ns], ciphertext[ns:], nil)
 	if err != nil {
 		return "", fmt.Errorf("webhook secret: %w", err)
 	}

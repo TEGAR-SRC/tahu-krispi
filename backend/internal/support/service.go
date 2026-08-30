@@ -83,6 +83,11 @@ func (s *Service) CreateTicket(ctx context.Context, in CreateTicketInput) (*Tick
 	}
 	defer tx.Rollback(ctx)
 	var seq int64
+	// Serialize ticket-number generation so two concurrent inserts can't
+	// derive the same MAX+1. Advisory transaction lock held until commit.
+	if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(7272301)`); err != nil {
+		return nil, err
+	}
 	if err := tx.QueryRow(ctx, `
 SELECT COALESCE(MAX(CAST(split_part(ticket_number,'-',2) AS bigint)),0)+1 FROM support_tickets`).Scan(&seq); err != nil {
 		return nil, err

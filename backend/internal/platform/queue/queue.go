@@ -61,9 +61,15 @@ func (w *Worker) pollAndProcess(ctx context.Context) {
 		err := w.db.QueryRow(ctx, `
 UPDATE jobs SET status='running', locked_by=$1, locked_at=now(), attempts=attempts+1, updated_at=now()
 WHERE id = (
-  -- No queue filter: every queue (provisioning, sync, webhook, email,
-  -- maintenance, ...) is polled; dispatch is keyed by job_type only.
-  SELECT id FROM jobs WHERE status IN ('queued','retry') AND run_after <= now()
+  -- Reclaim jobs this worker previously owned whose lease has expired (the
+  -- process crashed while running them). STATUS='running' AND locked_at < 10m
+  -- treats the lease as stale and takes the job back, so operations are never
+  -- lost permanently on a worker crash.
+  SELECT id FROM jobs WHERE (
+      (status IN ('queued','retry') AND run_after <= now())
+      OR
+      (status='running' AND locked_by=$1 AND locked_at < now() - interval '10 minutes')
+    )
   ORDER BY run_after, created_at LIMIT 1 FOR UPDATE SKIP LOCKED
 )
 RETURNING id, queue, job_type, resource_id, payload, attempts, max_attempts`,

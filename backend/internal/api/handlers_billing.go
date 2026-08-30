@@ -363,7 +363,7 @@ func (s *Server) handlePayInvoiceWithWallet(c fiber.Ctx) error {
 		return mw.WriteError(c, errValidation("invalid invoice id"))
 	}
 	userID := mustUserID(c)
-	if err := s.billingSvc.PayInvoiceWithWallet(c.Context(), invoiceID, userID); err != nil {
+	if err := s.billingSvc.PayInvoiceWithWallet(c.Context(), invoiceID, mustOrgID(c), userID); err != nil {
 		return mw.WriteError(c, err)
 	}
 	return mw.JSON(c, 200, fiber.Map{"status": "paid"}, nil)

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -451,7 +452,9 @@ func fbClient(fb FallbackStorage) (*objstore.Client, error) {
 	}
 	useSSL := !strings.HasPrefix(fb.Endpoint, "http://")
 	ep := strings.TrimPrefix(strings.TrimPrefix(fb.Endpoint, "https://"), "http://")
-	return objstore.New(context.Background(), ep, fb.AccessKey, fb.SecretKey, "", fb.Bucket, useSSL)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	return objstore.New(ctx, ep, fb.AccessKey, fb.SecretKey, "", fb.Bucket, useSSL)
 }
 
 // InvalidateBackendCache drops cached clients after admin edits.

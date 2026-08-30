@@ -95,33 +95,44 @@ WHERE id=$1`, actionID, status, lastErr)
 	if err != nil {
 		return nil, err
 	}
-	if _, err := s.db.Exec(ctx, `
-UPDATE instances SET vcpu=$2, ram_mb=$3, disk_gb=$4
-WHERE id=$1 AND organization_id=$5 AND deleted_at IS NULL`,
-		instanceID, target.CPU, target.RAMMB, target.DiskGB, orgID); err != nil {
-		return nil, err
-	}
-	if err := s.repriceSubscription(ctx, instanceID, target); err != nil {
+	if err := s.applyResizeSpec(ctx, instanceID, target, orgID); err != nil {
 		return nil, err
 	}
 	return s.GetByIDAndOrg(ctx, instanceID, orgID)
 }
 
-// repriceSubscription keeps subscriptions.recurring_amount in sync with the
+// applyResizeSpec persists the new spec and reprices the linked subscription
+// atomically so a repricing failure cannot leave the instances row updated but
+// the subscription on a stale recurring_amount. If repricing fails the whole
+// transaction rolls back, the instance keeps its old spec in the DB, and a
+// resize retry is safe.
+func (s *Service) applyResizeSpec(ctx context.Context, instanceID uuid.UUID, target TargetSpec, orgID uuid.UUID) error {
+	tx, err := s.db.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	if _, err := tx.Exec(ctx, `
+UPDATE instances SET vcpu=$2, ram_mb=$3, disk_gb=$4
+WHERE id=$1 AND organization_id=$5 AND deleted_at IS NULL`,
+		instanceID, target.CPU, target.RAMMB, target.DiskGB, orgID); err != nil {
+		return err
+	}
+	if err := s.repriceSubscriptionTx(ctx, tx, instanceID, target); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
+}
+
+// repriceSubscriptionTx keeps subscriptions.recurring_amount in sync with the
 // new instance spec so renewal invoices (which price from that stored
-// snapshot) reflect what the customer actually runs. Only active custom
-// subscriptions are touched; fixed-plan ones keep their plan price.
-//
-// Failure handling: this runs after the provider accepted the new spec and the
-// instances row is updated. A repricing error is surfaced to the caller rather
-// than swallowed — a silent failure would leave renewals on the stale amount
-// forever with nothing recording it — and retrying resize afterwards is safe:
-// the spec UPDATE is idempotent for an already-applied spec (the policy check
-// rejects it as "no spec change requested", but the subscription stays
-// consistent because only the repricing step failed).
-func (s *Service) repriceSubscription(ctx context.Context, instanceID uuid.UUID, target TargetSpec) error {
+// snapshot) reflect what the customer actually runs. It runs inside the spec
+// update transaction (applyResizeSpec), so a repricing failure rolls back the
+// spec change and a resize retry is safe. Only active custom subscriptions are
+// touched; fixed-plan ones keep their plan price.
+func (s *Service) repriceSubscriptionTx(ctx context.Context, tx pgx.Tx, instanceID uuid.UUID, target TargetSpec) error {
 	var subID, regionID *uuid.UUID
-	if err := s.db.QueryRow(ctx, `
+	if err := tx.QueryRow(ctx, `
 SELECT subscription_id, region_id FROM instances WHERE id=$1`, instanceID).
 		Scan(&subID, &regionID); err != nil {
 		return fmt.Errorf("reload instance links: %w", err)
@@ -135,7 +146,7 @@ SELECT subscription_id, region_id FROM instances WHERE id=$1`, instanceID).
 		currency  string
 		period    string
 	)
-	err := s.db.QueryRow(ctx, `
+	err := tx.QueryRow(ctx, `
 SELECT product_id, plan_id, currency::text, billing_period::text
 FROM subscriptions WHERE id=$1 AND status='active'`, *subID).
 		Scan(&productID, &planID, &currency, &period)
@@ -158,7 +169,7 @@ FROM subscriptions WHERE id=$1 AND status='active'`, *subID).
 	if err != nil {
 		return fmt.Errorf("reprice subscription after resize: %w", err)
 	}
-	if _, err := s.db.Exec(ctx, `
+	if _, err := tx.Exec(ctx, `
 UPDATE subscriptions SET recurring_amount=$2 WHERE id=$1 AND status='active'`, *subID, amount); err != nil {
 		return fmt.Errorf("update subscription recurring_amount: %w", err)
 	}

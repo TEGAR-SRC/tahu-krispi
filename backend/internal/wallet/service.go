@@ -90,7 +90,7 @@ INSERT INTO wallet_transactions(wallet_id, direction, amount, balance_before, ba
 VALUES ($1,$2::ledger_direction,$3,$4,$5,NULLIF($6,''),$7,NULLIF($8,''),NULLIF($9,''))`,
 		walletID, direction, amount, balanceBefore, balanceAfter,
 		referenceType, nullUUID(referenceID), idempotencyKey, description)
-	if err != nil && isUnique(err, "wallet_transactions_wallet_id_key") {
+	if err != nil && isUnique(err, "wallet_transactions_wallet_id_idempotency_key") {
 		return apperrors.New(apperrors.CodeIdempotencyConflict, "idempotency key already used for this wallet")
 	}
 	if err != nil {

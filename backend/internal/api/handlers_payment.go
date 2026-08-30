@@ -23,7 +23,7 @@ func (s *Server) handleCreatePayment(c fiber.Ctx) error {
 	var in createPaymentInput
 	_ = c.Bind().Body(&in)
 	// Resolve the outstanding amount from the invoice; clients never set the amount.
-	amount, currency, aerr := s.paymentSvc.GetInvoiceAmountDue(c.Context(), invoiceID)
+	amount, currency, aerr := s.paymentSvc.GetInvoiceAmountDue(c.Context(), invoiceID, mustOrgID(c))
 	if aerr != nil {
 		return mw.WriteError(c, aerr)
 	}
