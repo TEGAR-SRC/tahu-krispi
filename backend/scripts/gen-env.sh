@@ -21,6 +21,7 @@ APP_PORT=8080
 APP_DOMAIN=kilat-cloud.com
 PUBLIC_API_BASE_URL=https://api.kilat-cloud.com
 CONSOLE_BASE_URL=https://console.kilat-cloud.com
+ADMIN_CONSOLE_BASE_URL=https://admin.kilat-cloud.com
 DOWNLOAD_BASE_URL=https://dl.kilat-cloud.com
 
 # OAuth — Google / GitHub (empty = provider disabled, login will redirect with ?error=oauth_not_configured)
@@ -50,18 +51,22 @@ ARGON2_SALT_LENGTH=16
 ONIDEL_BASE_URL=https://api.cloud.onidel.com
 ONIDEL_API_KEY=
 
-# Internal object storage (S3/R2). Empty = file endpoints return 503.
-# Defaults below target the local MinIO from `make up` (buckets auto-created);
-# for production point these at real Cloudflare R2 / S3 credentials.
+# Internal object storage (S3/R2) — RustFS (self-hosted) from `make up`.
 R2_ENDPOINT=http://localhost:54390
 R2_ACCESS_KEY=kilat
 R2_SECRET_KEY=kilat-secret
-R2_BUCKET=kilat-cloud-dev
+R2_BUCKET=kilat-cloud
 
-# SMTP (empty host = email jobs parked as failed; flows keep working)
-SMTP_HOST=
+# RustFS (self-hosted S3) — used by Docker compose; maps into R2_*.
+RUSTFS_ACCESS_KEY=kilat
+RUSTFS_SECRET_KEY=kilat-secret
+RUSTFS_PORT=54390
+RUSTFS_CONSOLE_PORT=54391
+
+# SMTP (Resend). Fill SMTP_PASSWORD with the Resend API key to enable email.
+SMTP_HOST=smtp.resend.com
 SMTP_PORT=587
-SMTP_USER=
+SMTP_USER=resend
 SMTP_PASSWORD=
 SMTP_FROM=noreply@kilat-cloud.com
 
@@ -76,11 +81,13 @@ SUMOPOD_WEBHOOK_TOKEN=
 RATE_LIMIT_LOGIN_PER_MINUTE=10
 RATE_LIMIT_REGISTER_PER_HOUR=20
 
-# Dev-only: echo phone OTP in API responses (no SMS gateway yet)
-# Dev-only: auto-activate accounts on registration (SMTP not configured)
-AUTO_VERIFY_EMAIL=true
-OTP_DEBUG_ECHO=true
+# Production flags — dev conveniences disabled
+AUTO_VERIFY_EMAIL=false
+OTP_DEBUG_ECHO=false
 SUBSCRIPTION_GRACE_DAYS=3
+
+# CORS
+CORS_ALLOWED_ORIGINS=https://admin.kilat-cloud.com,https://console.kilat-cloud.com,https://kilat-cloud.com,https://landing.kilat-cloud.com,https://docs.kilat-cloud.com
 EOF
 
 chmod 600 .env
