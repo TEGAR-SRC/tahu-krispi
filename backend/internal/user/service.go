@@ -466,7 +466,7 @@ func (s *Service) sendVerificationEmail(ctx context.Context, email string, userI
 	if err := s.rdb.Set(ctx, fmt.Sprintf("kc:otp:email:%s", hash), userID.String(), 24*time.Hour).Err(); err != nil {
 		return err
 	}
-	verifyLink := strings.TrimSuffix(s.cfg.ConsoleBaseURL, "/") + "/verify-email?token=" + token
+	verifyLink := strings.TrimSuffix(s.cfg.AuthConsoleBaseURL, "/") + "/verify-email?token=" + token
 	subject, textBody, htmlBody := mail.WelcomeVerification(email, verifyLink)
 	sendCtx, cancel := context.WithTimeout(ctx, 12*time.Second)
 	defer cancel()

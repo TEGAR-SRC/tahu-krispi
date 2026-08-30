@@ -122,7 +122,7 @@ func (s *Service) ForgotPassword(ctx context.Context, email string) (*ForgotPass
 	ttl := 30 * time.Minute
 	_, _ = s.rdb.Set(ctx, fmt.Sprintf("kc:pwreset:%s", hash), userID.String(), ttl).Result()
 	if s.mailSender != nil {
-		resetLink := strings.TrimSuffix(s.cfg.ConsoleBaseURL, "/") + "/reset-password?token=" + token
+		resetLink := strings.TrimSuffix(s.cfg.AuthConsoleBaseURL, "/") + "/reset-password?token=" + token
 		subject, textBody, htmlBody := mail.ResetPassword(resetLink)
 		sendCtx, cancel := context.WithTimeout(ctx, 12*time.Second)
 		_ = s.mailSender.Send(sendCtx, normalized, subject, textBody, htmlBody)

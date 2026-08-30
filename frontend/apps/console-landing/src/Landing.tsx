@@ -58,13 +58,13 @@ function renderSection(section: LandingSection) {
             {section.body ? <p className="max-w-2xl text-muted-foreground">{section.body}</p> : null}
             <div className="mt-4 flex flex-wrap justify-center gap-3">
               <a
-                href="https://console.kilat-cloud.com/signup"
+                href="https://auth.kilat-cloud.com/signup"
                 className="inline-flex h-11 items-center justify-center rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground hover:bg-primary/90"
               >
                 Get started
               </a>
               <a
-                href="https://console.kilat-cloud.com/login"
+                href="https://auth.kilat-cloud.com/login"
                 className="inline-flex h-11 items-center justify-center rounded-md border border-input bg-background px-6 text-sm font-medium hover:bg-accent"
               >
                 Sign in
@@ -195,13 +195,13 @@ export default function LandingPage() {
           </Link>
           <div className="flex items-center gap-2">
             <a
-              href="https://console.kilat-cloud.com/login"
+              href="https://auth.kilat-cloud.com/login"
               className="inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium hover:bg-accent"
             >
               Sign in
             </a>
             <a
-              href="https://console.kilat-cloud.com/signup"
+              href="https://auth.kilat-cloud.com/signup"
               className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
             >
               Get started
@@ -214,7 +214,7 @@ export default function LandingPage() {
           <h1 className="text-4xl font-bold">Kilat Cloud</h1>
           <p className="text-muted-foreground">Cloud infrastructure for everyone.</p>
           <a
-            href="https://console.kilat-cloud.com/signup"
+            href="https://auth.kilat-cloud.com/signup"
             className="inline-flex h-11 items-center justify-center rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground hover:bg-primary/90"
           >
             Get started

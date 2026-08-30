@@ -134,6 +134,7 @@ services:
       PUBLIC_API_BASE_URL: ${PUBLIC_API_BASE_URL:-https://api.kilat-cloud.com}
       CONSOLE_BASE_URL: ${CONSOLE_BASE_URL:-https://console.kilat-cloud.com}
       ADMIN_CONSOLE_BASE_URL: ${ADMIN_CONSOLE_BASE_URL:-https://admin.kilat-cloud.com}
+      AUTH_CONSOLE_BASE_URL: ${AUTH_CONSOLE_BASE_URL:-https://auth.kilat-cloud.com}
       DOWNLOAD_BASE_URL: ${DOWNLOAD_BASE_URL:-https://dl.kilat-cloud.com}
       DATABASE_URL: postgres://${POSTGRES_USER:-kilat}:${POSTGRES_PASSWORD:-kilat}@postgres:5432/${POSTGRES_DB:-kilat_cloud}?sslmode=disable
       REDIS_URL: redis://redis:6379/0
@@ -147,6 +148,7 @@ services:
       SUMOPOD_WEBHOOK_TOKEN: ${SUMOPOD_WEBHOOK_TOKEN:-whtok_change_me}
       ADMIN_API_DOMAIN: ${ADMIN_API_DOMAIN:-https://api-admin.kilat-cloud.com}
       USER_API_DOMAIN: ${USER_API_DOMAIN:-https://api-user.kilat-cloud.com}
+      AUTH_API_DOMAIN: ${AUTH_API_DOMAIN:-https://api-auth.kilat-cloud.com}
       LANDING_API_DOMAIN: ${LANDING_API_DOMAIN:-https://api-landing.kilat-cloud.com}
       DOCS_API_DOMAIN: ${DOCS_API_DOMAIN:-https://api-docs.kilat-cloud.com}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://admin.kilat-cloud.com,https://console.kilat-cloud.com,https://kilat-cloud.com,https://landing.kilat-cloud.com,https://docs.kilat-cloud.com}

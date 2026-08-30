@@ -16,6 +16,7 @@ import (
 //
 //   - admin   → api-admin.kilat-cloud.com   → /v1/admin/*, staff surfaces
 //   - user    → api-user.kilat-cloud.com    → customer endpoints
+//   - auth    → api-auth.kilat-cloud.com    → identity flows only (/v1/auth/*, /v1/me/*)
 //   - landing → api-landing.kilat-cloud.com → public marketing + media
 //   - docs    → api-docs.kilat-cloud.com    → public docs
 //
@@ -26,6 +27,7 @@ const (
 	audienceAll     = "all"
 	audienceAdmin   = "admin"
 	audienceUser    = "user"
+	audienceAuth    = "auth"
 	audienceLanding = "landing"
 	audienceDocs    = "docs"
 )
@@ -59,6 +61,8 @@ func (s *Server) audienceFor(c fiber.Ctx) string {
 		return audienceAdmin
 	case s.apiDomainHost(s.cfg.UserAPIDomain):
 		return audienceUser
+	case s.apiDomainHost(s.cfg.AuthAPIDomain):
+		return audienceAuth
 	case s.apiDomainHost(s.cfg.LandingAPIDomain):
 		return audienceLanding
 	case s.apiDomainHost(s.cfg.DocsAPIDomain):
@@ -116,6 +120,13 @@ func audienceAllowedPath(aud, path string) bool {
 	case audienceUser:
 		// Customer console: everything except the staff /admin surface.
 		return !strings.HasPrefix(path, "/v1/admin")
+	case audienceAuth:
+		// Standalone auth console: identity flows only. It must reach
+		// auth, /me and contact-change endpoints but nothing else.
+		return strings.HasPrefix(path, "/v1/auth/") ||
+			strings.HasPrefix(path, "/v1/me") ||
+			strings.HasPrefix(path, "/v1/contact-change") ||
+			isBaseRoute(path)
 	case audienceLanding:
 		// Marketing site: public content only.
 		return publicLandingPrefix(path)

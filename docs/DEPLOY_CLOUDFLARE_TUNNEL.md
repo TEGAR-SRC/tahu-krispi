@@ -68,8 +68,12 @@ setiap hostname dan arahkan ke service di network `kilat-net`:
 | `api.kilat-cloud.com`   | `http://api:8080` | HTTP  | API generik (semua endpoint) |
 | `api-admin.kilat-cloud.com` | `http://api:8080` | HTTP | API admin console          |
 | `api-user.kilat-cloud.com`  | `http://api:8080` | HTTP | API user console           |
+| `api-auth.kilat-cloud.com`  | `http://api:8080` | HTTP | API auth console (identitas) |
 | `api-landing.kilat-cloud.com`| `http://api:8080` | HTTP | API landing page           |
 | `api-docs.kilat-cloud.com`   | `http://api:8080` | HTTP | API docs site              |
+
+> Frontend console standalone (`auth.kilat-cloud.com`) di-deploy via Cloudflare
+> Pages dengan domain `auth.kilat-cloud.com`, dan berbicara ke `api-auth.kilat-cloud.com`.
 
 > Service name `api` = nama container dalam network Docker, bukan `localhost`.
 

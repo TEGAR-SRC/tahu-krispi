@@ -16,7 +16,7 @@ set -euo pipefail
 
 APP_NAME="${1:-}"
 if [ -z "$APP_NAME" ]; then
-  echo "usage: build-if-changed.sh <app-name> (console-admin|console-user|console-landing|console-docs)" >&2
+  echo "usage: build-if-changed.sh <app-name> (console-admin|console-user|console-auth|console-landing|console-docs)" >&2
   exit 1
 fi
 

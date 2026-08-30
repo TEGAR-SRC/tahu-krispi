@@ -72,9 +72,9 @@ func (s *Server) oauthRedirectURL(provider string) string {
 }
 
 func (s *Server) oauthConsoleURL(path string) string {
-	base := strings.TrimRight(s.cfg.ConsoleBaseURL, "/")
+	base := strings.TrimRight(s.cfg.AuthConsoleBaseURL, "/")
 	if base == "" {
-		base = "http://localhost:5173"
+		base = "http://localhost:5175"
 	}
 	if !strings.HasPrefix(path, "/") {
 		path = "/" + path

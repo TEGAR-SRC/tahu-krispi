@@ -82,7 +82,7 @@ func NewServer(cfg *config.Config, log *logger.Logger, db *pgxpool.Pool, rdb *go
 	// WebAuthn Relying Party config derives from the existing public-domain
 	// settings: RPID is the bare registrable domain, origins are where the
 	// user/admin consoles run navigator.credentials.create().
-	passkeyMgr, err := user.NewPasskeyManager(db, rdb, encKey, cfg.AppDomain, []string{cfg.ConsoleBaseURL, cfg.AdminConsoleBaseURL})
+	passkeyMgr, err := user.NewPasskeyManager(db, rdb, encKey, cfg.AppDomain, []string{cfg.ConsoleBaseURL, cfg.AdminConsoleBaseURL, cfg.AuthConsoleBaseURL})
 	if err != nil {
 		return nil, err
 	}

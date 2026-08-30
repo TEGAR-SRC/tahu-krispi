@@ -20,12 +20,14 @@ type Config struct {
 	PublicAPIBaseURL    string // https://api.kilat-cloud.com
 	ConsoleBaseURL      string // https://console.kilat-cloud.com (user console)
 	AdminConsoleBaseURL string // https://admin.kilat-cloud.com (staff console)
+	AuthConsoleBaseURL  string // https://auth.kilat-cloud.com (standalone auth console)
 	DownloadBaseURL     string // https://dl.kilat-cloud.com
 
 	// Per-console API domains used for audience scoping. Each console only
 	// reaches the endpoints its API domain is allowed to serve.
 	AdminAPIDomain   string // https://api-admin.kilat-cloud.com
 	UserAPIDomain    string // https://api-user.kilat-cloud.com
+	AuthAPIDomain    string // https://api-auth.kilat-cloud.com (auth console only)
 	LandingAPIDomain string // https://api-landing.kilat-cloud.com
 	DocsAPIDomain    string // https://api-docs.kilat-cloud.com
 
@@ -96,9 +98,11 @@ func Load() (*Config, error) {
 		PublicAPIBaseURL:         getEnv("PUBLIC_API_BASE_URL", "https://api.kilat-cloud.com"),
 		ConsoleBaseURL:           getEnv("CONSOLE_BASE_URL", "https://console.kilat-cloud.com"),
 		AdminConsoleBaseURL:      getEnv("ADMIN_CONSOLE_BASE_URL", "https://admin.kilat-cloud.com"),
+		AuthConsoleBaseURL:       getEnv("AUTH_CONSOLE_BASE_URL", "https://auth.kilat-cloud.com"),
 		DownloadBaseURL:          getEnv("DOWNLOAD_BASE_URL", "https://dl.kilat-cloud.com"),
 		AdminAPIDomain:           getEnv("ADMIN_API_DOMAIN", "https://api-admin.kilat-cloud.com"),
 		UserAPIDomain:            getEnv("USER_API_DOMAIN", "https://api-user.kilat-cloud.com"),
+		AuthAPIDomain:            getEnv("AUTH_API_DOMAIN", "https://api-auth.kilat-cloud.com"),
 		LandingAPIDomain:         getEnv("LANDING_API_DOMAIN", "https://api-landing.kilat-cloud.com"),
 		DocsAPIDomain:            getEnv("DOCS_API_DOMAIN", "https://api-docs.kilat-cloud.com"),
 		DatabaseURL:              getEnvRequired("DATABASE_URL"),
@@ -180,6 +184,7 @@ func (c *Config) CORSOrigins() string {
 	add(c.PublicAPIBaseURL)
 	add(c.ConsoleBaseURL)
 	add(c.AdminConsoleBaseURL)
+	add(c.AuthConsoleBaseURL)
 	// AppDomain is bare (kilat-cloud.com); prefix with https:// for valid origin.
 	if c.AppDomain != "" {
 		origins = append(origins, "https://"+c.AppDomain)
