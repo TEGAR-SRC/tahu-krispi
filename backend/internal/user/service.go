@@ -92,18 +92,38 @@ type LoginOutput struct {
 const preauthTTL = 5 * time.Minute
 
 func (s *Service) Register(ctx context.Context, in RegisterInput) (*LoginOutput, error) {
-	if !in.TermsAccepted || !in.PrivacyAccepted {
-		return nil, apperrors.New(apperrors.CodeValidation, "terms and privacy must be accepted")
+	if !in.TermsAccepted {
+		return nil, apperrors.WithFields(
+			apperrors.New(apperrors.CodeValidation, "terms must be accepted"),
+			map[string]string{"terms_accepted": "Anda harus menyetujui Syarat & Ketentuan"})
+	}
+	if !in.PrivacyAccepted {
+		return nil, apperrors.WithFields(
+			apperrors.New(apperrors.CodeValidation, "privacy must be accepted"),
+			map[string]string{"privacy_accepted": "Anda harus menyetujui Kebijakan Privasi"})
 	}
 	email := v.NormalizeEmail(in.Email)
 	if err := v.ValidateEmail(email); err != nil {
-		return nil, apperrors.WithFields(apperrors.New(apperrors.CodeValidation, err.Error()), map[string]string{"email": err.Error()})
+		// Map to Indonesian-friendly field message while keeping the original error for debugging.
+		fieldMsg := err.Error()
+		if fieldMsg == "email is required" {
+			fieldMsg = "email wajib diisi"
+		} else if fieldMsg == "invalid email format" {
+			fieldMsg = "format email tidak valid"
+		}
+		return nil, apperrors.WithFields(apperrors.New(apperrors.CodeValidation, err.Error()), map[string]string{"email": fieldMsg})
 	}
 	var phoneE164 string
 	if in.Phone != "" {
 		p, err := v.NormalizePhoneE164(in.Phone, "")
 		if err != nil {
-			return nil, apperrors.WithFields(apperrors.New(apperrors.CodeValidation, err.Error()), map[string]string{"phone": err.Error()})
+			fieldMsg := err.Error()
+			if fieldMsg == "phone is required" {
+				fieldMsg = "nomor telepon wajib diisi"
+			} else if fieldMsg == "invalid phone length" {
+				fieldMsg = "panjang nomor telepon tidak valid, gunakan format +628..."
+			}
+			return nil, apperrors.WithFields(apperrors.New(apperrors.CodeValidation, err.Error()), map[string]string{"phone": fieldMsg})
 		}
 		phoneE164 = p
 	}
@@ -111,12 +131,12 @@ func (s *Service) Register(ctx context.Context, in RegisterInput) (*LoginOutput,
 	if username != "" && !v.ValidateUsername(username) {
 		return nil, apperrors.WithFields(
 			apperrors.New(apperrors.CodeValidation, "invalid username"),
-			map[string]string{"username": "3-32 chars, alphanumeric/._- starting with alnum"})
+			map[string]string{"username": "3-32 karakter, huruf/angka/titik/garis/dash, diawali huruf/angka"})
 	}
 	if len(in.Password) < 10 {
 		return nil, apperrors.WithFields(
 			apperrors.New(apperrors.CodeValidation, "password too short"),
-			map[string]string{"password": "minimum 10 characters"})
+			map[string]string{"password": "minimal 10 karakter"})
 	}
 	hash, err := crypto.HashPassword(in.Password, s.argon2Params)
 	if err != nil {
@@ -246,7 +266,9 @@ FROM users WHERE lower(email::text)=$1 AND deleted_at IS NULL`, email).
 		return nil, err
 	}
 	if lockedUntil != nil && lockedUntil.After(time.Now()) {
-		return nil, apperrors.New(apperrors.CodeAccountLocked, "account temporarily locked")
+		return nil, apperrors.WithFields(
+			apperrors.New(apperrors.CodeAccountLocked, "account temporarily locked; try again after 15 minutes"),
+			map[string]string{"email": "akun terkunci sementara, coba lagi setelah 15 menit"})
 	}
 	ok, err := crypto.VerifyPassword(in.Password, pwHash)
 	if err != nil || !ok {
@@ -254,16 +276,29 @@ FROM users WHERE lower(email::text)=$1 AND deleted_at IS NULL`, email).
 		lockUntil := time.Time{}
 		if newFailed >= 5 {
 			lockUntil = time.Now().Add(15 * time.Minute)
+			// Notify the owner that the account was locked after repeated failures.
+			if s.mailSender != nil {
+				subject, textBody, htmlBody := mail.AccountLocked(email, in.IP, lockUntil, time.Now())
+				sendCtx, cancel := context.WithTimeout(ctx, 12*time.Second)
+				_ = s.mailSender.Send(sendCtx, email, subject, textBody, htmlBody)
+				cancel()
+			}
 		}
 		_, _ = s.db.Exec(ctx, `
 UPDATE users SET failed_login_count=$2, locked_until=$3 WHERE id=$1`,
 			userID, newFailed, nullableTime(lockUntil))
 		s.recordAuthEvent(ctx, userID, "login_failed", false, in.IP, in.UserAgent)
-		return nil, apperrors.New(apperrors.CodeInvalidCredentials, "invalid credentials")
+		return nil, apperrors.WithFields(
+			apperrors.New(apperrors.CodeInvalidCredentials, "invalid credentials"),
+			map[string]string{"email": "email atau password salah", "password": "email atau password salah"})
 	}
 	if status != "active" {
 		if status == "pending" {
-			return nil, apperrors.New(apperrors.CodeEmailNotVerified, "email not verified; please verify before login")
+			// Auto-resend verification email so the user immediately gets a fresh link without manual resend.
+			_ = s.sendVerificationEmail(ctx, email, userID)
+			return nil, apperrors.WithFields(
+				apperrors.New(apperrors.CodeEmailNotVerified, "email not verified; verification email sent, please check your inbox"),
+				map[string]string{"email": "email belum diverifikasi; email verifikasi sudah dikirim, cek inbox & spam"})
 		}
 		return nil, apperrors.New(apperrors.CodeForbidden, fmt.Sprintf("account status %s does not permit login", status))
 	}
@@ -445,7 +480,13 @@ func (s *Service) sendVerificationEmail(ctx context.Context, email string, userI
 func (s *Service) ResendVerificationByEmail(ctx context.Context, email string) error {
 	normalized := v.NormalizeEmail(email)
 	if err := v.ValidateEmail(normalized); err != nil {
-		return apperrors.WithFields(apperrors.New(apperrors.CodeValidation, err.Error()), map[string]string{"email": err.Error()})
+		fieldMsg := err.Error()
+		if fieldMsg == "email is required" {
+			fieldMsg = "email wajib diisi"
+		} else if fieldMsg == "invalid email format" {
+			fieldMsg = "format email tidak valid"
+		}
+		return apperrors.WithFields(apperrors.New(apperrors.CodeValidation, err.Error()), map[string]string{"email": fieldMsg})
 	}
 	var userID uuid.UUID
 	var emailStatus string
@@ -456,7 +497,9 @@ func (s *Service) ResendVerificationByEmail(ctx context.Context, email string) e
 		return nil
 	}
 	if emailStatus == "verified" {
-		return apperrors.New(apperrors.CodeConflict, "email already verified")
+		return apperrors.WithFields(
+			apperrors.New(apperrors.CodeConflict, "email already verified"),
+			map[string]string{"email": "email sudah terverifikasi"})
 	}
 	return s.sendVerificationEmail(ctx, normalized, userID)
 }
@@ -479,13 +522,21 @@ func mapUniqueViolation(err error) error {
 	msg := err.Error()
 	switch {
 	case contains(msg, "ux_users_email_live"):
-		return apperrors.New(apperrors.CodeEmailExists, "email already registered")
+		return apperrors.WithFields(
+			apperrors.New(apperrors.CodeEmailExists, "email already registered"),
+			map[string]string{"email": "email sudah terdaftar"})
 	case contains(msg, "ux_users_phone_live"):
-		return apperrors.New(apperrors.CodePhoneExists, "phone already registered")
+		return apperrors.WithFields(
+			apperrors.New(apperrors.CodePhoneExists, "phone already registered"),
+			map[string]string{"phone": "nomor telepon sudah terdaftar"})
 	case contains(msg, "ux_users_username_live"):
-		return apperrors.New(apperrors.CodeUsernameExists, "username already taken")
+		return apperrors.WithFields(
+			apperrors.New(apperrors.CodeUsernameExists, "username already taken"),
+			map[string]string{"username": "username sudah dipakai"})
 	case contains(msg, "ux_organizations_slug_live"):
-		return apperrors.New(apperrors.CodeConflict, "organization slug already exists")
+		return apperrors.WithFields(
+			apperrors.New(apperrors.CodeConflict, "organization slug already exists"),
+			map[string]string{"organization_slug": "slug organisasi sudah dipakai"})
 	default:
 		return err
 	}
