@@ -14,6 +14,8 @@ import (
 	"errors"
 	"fmt"
 	"html"
+	"io"
+	"net/http"
 	"net/url"
 	"os"
 	"os/signal"
@@ -2176,7 +2178,65 @@ WHERE id=$1 AND deleted_at IS NULL
 		if _, serr := ssrf.Validate(*sourceURL); serr != nil {
 			return failFinal(fmt.Errorf("custom iso source URL rejected: %w", serr))
 		}
-		url = *sourceURL
+		// S3-first flow: download external URL to S3 (RustFS) first, then let
+		// the provider fetch from the presigned S3 URL. This ensures persistence
+		// and that the provider always pulls from internal S3, not directly
+		// from the external URL.
+		cl2, cerr2 := a.objClient(ctx)
+		if cerr2 != nil {
+			return failFinal(cerr2)
+		}
+		var backendID2 uuid.UUID
+		if berr := a.db.QueryRow(ctx, `SELECT id FROM object_storage_backends WHERE enabled ORDER BY created_at LIMIT 1`).Scan(&backendID2); berr != nil {
+			return failFinal(fmt.Errorf("no storage backend: %w", berr))
+		}
+		req, rerr := http.NewRequestWithContext(ctx, http.MethodGet, *sourceURL, nil)
+		if rerr != nil {
+			return failFinal(fmt.Errorf("create request for %q: %w", *sourceURL, rerr))
+		}
+		resp, rerr := http.DefaultClient.Do(req)
+		if rerr != nil {
+			return failFinal(fmt.Errorf("fetch iso url %q: %w", *sourceURL, rerr))
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+			return failFinal(fmt.Errorf("fetch iso url %q: status %d", *sourceURL, resp.StatusCode))
+		}
+		fname2 := path.Base(*sourceURL)
+		if fname2 == "" || fname2 == "." || fname2 == "/" {
+			fname2 = name
+		}
+		if !strings.HasSuffix(strings.ToLower(fname2), ".iso") {
+			fname2 += ".iso"
+		}
+		s3Key2 := "isos/" + orgID.String() + "/" + isoID.String() + "/" + fname2
+		size2 := resp.ContentLength
+		if size2 < 0 {
+			size2 = -1
+		}
+		// Stream external body directly to S3 (handles 755MB via multipart).
+		etag2, perr2 := cl2.PutObject(ctx, s3Key2, resp.Body, size2, "application/octet-stream")
+		if perr2 != nil {
+			// Ensure body is drained
+			_, _ = io.Copy(io.Discard, resp.Body)
+			return failFinal(fmt.Errorf("upload iso to s3 %q: %w", s3Key2, perr2))
+		}
+		var objID2 uuid.UUID
+		if err := a.db.QueryRow(ctx, `
+INSERT INTO stored_objects(storage_backend_id, organization_id, object_key, purpose, mime_type, size_bytes, etag)
+VALUES ($1,$2,$3,'custom_iso','application/octet-stream',$4,NULLIF($5,''))
+ON CONFLICT (storage_backend_id, object_key) DO UPDATE SET mime_type=EXCLUDED.mime_type, size_bytes=EXCLUDED.size_bytes, etag=EXCLUDED.etag, deleted_at=NULL
+RETURNING id`, backendID2, orgID, s3Key2, size2, etag2).Scan(&objID2); err != nil {
+			return failFinal(fmt.Errorf("insert stored_object for iso: %w", err))
+		}
+		if _, uerr := a.db.Exec(ctx, `UPDATE custom_isos SET storage_key=$2, source_object_id=$3, source_url=NULL, updated_at=now() WHERE id=$1`, isoID, s3Key2, objID2); uerr != nil {
+			return failFinal(fmt.Errorf("update iso with s3 key: %w", uerr))
+		}
+		purl2, perr2 := cl2.PresignedGet(ctx, s3Key2, isoPresignExpiry)
+		if perr2 != nil {
+			return failFinal(fmt.Errorf("presign iso object %q: %w", s3Key2, perr2))
+		}
+		url = purl2
 	default:
 		return failFinal(errors.New("custom iso has neither storage_key nor source_url"))
 	}
