@@ -22,6 +22,13 @@ type Config struct {
 	AdminConsoleBaseURL string // https://admin.kilat-cloud.com (staff console)
 	DownloadBaseURL     string // https://dl.kilat-cloud.com
 
+	// Per-console API domains used for audience scoping. Each console only
+	// reaches the endpoints its API domain is allowed to serve.
+	AdminAPIDomain   string // https://api-admin.kilat-cloud.com
+	UserAPIDomain    string // https://api-user.kilat-cloud.com
+	LandingAPIDomain string // https://api-landing.kilat-cloud.com
+	DocsAPIDomain    string // https://api-docs.kilat-cloud.com
+
 	DatabaseURL string
 	RedisURL    string
 
@@ -90,6 +97,10 @@ func Load() (*Config, error) {
 		ConsoleBaseURL:           getEnv("CONSOLE_BASE_URL", "https://console.kilat-cloud.com"),
 		AdminConsoleBaseURL:      getEnv("ADMIN_CONSOLE_BASE_URL", "https://admin.kilat-cloud.com"),
 		DownloadBaseURL:          getEnv("DOWNLOAD_BASE_URL", "https://dl.kilat-cloud.com"),
+		AdminAPIDomain:           getEnv("ADMIN_API_DOMAIN", "https://api-admin.kilat-cloud.com"),
+		UserAPIDomain:            getEnv("USER_API_DOMAIN", "https://api-user.kilat-cloud.com"),
+		LandingAPIDomain:         getEnv("LANDING_API_DOMAIN", "https://api-landing.kilat-cloud.com"),
+		DocsAPIDomain:            getEnv("DOCS_API_DOMAIN", "https://api-docs.kilat-cloud.com"),
 		DatabaseURL:              getEnvRequired("DATABASE_URL"),
 		RedisURL:                 getEnvRequired("REDIS_URL"),
 		JWTSecret:                getEnvRequired("JWT_SECRET"),

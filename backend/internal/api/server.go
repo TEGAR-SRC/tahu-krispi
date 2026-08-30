@@ -137,6 +137,8 @@ func NewServer(cfg *config.Config, log *logger.Logger, db *pgxpool.Pool, rdb *go
 	app.Use(recover.New())
 	app.Use(mw.RequestID())
 	app.Use(mw.SecurityHeaders())
+	app.Use(s.resolveAudience)
+	app.Use(s.enforceAudienceScope)
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     strings.Split(s.cfg.CORSOrigins(), ","),
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
@@ -448,8 +450,8 @@ func (s *Server) registerRoutes() {
 	v1.Post("/me/affiliate/withdraw", s.authJWT(), s.handleAffiliateWithdraw)
 	v1.Post("/affiliate/track/:code", s.handleTrackReferral)
 
-	// Admin (platform admins only).
-	admin := v1.Group("/admin", s.authJWT())
+	// Admin (platform admins only). Only reachable via the admin API domain.
+	admin := v1.Group("/admin", s.authJWT(), s.allowAudiences(audienceAdmin))
 	admin.Get("/users", s.requireStaff("users"), s.adminListUsers)
 	admin.Patch("/users/:user_id/limits", s.requireStaff(""), s.adminUpdateUserLimits)
 	admin.Get("/affiliate/settings", s.requireStaff("billing"), s.handleAdminGetAffiliateSettings)
