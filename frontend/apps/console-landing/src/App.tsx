@@ -30,7 +30,7 @@ export default function App() {
           <div className="min-h-svh w-full bg-background">
             <BlogHeader />
             <BlogList />
-            <footer className="border-t px-6 py-6 text-center text-sm text-muted-foreground">
+            <footer className="border-t px-6 py-3 text-center text-xs text-muted-foreground">
               &copy; {new Date().getFullYear()} Kilat Cloud
             </footer>
           </div>
@@ -42,7 +42,7 @@ export default function App() {
           <div className="min-h-svh w-full bg-background">
             <BlogHeader />
             <BlogDetail />
-            <footer className="border-t px-6 py-6 text-center text-sm text-muted-foreground">
+            <footer className="border-t px-6 py-3 text-center text-xs text-muted-foreground">
               &copy; {new Date().getFullYear()} Kilat Cloud
             </footer>
           </div>

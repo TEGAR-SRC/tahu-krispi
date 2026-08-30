@@ -42,8 +42,8 @@ function renderSection(section: LandingSection) {
   switch (section.section_key) {
     case "hero":
       return (
-        <section className="border-b py-16 text-center sm:py-24">
-          <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-4">
+        <section className="w-full border-b bg-gradient-to-b from-primary/5 via-background to-background py-20 text-center sm:py-28">
+          <div className="flex w-full flex-col items-center gap-4 px-6">
             {section.media_url ? (
               <img
                 src={resolveMediaUrl(section.media_url)}
@@ -223,7 +223,7 @@ export default function LandingPage() {
       ) : (
         ordered.map((section) => <div key={section.id}>{renderSection(section)}</div>)
       )}
-      <footer className="border-t px-6 py-6 text-center text-sm text-muted-foreground">
+      <footer className="border-t px-6 py-3 text-center text-xs text-muted-foreground">
         &copy; {new Date().getFullYear()} Kilat Cloud
       </footer>
     </div>
