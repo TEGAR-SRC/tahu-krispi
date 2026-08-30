@@ -104,6 +104,9 @@ const normalizeCheckoutUrl = (url: string) =>
 // Statuses where paying more makes no sense.
 const SETTLED = new Set(["paid", "void", "refunded"])
 
+const isValidUUID = (id: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+
 export default function CustomerInvoiceDetailPage() {
   const { invoiceId } = useParams()
   const navigate = useNavigate()
@@ -121,6 +124,11 @@ export default function CustomerInvoiceDetailPage() {
 
   const load = useCallback(async () => {
     if (!orgId || !invoiceId) return
+    if (!isValidUUID(invoiceId)) {
+      setError(new Error("Invoice tidak ditemukan"))
+      setLoading(false)
+      return
+    }
     setLoading(true)
     setError(null)
     try {
