@@ -10,6 +10,7 @@ import { toast } from "sonner"
 import { apiGet, apiPost, ApiError } from "@/lib/api"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { SimpleDataTable, type SimpleColumn } from "@/components/shared/SimpleDataTable"
+import { BulkActionBar, useBulkSelection } from "@/components/shared/BulkActionBar"
 import { ErrorBanner } from "@/components/shared/ErrorBanner"
 import {
   AlertDialog,
@@ -115,6 +116,79 @@ export default function BillingWalletsPage() {
   const [txnsPage, setTxnsPage] = useState(1)
   const [txnsLoading, setTxnsLoading] = useState(false)
   const [txnsError, setTxnsError] = useState<unknown>(null)
+
+  // Bulk adjust
+  const bulk = useBulkSelection<OrgRow>((row) => row.id)
+  const [bulkAdjustOpen, setBulkAdjustOpen] = useState(false)
+  const [bulkForm, setBulkForm] = useState<AdjustForm>({
+    direction: "credit",
+    amount: "",
+    currency: "IDR",
+    description: "",
+  })
+  const [bulkFormError, setBulkFormError] = useState<string | null>(null)
+  const [bulkBusy, setBulkBusy] = useState(false)
+  const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false)
+
+  const openBulkAdjust = () => {
+    setBulkForm({
+      direction: "credit",
+      amount: "",
+      currency: "IDR",
+      description: "",
+    })
+    setBulkFormError(null)
+    setBulkAdjustOpen(true)
+  }
+
+  const submitBulkAdjust = () => {
+    const amount = Number(bulkForm.amount)
+    const currency = bulkForm.currency.trim().toUpperCase()
+    if (!bulkForm.amount.trim() || Number.isNaN(amount) || amount <= 0) {
+      setBulkFormError("Amount must be a number greater than 0.")
+      return
+    }
+    if (currency.length !== 3) {
+      setBulkFormError("Currency must be a 3-letter ISO code (e.g. IDR).")
+      return
+    }
+    if (!bulkForm.description.trim()) {
+      setBulkFormError("Description is required.")
+      return
+    }
+    setBulkFormError(null)
+    setBulkConfirmOpen(true)
+  }
+
+  const applyBulkAdjust = async () => {
+    const targets = bulk.resolve(list.rows)
+    if (targets.length === 0) return
+    setBulkBusy(true)
+    try {
+      await Promise.all(
+        targets.map((org) =>
+          apiPost(`/admin/wallets/${org.id}/adjust`, {
+            direction: bulkForm.direction,
+            amount: Number(bulkForm.amount),
+            currency: bulkForm.currency.trim().toUpperCase(),
+            description: bulkForm.description.trim(),
+          }),
+        ),
+      )
+      toast.success(
+        `${bulkForm.direction === "credit" ? "Credited" : "Debited"} ${formatMoney(Number(bulkForm.amount), bulkForm.currency.trim().toUpperCase())} across ${targets.length} wallet${targets.length === 1 ? "" : "s"}`,
+      )
+      setBulkConfirmOpen(false)
+      setBulkAdjustOpen(false)
+      bulk.clear()
+      reloadBalances()
+    } catch (cause) {
+      toast.error(cause instanceof ApiError ? cause.message : "Failed to adjust wallets")
+      setBulkConfirmOpen(false)
+    } finally {
+      setBulkBusy(false)
+    }
+  }
 
   const reloadBalances = useCallback(() => setBalanceTick((tick) => tick + 1), [])
 
@@ -309,12 +383,27 @@ export default function BillingWalletsPage() {
         description="Per-organization prepaid balances. Balances are read per organization because the API exposes no admin-wide wallet listing."
       />
 
+      <BulkActionBar
+        selectedCount={bulk.selectedKeys.size}
+        busy={bulkBusy}
+        actions={[
+          {
+            key: "adjust",
+            label: "Bulk adjust",
+            onClick: openBulkAdjust,
+          },
+        ]}
+      />
+
       <SimpleDataTable
         columns={columns}
         rows={list.rows}
         loading={list.loading}
         error={list.error}
-        getRowKey={(org) => org.id}
+        getRowKey={bulk.getRowKey}
+        selectable
+        selectedKeys={bulk.selectedKeys}
+        onSelectionChange={bulk.onSelectionChange}
         emptyMessage="No organizations yet."
         skeletonRows={6}
       />
@@ -448,6 +537,128 @@ export default function BillingWalletsPage() {
               }}
             >
               {submitting ? "Applying…" : "Apply adjustment"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk adjust dialog */}
+      <Dialog
+        open={bulkAdjustOpen}
+        onOpenChange={(open) => {
+          if (!open && !bulkBusy) setBulkAdjustOpen(false)
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Bulk adjust wallets</DialogTitle>
+            <DialogDescription>
+              Apply one manual ledger entry to {bulk.selectedKeys.size} selected
+              organization wallet(s). The same amount, currency and description are used
+              for every target.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid w-full max-w-full min-w-0 gap-4">
+            <div className="grid w-full max-w-full min-w-0 gap-2">
+              <Label htmlFor="bulk-wallet-direction">Direction</Label>
+              <Select
+                value={bulkForm.direction}
+                onValueChange={(value) =>
+                  setBulkForm((current) => ({
+                    ...current,
+                    direction: value as AdjustForm["direction"],
+                  }))
+                }
+              >
+                <SelectTrigger id="bulk-wallet-direction">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="credit">Credit (add)</SelectItem>
+                  <SelectItem value="debit">Debit (remove)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid w-full max-w-full min-w-0 grid-cols-2 gap-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="bulk-wallet-amount">Amount</Label>
+                <Input
+                  id="bulk-wallet-amount"
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={bulkForm.amount}
+                  onChange={(event) =>
+                    setBulkForm((current) => ({ ...current, amount: event.target.value }))
+                  }
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="bulk-wallet-currency">Currency</Label>
+                <Input
+                  id="bulk-wallet-currency"
+                  maxLength={3}
+                  value={bulkForm.currency}
+                  onChange={(event) =>
+                    setBulkForm((current) => ({ ...current, currency: event.target.value }))
+                  }
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="bulk-wallet-description">Description</Label>
+              <Input
+                id="bulk-wallet-description"
+                value={bulkForm.description}
+                onChange={(event) =>
+                  setBulkForm((current) => ({ ...current, description: event.target.value }))
+                }
+              />
+            </div>
+            {bulkFormError ? (
+              <p className="text-sm text-destructive">{bulkFormError}</p>
+            ) : null}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" disabled={bulkBusy} onClick={() => setBulkAdjustOpen(false)}>
+              Cancel
+            </Button>
+            <Button disabled={bulkBusy} onClick={submitBulkAdjust}>
+              {bulkBusy ? "Applying…" : "Continue"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk adjustment confirmation */}
+      <AlertDialog
+        open={bulkConfirmOpen}
+        onOpenChange={(open) => {
+          if (!open && !bulkBusy) setBulkConfirmOpen(false)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {bulkForm.direction === "credit" ? "Credit" : "Debit"} {bulk.selectedKeys.size} wallet{bulk.selectedKeys.size === 1 ? "" : "s"}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {formatMoney(Number(bulkForm.amount), bulkForm.currency)} will be{" "}
+              {bulkForm.direction === "credit" ? "added to" : "removed from"} the wallets of{" "}
+              {bulk.selectedKeys.size} selected organization(s) with description "
+              {bulkForm.description.trim()}".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkBusy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={bulkBusy}
+              onClick={(event) => {
+                event.preventDefault()
+                void applyBulkAdjust()
+              }}
+            >
+              {bulkBusy ? "Applying…" : "Apply adjustment"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

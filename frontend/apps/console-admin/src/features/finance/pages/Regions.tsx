@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { apiGet } from "@/lib/api"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { SimpleDataTable, type SimpleColumn } from "@/components/shared/SimpleDataTable"
+import { BulkActionBar, useBulkSelection } from "@/components/shared/BulkActionBar"
 import { ErrorBanner } from "@/components/shared/ErrorBanner"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
@@ -27,6 +28,8 @@ export default function FinanceRegionsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
   const [search, setSearch] = useState("")
+
+  const bulk = useBulkSelection<Region>((row) => row.id)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -127,16 +130,22 @@ export default function FinanceRegionsPage() {
       ) : loading ? (
         <Skeleton className="h-72 w-full" />
       ) : (
-        <SimpleDataTable
-          columns={columns}
-          rows={filtered}
-          getRowKey={(row) => row.id}
-          emptyMessage={
-            search.trim()
-              ? `No regions match “${search.trim()}”.`
-              : "No regions are registered yet."
-          }
-        />
+        <>
+          <BulkActionBar selectedCount={bulk.selectedKeys.size} actions={[]} />
+          <SimpleDataTable
+            columns={columns}
+            rows={filtered}
+            getRowKey={bulk.getRowKey}
+            selectable
+            selectedKeys={bulk.selectedKeys}
+            onSelectionChange={bulk.onSelectionChange}
+            emptyMessage={
+              search.trim()
+                ? `No regions match “${search.trim()}”.`
+                : "No regions are registered yet."
+            }
+          />
+        </>
       )}
     </div>
   )

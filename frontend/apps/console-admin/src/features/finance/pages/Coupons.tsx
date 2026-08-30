@@ -7,6 +7,7 @@ import { apiGet, apiPost, apiDelete, ApiError } from "@/lib/api"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { SimpleDataTable, type SimpleColumn } from "@/components/shared/SimpleDataTable"
+import { BulkActionBar, useBulkSelection } from "@/components/shared/BulkActionBar"
 import { ErrorBanner } from "@/components/shared/ErrorBanner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -117,8 +118,37 @@ export default function FinanceCouponsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Coupon | null>(null)
   const [deleting, setDeleting] = useState(false)
 
+  const couponBulk = useBulkSelection<Coupon>((row) => row.id)
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false)
+  const [bulkDeleting, setBulkDeleting] = useState(false)
+
+  const redemptionBulk = useBulkSelection<RedemptionRow>((row) => row.orderPublicId)
+
   const [redemptions, setRedemptions] = useState<RedemptionRow[]>([])
   const [redemptionsLoading, setRedemptionsLoading] = useState(false)
+
+  const bulkDeleteCoupons = useCallback(async () => {
+    const targets = couponBulk.resolve(rows)
+    if (targets.length === 0) {
+      couponBulk.clear()
+      setConfirmBulkDelete(false)
+      return
+    }
+    setBulkDeleting(true)
+    try {
+      for (const row of targets) {
+        await apiDelete(`/admin/coupons/${row.id}`)
+      }
+      toast.success(`Deleted ${targets.length} coupon${targets.length === 1 ? "" : "s"}`)
+      setConfirmBulkDelete(false)
+      couponBulk.clear()
+      await loadCoupons()
+    } catch (cause) {
+      toast.error(cause instanceof ApiError ? cause.message : "Failed to delete coupons")
+    } finally {
+      setBulkDeleting(false)
+    }
+  }, [couponBulk, rows, loadCoupons])
 
   const loadCoupons = useCallback(async () => {
     setLoading(true)
@@ -348,11 +378,26 @@ export default function FinanceCouponsPage() {
 
         <TabsContent value="coupons" className="mt-4 space-y-4">
           {error ? <ErrorBanner error={error} /> : null}
+          <BulkActionBar
+            selectedCount={couponBulk.selectedKeys.size}
+            actions={[
+              {
+                key: "delete",
+                label: "Delete selected",
+                destructive: true,
+                onClick: () => setConfirmBulkDelete(true),
+              },
+            ]}
+            busy={bulkDeleting}
+          />
           <SimpleDataTable
             columns={columns}
             rows={rows}
             loading={loading}
-            getRowKey={(row) => row.id}
+            selectable
+            getRowKey={couponBulk.getRowKey}
+            selectedKeys={couponBulk.selectedKeys}
+            onSelectionChange={couponBulk.onSelectionChange}
             emptyMessage={
               error
                 ? "Coupon list unavailable."
@@ -371,6 +416,7 @@ export default function FinanceCouponsPage() {
               <RefreshCwIcon /> Reload
             </Button>
           </div>
+          <BulkActionBar selectedCount={redemptionBulk.selectedKeys.size} actions={[]} />
           <SimpleDataTable
             columns={[
               { key: "code", header: "Coupon", render: (row) => <span className="font-mono">{row.code}</span> },
@@ -390,7 +436,10 @@ export default function FinanceCouponsPage() {
             ]}
             rows={redemptions}
             loading={redemptionsLoading}
-            getRowKey={(row) => row.orderPublicId}
+            selectable
+            getRowKey={redemptionBulk.getRowKey}
+            selectedKeys={redemptionBulk.selectedKeys}
+            onSelectionChange={redemptionBulk.onSelectionChange}
             emptyMessage={redemptionsLoading ? "Scanning recent orders…" : "No coupon redemptions found on recent orders."}
           />
         </TabsContent>
@@ -554,6 +603,32 @@ export default function FinanceCouponsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Bulk delete confirmation */}
+      <AlertDialog open={confirmBulkDelete} onOpenChange={setConfirmBulkDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete selected coupons?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {couponBulk.resolve(rows).length} coupon
+              {couponBulk.resolve(rows).length === 1 ? "" : "s"} will be removed permanently. Past
+              orders keep their applied discounts.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={bulkDeleting}
+              onClick={(event) => {
+                event.preventDefault()
+                void bulkDeleteCoupons()
+              }}
+            >
+              {bulkDeleting ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete confirmation */}
       <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => {

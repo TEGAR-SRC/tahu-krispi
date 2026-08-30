@@ -10,6 +10,7 @@ import { apiGet, apiPost, ApiError } from "@/lib/api"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { SimpleDataTable, type SimpleColumn } from "@/components/shared/SimpleDataTable"
 import { ErrorBanner } from "@/components/shared/ErrorBanner"
+import { BulkActionBar, useBulkSelection } from "@/components/shared/BulkActionBar"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -142,6 +143,9 @@ export default function BillingOrdersPage() {
   const [detailError, setDetailError] = useState<unknown>(null)
   const [voidTarget, setVoidTarget] = useState<OrderRow | null>(null)
   const [voiding, setVoiding] = useState(false)
+  const bulk = useBulkSelection<OrderRow>((order) => order.id)
+  const [bulkVoidOpen, setBulkVoidOpen] = useState(false)
+  const [bulkVoiding, setBulkVoiding] = useState(false)
 
   const openDetail = (order: OrderRow) => {
     setDetail(null)
@@ -169,6 +173,38 @@ export default function BillingOrdersPage() {
       setVoiding(false)
     }
   }
+
+  const confirmBulkVoid = async () => {
+    const targets = bulk.resolve(list.rows).filter(
+      (order) => !TERMINAL_STATUSES.has(order.status),
+    )
+    if (targets.length === 0) {
+      setBulkVoidOpen(false)
+      return
+    }
+    setBulkVoiding(true)
+    try {
+      for (const order of targets) {
+        await apiPost(`/admin/orders/${order.id}/void`)
+      }
+      toast.success(
+        `${targets.length} order${targets.length > 1 ? "s" : ""} cancelled`,
+      )
+      setBulkVoidOpen(false)
+      bulk.clear()
+      list.reload()
+    } catch (cause) {
+      toast.error(
+        cause instanceof ApiError ? cause.message : "Failed to void orders",
+      )
+    } finally {
+      setBulkVoiding(false)
+    }
+  }
+
+  const voidableCount = bulk
+    .resolve(list.rows)
+    .filter((order) => !TERMINAL_STATUSES.has(order.status)).length
 
   const columns: Array<SimpleColumn<OrderRow>> = [
     {
@@ -264,12 +300,28 @@ export default function BillingOrdersPage() {
         }
       />
 
+      <BulkActionBar
+        selectedCount={bulk.selectedKeys.size}
+        busy={bulkVoiding}
+        actions={[
+          {
+            key: "void",
+            label: "Void selected",
+            destructive: true,
+            onClick: () => setBulkVoidOpen(true),
+          },
+        ]}
+      />
+
       <SimpleDataTable
         columns={columns}
         rows={list.rows}
         loading={list.loading}
         error={list.error}
-        getRowKey={(row) => row.id}
+        getRowKey={bulk.getRowKey}
+        selectable
+        selectedKeys={bulk.selectedKeys}
+        onSelectionChange={bulk.onSelectionChange}
         emptyMessage="No orders match this filter."
         skeletonRows={6}
       />
@@ -445,6 +497,36 @@ export default function BillingOrdersPage() {
               }}
             >
               {voiding ? "Voiding…" : "Void order"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={bulkVoidOpen}
+        onOpenChange={(open) => {
+          if (!open && !bulkVoiding) setBulkVoidOpen(false)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Void selected orders?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {voidableCount} order{voidableCount === 1 ? "" : "s"} will be
+              cancelled and their draft/unpaid invoices voided. Terminal orders
+              are skipped. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkVoiding}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={bulkVoiding}
+              onClick={(event) => {
+                event.preventDefault()
+                void confirmBulkVoid()
+              }}
+            >
+              {bulkVoiding ? "Voiding…" : "Void selected"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

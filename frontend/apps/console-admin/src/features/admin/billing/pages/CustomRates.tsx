@@ -8,6 +8,7 @@ import { toast } from "sonner"
 import { apiGet, apiPost, ApiError } from "@/lib/api"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { SimpleDataTable, type SimpleColumn } from "@/components/shared/SimpleDataTable"
+import { BulkActionBar, useBulkSelection } from "@/components/shared/BulkActionBar"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -118,6 +119,8 @@ export default function BillingCustomRatesPage() {
   const [form, setForm] = useState<RateFormState>(EMPTY_FORM)
   const [formError, setFormError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+
+  const bulk = useBulkSelection<CustomRateRow>((row) => row.id)
 
   // Products power the rate form's target selector.
   const loadProducts = () => {
@@ -277,12 +280,17 @@ export default function BillingCustomRatesPage() {
         }
       />
 
+      <BulkActionBar selectedCount={bulk.selectedKeys.size} actions={[]} />
+
       <SimpleDataTable
         columns={columns}
         rows={list.rows}
         loading={list.loading}
         error={list.error}
-        getRowKey={(rate) => rate.id}
+        getRowKey={bulk.getRowKey}
+        selectable
+        selectedKeys={bulk.selectedKeys}
+        onSelectionChange={bulk.onSelectionChange}
         emptyMessage="No custom rates yet."
         skeletonRows={6}
       />

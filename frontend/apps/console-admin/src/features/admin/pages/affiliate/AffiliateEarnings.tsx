@@ -10,6 +10,7 @@ import { RotateCcwIcon } from "lucide-react"
 import { apiGet, apiPost, ApiError } from "@/lib/api"
 import type { PagedMeta } from "@/lib/types"
 import { SimpleDataTable, type SimpleColumn } from "@/components/shared/SimpleDataTable"
+import { BulkActionBar, useBulkSelection } from "@/components/shared/BulkActionBar"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -61,6 +62,27 @@ export default function AffiliateEarningsPage() {
   const [reloadTick, setReloadTick] = useState(0)
   const [reverseTarget, setReverseTarget] = useState<EarningRow | null>(null)
   const [reversing, setReversing] = useState(false)
+
+  const bulk = useBulkSelection<EarningRow>((row) => row.id)
+  const [bulkConfirmReverse, setBulkConfirmReverse] = useState(false)
+  const [bulkBusy, setBulkBusy] = useState(false)
+
+  const bulkReverse = async () => {
+    const targets = bulk.resolve(rows).filter((row) => row.status === "approved")
+    if (targets.length === 0) return
+    setBulkBusy(true)
+    try {
+      await Promise.all(targets.map((row) => apiPost(`/admin/affiliate/earnings/${row.id}/reverse`)))
+      toast.success(`Reversed ${targets.length} commission${targets.length === 1 ? "" : "s"}`)
+      setBulkConfirmReverse(false)
+      bulk.clear()
+      setReloadTick((tick) => tick + 1)
+    } catch (cause) {
+      toast.error(cause instanceof ApiError ? cause.message : "Failed to reverse earnings")
+    } finally {
+      setBulkBusy(false)
+    }
+  }
 
   const load = useCallback(() => {
     setLoading(true)
@@ -221,12 +243,27 @@ export default function AffiliateEarningsPage() {
           </Select>
         </CardHeader>
         <CardContent className="space-y-4">
+          <BulkActionBar
+            selectedCount={bulk.selectedKeys.size}
+            busy={bulkBusy}
+            actions={[
+              {
+                key: "reverse",
+                label: "Reverse selected",
+                destructive: true,
+                onClick: () => setBulkConfirmReverse(true),
+              },
+            ]}
+          />
           <SimpleDataTable
             columns={columns}
             rows={rows}
             loading={loading}
             error={error}
-            getRowKey={(row) => row.id}
+            getRowKey={bulk.getRowKey}
+            selectable
+            selectedKeys={bulk.selectedKeys}
+            onSelectionChange={bulk.onSelectionChange}
             emptyMessage={
               statusFilter === "all"
                 ? "No affiliate earnings recorded yet."
@@ -264,6 +301,30 @@ export default function AffiliateEarningsPage() {
               }}
             >
               {reversing ? "Reversing…" : "Reverse earning"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={bulkConfirmReverse} onOpenChange={setBulkConfirmReverse}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reverse {bulk.selectedKeys.size} selected commission{bulk.selectedKeys.size === 1 ? "" : "s"}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Only approved earnings are reversed; others are skipped. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkBusy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-primary-foreground hover:bg-destructive/90"
+              disabled={bulkBusy}
+              onClick={(event) => {
+                event.preventDefault()
+                void bulkReverse()
+              }}
+            >
+              {bulkBusy ? "Reversing…" : "Reverse selected"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

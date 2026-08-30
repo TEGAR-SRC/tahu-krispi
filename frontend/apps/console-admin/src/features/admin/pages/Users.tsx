@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { apiGet, apiPatch, apiPost, ApiError } from "@/lib/api"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
+import { BulkActionBar, useBulkSelection } from "@/components/shared/BulkActionBar"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -72,6 +73,29 @@ export default function AdminUsersPage() {
   const [confirmAction, setConfirmAction] = useState<
     "suspend" | "activate" | "grant" | "revoke" | null
   >(null)
+
+  const bulk = useBulkSelection<AdminUserRow>((row) => row.id)
+  const [bulkBusy, setBulkBusy] = useState(false)
+  const [bulkConfirmSuspend, setBulkConfirmSuspend] = useState(false)
+
+  const runBulk = useCallback(
+    async (action: (row: AdminUserRow) => Promise<unknown>, successLabel: string) => {
+      const targets = bulk.resolve(rows)
+      if (targets.length === 0) return
+      setBulkBusy(true)
+      try {
+        await Promise.all(targets.map(action))
+        toast.success(`${successLabel} ${targets.length} user${targets.length === 1 ? "" : "s"}`)
+        setReloadTick((tick) => tick + 1)
+        bulk.clear()
+      } catch (cause) {
+        toast.error(cause instanceof ApiError ? cause.message : "Request failed")
+      } finally {
+        setBulkBusy(false)
+      }
+    },
+    [bulk, rows],
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -181,6 +205,25 @@ export default function AdminUsersPage() {
         </Select>
       </div>
 
+      <BulkActionBar
+        selectedCount={bulk.selectedKeys.size}
+        busy={bulkBusy}
+        actions={[
+          {
+            key: "activate",
+            label: "Activate selected",
+            onClick: () =>
+              void runBulk((row) => apiPost(`/admin/users/${row.id}/activate`), "Activated"),
+          },
+          {
+            key: "suspend",
+            label: "Suspend selected",
+            destructive: true,
+            onClick: () => setBulkConfirmSuspend(true),
+          },
+        ]}
+      />
+
       <SimpleDataTable<AdminUserRow>
         columns={[
           {
@@ -266,7 +309,10 @@ export default function AdminUsersPage() {
         rows={rows}
         loading={loading}
         error={error}
-        getRowKey={(row) => row.id}
+        getRowKey={bulk.getRowKey}
+        selectable
+        selectedKeys={bulk.selectedKeys}
+        onSelectionChange={bulk.onSelectionChange}
         emptyMessage="No users match these filters."
         skeletonRows={8}
       />
@@ -392,6 +438,34 @@ export default function AdminUsersPage() {
               </DialogFooter>
             </>
           ) : null}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={bulkConfirmSuspend}
+        onOpenChange={(open) => !open && setBulkConfirmSuspend(false)}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Suspend {bulk.selectedKeys.size} selected user{bulk.selectedKeys.size === 1 ? "" : "s"}?</DialogTitle>
+            <DialogDescription>
+              These accounts will no longer be able to sign in or use their resources.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkConfirmSuspend(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setBulkConfirmSuspend(false)
+                void runBulk((row) => apiPost(`/admin/users/${row.id}/suspend`), "Suspended")
+              }}
+            >
+              Suspend
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

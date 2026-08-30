@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { apiDelete, apiGet, apiPost, apiPut, ApiError } from "@/lib/api"
+import { BulkActionBar, useBulkSelection } from "@/components/shared/BulkActionBar"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
 import { MediaUpload } from "@/components/shared/MediaUpload"
@@ -55,6 +56,27 @@ export default function BlogPage() {
   const [creating, setCreating] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<BlogPostRow | null>(null)
 
+  const bulk = useBulkSelection<BlogPostRow>((row) => row.id)
+  const [bulkBusy, setBulkBusy] = useState(false)
+  const [bulkConfirmDelete, setBulkConfirmDelete] = useState(false)
+
+  const runBulkDelete = async () => {
+    const targets = bulk.resolve(rows)
+    if (targets.length === 0) return
+    setBulkBusy(true)
+    try {
+      await Promise.all(targets.map((row) => apiDelete(`/admin/blog/${row.id}`)))
+      toast.success(`Deleted ${targets.length} post${targets.length === 1 ? "" : "s"}`)
+      setBulkConfirmDelete(false)
+      bulk.clear()
+      refresh()
+    } catch (cause) {
+      toast.error(cause instanceof ApiError ? cause.message : "Failed to delete posts")
+    } finally {
+      setBulkBusy(false)
+    }
+  }
+
   useEffect(() => {
     let cancelled = false
     apiGet<BlogPostRow[]>("/admin/blog")
@@ -83,6 +105,19 @@ export default function BlogPage() {
         title="Blog"
         description="Markdown blog posts served on the public blog site. Create, edit, publish or delete posts."
         actions={<Button onClick={() => setCreating(true)}>New post</Button>}
+      />
+
+      <BulkActionBar
+        selectedCount={bulk.selectedKeys.size}
+        busy={bulkBusy}
+        actions={[
+          {
+            key: "delete",
+            label: "Delete selected",
+            destructive: true,
+            onClick: () => setBulkConfirmDelete(true),
+          },
+        ]}
       />
 
       <SimpleDataTable<BlogPostRow>
@@ -144,7 +179,10 @@ export default function BlogPage() {
         rows={rows}
         loading={loading}
         error={error}
-        getRowKey={(row) => row.id}
+        getRowKey={bulk.getRowKey}
+        selectable
+        selectedKeys={bulk.selectedKeys}
+        onSelectionChange={bulk.onSelectionChange}
         emptyMessage="No blog posts yet. Create a post to get started."
         skeletonRows={5}
       />
@@ -199,6 +237,30 @@ export default function BlogPage() {
               }}
             >
               Delete post
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={bulkConfirmDelete} onOpenChange={setBulkConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {bulk.selectedKeys.size} selected post{bulk.selectedKeys.size === 1 ? "" : "s"}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes them from the public blog. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkBusy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-primary-foreground hover:bg-destructive/90"
+              disabled={bulkBusy}
+              onClick={(event) => {
+                event.preventDefault()
+                void runBulkDelete()
+              }}
+            >
+              {bulkBusy ? "Deleting…" : "Delete selected"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -6,6 +6,7 @@ import { apiGet, apiPost, ApiError } from "@/lib/api"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { SimpleDataTable, type SimpleColumn } from "@/components/shared/SimpleDataTable"
+import { BulkActionBar, useBulkSelection } from "@/components/shared/BulkActionBar"
 import { ErrorBanner } from "@/components/shared/ErrorBanner"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
@@ -109,6 +110,8 @@ export default function FinanceRatesPage() {
   const [error, setError] = useState<unknown>(null)
 
   const [createOpen, setCreateOpen] = useState(false)
+
+  const bulk = useBulkSelection<CustomRate>((row) => row.id)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -238,6 +241,7 @@ export default function FinanceRatesPage() {
         </Card>
       ) : (
         <div className="space-y-6">
+          <BulkActionBar selectedCount={bulk.selectedKeys.size} actions={[]} />
           {groups.map(([productCode, productRates]) => (
             <section key={productCode} className="space-y-3">
               <h3 className="flex min-w-0 items-center gap-2 text-sm font-semibold">
@@ -249,7 +253,10 @@ export default function FinanceRatesPage() {
               <SimpleDataTable
                 columns={columnsFor()}
                 rows={productRates}
-                getRowKey={(row) => row.id}
+                getRowKey={bulk.getRowKey}
+                selectable
+                selectedKeys={bulk.selectedKeys}
+                onSelectionChange={bulk.onSelectionChange}
                 emptyMessage="No rates."
               />
             </section>

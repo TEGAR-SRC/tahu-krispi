@@ -4,6 +4,7 @@ import { toast } from "sonner"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { StatCard } from "@/components/shared/StatCard"
 import { SimpleDataTable, type SimpleColumn } from "@/components/shared/SimpleDataTable"
+import { BulkActionBar, useBulkSelection } from "@/components/shared/BulkActionBar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -147,6 +148,47 @@ export default function NocSecurityPage() {
   const [addingNetwork, setAddingNetwork] = useState(false)
   const [confirmUnblock, setConfirmUnblock] = useState<BlockedNetwork | null>(null)
   const [deletingNetwork, setDeletingNetwork] = useState<BlockedNetwork | null>(null)
+
+  const bulkIncidents = useBulkSelection<IncidentRow>((row) => row.id)
+  const [bulkResolveOpen, setBulkResolveOpen] = useState(false)
+  const [bulkIncidentBusy, setBulkIncidentBusy] = useState(false)
+  const bulkNetworks = useBulkSelection<BlockedNetwork>((row) => row.id)
+  const [bulkUnblockOpen, setBulkUnblockOpen] = useState(false)
+  const [bulkNetworkBusy, setBulkNetworkBusy] = useState(false)
+
+  const bulkResolveIncidents = async () => {
+    const targets = bulkIncidents.resolve(incidents)
+    if (targets.length === 0) return
+    setBulkIncidentBusy(true)
+    try {
+      await Promise.all(targets.map((row) => apiPost(`/admin/security-incidents/${row.id}/resolve`)))
+      toast.success(`Resolved ${targets.length} incident${targets.length === 1 ? "" : "s"}`)
+      setBulkResolveOpen(false)
+      bulkIncidents.clear()
+      await load()
+    } catch (cause) {
+      toastApiError(cause, "Could not resolve incidents")
+    } finally {
+      setBulkIncidentBusy(false)
+    }
+  }
+
+  const bulkUnblockNetworks = async () => {
+    const targets = bulkNetworks.resolve(networks)
+    if (targets.length === 0) return
+    setBulkNetworkBusy(true)
+    try {
+      await Promise.all(targets.map((row) => apiDelete(`/admin/blocked-networks/${row.id}`)))
+      toast.success(`Unblocked ${targets.length} network${targets.length === 1 ? "" : "s"}`)
+      setBulkUnblockOpen(false)
+      bulkNetworks.clear()
+      await load()
+    } catch (cause) {
+      toastApiError(cause, "Could not unblock networks")
+    } finally {
+      setBulkNetworkBusy(false)
+    }
+  }
 
   const loadCerts = useCallback(async () => {
     setCertsLoading(true)
@@ -560,6 +602,17 @@ export default function NocSecurityPage() {
           <CardTitle>Security incidents</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <BulkActionBar
+            selectedCount={bulkIncidents.selectedKeys.size}
+            busy={bulkIncidentBusy}
+            actions={[
+              {
+                key: "resolve",
+                label: "Resolve selected",
+                onClick: () => setBulkResolveOpen(true),
+              },
+            ]}
+          />
           <SimpleDataTable
             columns={incidentColumns}
             rows={incidents}
@@ -567,7 +620,10 @@ export default function NocSecurityPage() {
             error={incidentsError}
             skeletonRows={5}
             emptyMessage="No security incidents recorded — all quiet."
-            getRowKey={(row) => row.id}
+            getRowKey={bulkIncidents.getRowKey}
+            selectable
+            selectedKeys={bulkIncidents.selectedKeys}
+            onSelectionChange={bulkIncidents.onSelectionChange}
           />
           <p className="text-xs text-muted-foreground">
             Showing up to 50 most recent of {incidentTotal}.
@@ -622,6 +678,18 @@ export default function NocSecurityPage() {
             </div>
           </form>
 
+          <BulkActionBar
+            selectedCount={bulkNetworks.selectedKeys.size}
+            busy={bulkNetworkBusy}
+            actions={[
+              {
+                key: "unblock",
+                label: "Unblock selected",
+                destructive: true,
+                onClick: () => setBulkUnblockOpen(true),
+              },
+            ]}
+          />
           <SimpleDataTable
             columns={networkColumns}
             rows={networks}
@@ -629,7 +697,10 @@ export default function NocSecurityPage() {
             error={networksError}
             skeletonRows={4}
             emptyMessage="No networks are currently blocked."
-            getRowKey={(row) => row.id}
+            getRowKey={bulkNetworks.getRowKey}
+            selectable
+            selectedKeys={bulkNetworks.selectedKeys}
+            onSelectionChange={bulkNetworks.onSelectionChange}
           />
         </CardContent>
       </Card>
@@ -679,6 +750,57 @@ export default function NocSecurityPage() {
             >
               {deletingNetwork ? <Loader2Icon className="animate-spin" /> : null}
               Unblock network
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk resolve incidents confirmation */}
+      <AlertDialog open={bulkResolveOpen} onOpenChange={setBulkResolveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Resolve {bulkIncidents.selectedKeys.size} selected incident{bulkIncidents.selectedKeys.size === 1 ? "" : "s"}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              They will be marked resolved and leave the open queue.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkIncidentBusy}>Back</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={bulkIncidentBusy}
+              onClick={(event) => {
+                event.preventDefault()
+                void bulkResolveIncidents()
+              }}
+            >
+              {bulkIncidentBusy ? <Loader2Icon className="animate-spin" /> : null}
+              Resolve selected
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk unblock networks confirmation */}
+      <AlertDialog open={bulkUnblockOpen} onOpenChange={setBulkUnblockOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unblock {bulkNetworks.selectedKeys.size} selected network{bulkNetworks.selectedKeys.size === 1 ? "" : "s"}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Traffic from these ranges will be allowed again immediately.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkNetworkBusy}>Back</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-primary-foreground hover:bg-destructive/90"
+              disabled={bulkNetworkBusy}
+              onClick={(event) => {
+                event.preventDefault()
+                void bulkUnblockNetworks()
+              }}
+            >
+              {bulkNetworkBusy ? <Loader2Icon className="animate-spin" /> : null}
+              Unblock selected
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

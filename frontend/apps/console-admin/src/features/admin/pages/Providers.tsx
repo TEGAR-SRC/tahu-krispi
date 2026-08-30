@@ -7,6 +7,7 @@ import { Link } from "react-router-dom"
 import { toast } from "sonner"
 import { apiDelete, apiGet, apiPost, ApiError } from "@/lib/api"
 import { PageHeader } from "@/components/shared/PageHeader"
+import { BulkActionBar, useBulkSelection } from "@/components/shared/BulkActionBar"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
 import {
   AlertDialog,
@@ -69,6 +70,29 @@ export default function AdminProvidersPage() {
   const [editing, setEditing] = useState<ProviderRow | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ProviderRow | null>(null)
 
+  const bulk = useBulkSelection<ProviderRow>((row) => row.id)
+  const [bulkBusy, setBulkBusy] = useState(false)
+  const [bulkConfirmDelete, setBulkConfirmDelete] = useState(false)
+
+  const runBulk = useCallback(
+    async (action: (row: ProviderRow) => Promise<unknown>, successLabel: string) => {
+      const targets = bulk.resolve(rows)
+      if (targets.length === 0) return
+      setBulkBusy(true)
+      try {
+        await Promise.all(targets.map(action))
+        toast.success(`${successLabel} ${targets.length} provider${targets.length === 1 ? "" : "s"}`)
+        setReloadTick((tick) => tick + 1)
+        bulk.clear()
+      } catch (cause) {
+        toast.error(cause instanceof ApiError ? cause.message : "Request failed")
+      } finally {
+        setBulkBusy(false)
+      }
+    },
+    [bulk, rows],
+  )
+
   const load = useCallback(() => {
     setLoading(true)
     apiGet<ProviderRow[]>("/admin/providers", { query: { page, per_page: PER_PAGE } })
@@ -118,6 +142,25 @@ export default function AdminProvidersPage() {
             Add provider
           </Button>
         }
+      />
+
+      <BulkActionBar
+        selectedCount={bulk.selectedKeys.size}
+        busy={bulkBusy}
+        actions={[
+          {
+            key: "sync",
+            label: "Sync selected",
+            onClick: () =>
+              void runBulk((row) => apiPost(`/admin/providers/${row.id}/sync`), "Sync queued for"),
+          },
+          {
+            key: "delete",
+            label: "Delete selected",
+            destructive: true,
+            onClick: () => setBulkConfirmDelete(true),
+          },
+        ]}
       />
 
       <SimpleDataTable<ProviderRow>
@@ -221,7 +264,10 @@ export default function AdminProvidersPage() {
         rows={rows}
         loading={loading}
         error={error}
-        getRowKey={(row) => row.id}
+        getRowKey={bulk.getRowKey}
+        selectable
+        selectedKeys={bulk.selectedKeys}
+        onSelectionChange={bulk.onSelectionChange}
         emptyMessage="No providers configured yet."
         skeletonRows={4}
       />
@@ -273,6 +319,36 @@ export default function AdminProvidersPage() {
               }}
             >
               Delete provider
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={bulkConfirmDelete}
+        onOpenChange={setBulkConfirmDelete}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {bulk.selectedKeys.size} selected providers?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes them. Deletion fails with 409 while instances,
+              regions or provider accounts still reference a provider — disable it instead
+              by saving with Enabled off in that case.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkBusy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-primary-foreground hover:bg-destructive/90"
+              disabled={bulkBusy}
+              onClick={(event) => {
+                event.preventDefault()
+                setBulkConfirmDelete(false)
+                void runBulk((row) => apiDelete(`/admin/providers/${row.id}`), "Provider(s) deleted")
+              }}
+            >
+              Delete selected
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

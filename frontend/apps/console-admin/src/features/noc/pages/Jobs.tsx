@@ -4,6 +4,7 @@ import { apiGet, apiPost } from "@/lib/api"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { SimpleDataTable, type SimpleColumn } from "@/components/shared/SimpleDataTable"
+import { BulkActionBar, useBulkSelection } from "@/components/shared/BulkActionBar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -47,6 +48,10 @@ export default function NocJobsPage() {
 
   const [actionJob, setActionJob] = useState<{ job: JobRow; op: "retry" | "cancel" } | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
+
+  const bulk = useBulkSelection<JobRow>((row) => row.id)
+  const [bulkOp, setBulkOp] = useState<"retry" | "cancel" | null>(null)
+  const [bulkBusy, setBulkBusy] = useState(false)
 
   const load = useCallback(
     async (targetPage: number, silent = false) => {
@@ -105,6 +110,32 @@ export default function NocJobsPage() {
       }
     },
     [load, page],
+  )
+
+  const runBulk = useCallback(
+    async (op: "retry" | "cancel") => {
+      const targets = bulk.resolve(rows)
+      if (targets.length === 0) return
+      setBulkBusy(true)
+      try {
+        for (const job of targets) {
+          await apiPost(`/admin/jobs/${job.id}/${op}`)
+        }
+        toast.success(
+          op === "retry"
+            ? `Requeued ${targets.length} job(s)`
+            : `Cancelled ${targets.length} job(s)`,
+        )
+        setBulkOp(null)
+        await load(page, true)
+        bulk.clear()
+      } catch (cause) {
+        toastApiError(cause, `Could not ${op} selected jobs`)
+      } finally {
+        setBulkBusy(false)
+      }
+    },
+    [bulk, rows, load, page],
   )
 
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE))
@@ -262,6 +293,15 @@ export default function NocJobsPage() {
         </span>
       </div>
 
+      <BulkActionBar
+        selectedCount={bulk.selectedKeys.size}
+        busy={bulkBusy}
+        actions={[
+          { key: "retry", label: "Retry selected", onClick: () => void runBulk("retry") },
+          { key: "cancel", label: "Cancel selected", onClick: () => setBulkOp("cancel") },
+        ]}
+      />
+
       <SimpleDataTable
         columns={columns}
         rows={rows}
@@ -270,6 +310,9 @@ export default function NocJobsPage() {
         skeletonRows={8}
         emptyMessage="No jobs match the current filters."
         getRowKey={(row) => row.id}
+        selectable
+        selectedKeys={bulk.selectedKeys}
+        onSelectionChange={bulk.onSelectionChange}
       />
 
       <div className="flex min-w-0 items-center justify-end gap-3">
@@ -320,6 +363,31 @@ export default function NocJobsPage() {
               }}
             >
               Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk cancel confirmation */}
+      <AlertDialog open={bulkOp === "cancel"} onOpenChange={(open) => !open && setBulkOp(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel selected jobs?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {bulk.selectedKeys.size} selected job(s) will be marked cancelled and never executed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkBusy}>Back</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={bulkBusy}
+              onClick={(event) => {
+                event.preventDefault()
+                void runBulk("cancel")
+              }}
+            >
+              {bulkBusy ? <Loader2Icon className="animate-spin" /> : null}
+              Cancel selected
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

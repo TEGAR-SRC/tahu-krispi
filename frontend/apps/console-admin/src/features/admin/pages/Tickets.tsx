@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { apiGet, apiPost, ApiError } from "@/lib/api"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
+import { BulkActionBar, useBulkSelection } from "@/components/shared/BulkActionBar"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -83,6 +84,26 @@ export default function AdminTicketsPage() {
   // Keep the row snapshot so the sheet header renders before messages load.
   const [selectedSnapshot, setSelectedSnapshot] = useState<AdminTicketRow | null>(null)
 
+  const bulk = useBulkSelection<AdminTicketRow>((row) => row.id)
+  const [bulkBusy, setBulkBusy] = useState(false)
+  const [bulkConfirmClose, setBulkConfirmClose] = useState(false)
+
+  const runBulkClose = useCallback(async () => {
+    const targets = bulk.resolve(rows)
+    if (targets.length === 0) return
+    setBulkBusy(true)
+    try {
+      await Promise.all(targets.map((row) => apiPost(`/admin/tickets/${row.id}/close`)))
+      toast.success(`Closed ${targets.length} ticket${targets.length === 1 ? "" : "s"}`)
+      reloadList()
+      bulk.clear()
+    } catch (cause) {
+      toast.error(cause instanceof ApiError ? cause.message : "Request failed")
+    } finally {
+      setBulkBusy(false)
+    }
+  }, [bulk, rows, reloadList])
+
   useEffect(() => {
     let cancelled = false
     apiGet<AdminTicketRow[]>("/admin/tickets", {
@@ -146,6 +167,19 @@ export default function AdminTicketsPage() {
         </Select>
       </div>
 
+      <BulkActionBar
+        selectedCount={bulk.selectedKeys.size}
+        busy={bulkBusy}
+        actions={[
+          {
+            key: "close",
+            label: "Close selected",
+            destructive: true,
+            onClick: () => setBulkConfirmClose(true),
+          },
+        ]}
+      />
+
       <SimpleDataTable<AdminTicketRow>
         columns={[
           {
@@ -202,7 +236,10 @@ export default function AdminTicketsPage() {
         rows={rows}
         loading={loading}
         error={error}
-        getRowKey={(row) => row.id}
+        getRowKey={bulk.getRowKey}
+        selectable
+        selectedKeys={bulk.selectedKeys}
+        onSelectionChange={bulk.onSelectionChange}
         emptyMessage="No tickets match this filter."
         skeletonRows={8}
       />
@@ -220,6 +257,31 @@ export default function AdminTicketsPage() {
           onMutated={() => reloadList()}
         />
       ) : null}
+
+      <AlertDialog open={bulkConfirmClose} onOpenChange={setBulkConfirmClose}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Close {bulk.selectedKeys.size} selected ticket{bulk.selectedKeys.size === 1 ? "" : "s"}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Customers can no longer reply to these tickets once they are closed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep open</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-primary-foreground hover:bg-destructive/90"
+              onClick={() => {
+                setBulkConfirmClose(false)
+                void runBulkClose()
+              }}
+            >
+              Close tickets
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

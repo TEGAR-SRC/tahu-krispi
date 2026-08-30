@@ -5,6 +5,7 @@
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { apiDelete, apiGet, apiPost, apiPut, ApiError } from "@/lib/api"
+import { BulkActionBar, useBulkSelection } from "@/components/shared/BulkActionBar"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
 import { MediaUpload } from "@/components/shared/MediaUpload"
@@ -73,6 +74,27 @@ export default function LandingPage() {
   const [creating, setCreating] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<LandingSectionRow | null>(null)
 
+  const bulk = useBulkSelection<LandingSectionRow>((row) => row.id)
+  const [bulkBusy, setBulkBusy] = useState(false)
+  const [bulkConfirmDelete, setBulkConfirmDelete] = useState(false)
+
+  const runBulkDelete = async () => {
+    const targets = bulk.resolve(rows)
+    if (targets.length === 0) return
+    setBulkBusy(true)
+    try {
+      await Promise.all(targets.map((row) => apiDelete(`/admin/landing/${row.id}`)))
+      toast.success(`Deleted ${targets.length} section${targets.length === 1 ? "" : "s"}`)
+      setBulkConfirmDelete(false)
+      bulk.clear()
+      refresh()
+    } catch (cause) {
+      toast.error(cause instanceof ApiError ? cause.message : "Failed to delete sections")
+    } finally {
+      setBulkBusy(false)
+    }
+  }
+
   useEffect(() => {
     let cancelled = false
     apiGet<LandingSectionRow[]>("/admin/landing")
@@ -105,6 +127,19 @@ export default function LandingPage() {
             New section
           </Button>
         }
+      />
+
+      <BulkActionBar
+        selectedCount={bulk.selectedKeys.size}
+        busy={bulkBusy}
+        actions={[
+          {
+            key: "delete",
+            label: "Delete selected",
+            destructive: true,
+            onClick: () => setBulkConfirmDelete(true),
+          },
+        ]}
       />
 
       <SimpleDataTable<LandingSectionRow>
@@ -163,7 +198,10 @@ export default function LandingPage() {
         rows={rows}
         loading={loading}
         error={error}
-        getRowKey={(row) => row.id}
+        getRowKey={bulk.getRowKey}
+        selectable
+        selectedKeys={bulk.selectedKeys}
+        onSelectionChange={bulk.onSelectionChange}
         emptyMessage="No landing content yet. Create a section to get started."
         skeletonRows={5}
       />
@@ -223,6 +261,30 @@ export default function LandingPage() {
               }}
             >
               Delete section
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={bulkConfirmDelete} onOpenChange={setBulkConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {bulk.selectedKeys.size} selected section{bulk.selectedKeys.size === 1 ? "" : "s"}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes them from the marketing site. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkBusy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-primary-foreground hover:bg-destructive/90"
+              disabled={bulkBusy}
+              onClick={(event) => {
+                event.preventDefault()
+                void runBulkDelete()
+              }}
+            >
+              {bulkBusy ? "Deleting…" : "Delete selected"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

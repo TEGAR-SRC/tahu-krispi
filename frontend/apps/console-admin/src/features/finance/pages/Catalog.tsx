@@ -6,6 +6,7 @@ import { apiGet, apiPost, apiPatch, ApiError } from "@/lib/api"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
+import { BulkActionBar, useBulkSelection } from "@/components/shared/BulkActionBar"
 import { ErrorBanner } from "@/components/shared/ErrorBanner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -150,6 +151,9 @@ export default function FinanceCatalogPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
 
+  const bulkProducts = useBulkSelection<Product>((row) => row.id)
+  const bulkPlans = useBulkSelection<Plan>((row) => row.id)
+
   const loadCatalog = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -231,6 +235,7 @@ function ProductsTab({
           <PlusIcon /> New product
         </Button>
       </div>
+      <BulkActionBar selectedCount={bulkProducts.selectedKeys.size} actions={[]} />
       <SimpleDataTable
         columns={[
           { key: "code", header: "Code", render: (row) => <span className="font-mono">{row.code}</span> },
@@ -266,7 +271,10 @@ function ProductsTab({
         ]}
         rows={products}
         loading={loading}
-        getRowKey={(row) => row.id}
+        getRowKey={bulkProducts.getRowKey}
+        selectable
+        selectedKeys={bulkProducts.selectedKeys}
+        onSelectionChange={bulkProducts.onSelectionChange}
         emptyMessage="No products defined."
       />
 
@@ -529,6 +537,7 @@ function PlansTab({
           <PlusIcon /> New plan
         </Button>
       </div>
+      <BulkActionBar selectedCount={bulkPlans.selectedKeys.size} actions={[]} />
       <SimpleDataTable
         columns={[
           { key: "code", header: "Code", render: (row) => <span className="font-mono">{row.code}</span> },
@@ -556,7 +565,10 @@ function PlansTab({
         ]}
         rows={filtered}
         loading={loading}
-        getRowKey={(row) => row.id}
+        getRowKey={bulkPlans.getRowKey}
+        selectable
+        selectedKeys={bulkPlans.selectedKeys}
+        onSelectionChange={bulkPlans.onSelectionChange}
         emptyMessage="No plans for this product yet."
       />
 
@@ -719,6 +731,7 @@ function PlanPricesTab({
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [addedThisSession, setAddedThisSession] = useState<PlanPriceCreated[]>([])
+  const bulkPrices = useBulkSelection<PlanPriceCreated>((row) => row.id)
 
   const selectedPlan = plans.find((plan) => plan.id === planId)
 
@@ -840,7 +853,10 @@ function PlanPricesTab({
             { key: "active_from", header: "Active from", render: (row) => formatDateTime(row.active_from) },
           ]}
           rows={[...addedThisSession].reverse()}
-          getRowKey={(row) => row.id}
+          getRowKey={bulkPrices.getRowKey}
+          selectable
+          selectedKeys={bulkPrices.selectedKeys}
+          onSelectionChange={bulkPrices.onSelectionChange}
           emptyMessage=""
         />
       ) : null}
@@ -864,6 +880,7 @@ function CustomRatesTab({
   onChanged: () => Promise<void>
 }) {
   const [createOpen, setCreateOpen] = useState(false)
+  const bulkRates = useBulkSelection<CustomRate>((row) => row.id)
 
   return (
     <TabsContent value="rates" className="mt-4 space-y-4">
@@ -875,6 +892,7 @@ function CustomRatesTab({
           <PlusIcon /> New rate
         </Button>
       </div>
+      <BulkActionBar selectedCount={bulkRates.selectedKeys.size} actions={[]} />
       <SimpleDataTable
         columns={[
           { key: "product_code", header: "Product" },
@@ -906,7 +924,10 @@ function CustomRatesTab({
         ]}
         rows={rates}
         loading={loading}
-        getRowKey={(row) => row.id}
+        getRowKey={bulkRates.getRowKey}
+        selectable
+        selectedKeys={bulkRates.selectedKeys}
+        onSelectionChange={bulkRates.onSelectionChange}
         emptyMessage="No custom rates configured."
       />
 

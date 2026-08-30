@@ -10,6 +10,7 @@ import { toast } from "sonner"
 import { apiGet, apiPost, apiDelete, ApiError } from "@/lib/api"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { SimpleDataTable, type SimpleColumn } from "@/components/shared/SimpleDataTable"
+import { BulkActionBar, useBulkSelection } from "@/components/shared/BulkActionBar"
 import { ErrorBanner } from "@/components/shared/ErrorBanner"
 import {
   AlertDialog,
@@ -157,6 +158,27 @@ export default function BillingCouponsPage() {
   const [detailCoupon, setDetailCoupon] = useState<CouponRow | null>(null)
   const [redemptions, setRedemptions] = useState<CouponRedemption[] | null>(null)
   const [detailError, setDetailError] = useState<unknown>(null)
+
+  const bulk = useBulkSelection<CouponRow>((row) => row.id)
+  const [bulkConfirmDelete, setBulkConfirmDelete] = useState(false)
+  const [bulkBusy, setBulkBusy] = useState(false)
+
+  const bulkDelete = async () => {
+    const targets = bulk.resolve(list.rows)
+    if (targets.length === 0) return
+    setBulkBusy(true)
+    try {
+      await Promise.all(targets.map((row) => apiDelete(`/admin/coupons/${row.id}`)))
+      toast.success(`Deleted ${targets.length} coupon${targets.length === 1 ? "" : "s"}`)
+      setBulkConfirmDelete(false)
+      bulk.clear()
+      list.reload()
+    } catch (cause) {
+      toast.error(cause instanceof ApiError ? cause.message : "Failed to delete coupons")
+    } finally {
+      setBulkBusy(false)
+    }
+  }
 
   const openCreate = () => {
     setEditing(null)
@@ -368,12 +390,28 @@ export default function BillingCouponsPage() {
         }
       />
 
+      <BulkActionBar
+        selectedCount={bulk.selectedKeys.size}
+        busy={bulkBusy}
+        actions={[
+          {
+            key: "delete",
+            label: "Delete selected",
+            destructive: true,
+            onClick: () => setBulkConfirmDelete(true),
+          },
+        ]}
+      />
+
       <SimpleDataTable
         columns={columns}
         rows={list.rows}
         loading={list.loading}
         error={list.error}
-        getRowKey={(coupon) => coupon.id}
+        getRowKey={bulk.getRowKey}
+        selectable
+        selectedKeys={bulk.selectedKeys}
+        onSelectionChange={bulk.onSelectionChange}
         emptyMessage="No coupons yet."
         skeletonRows={5}
       />
@@ -720,6 +758,31 @@ export default function BillingCouponsPage() {
               }}
             >
               {deleting ? "Deleting…" : "Delete coupon"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={bulkConfirmDelete} onOpenChange={setBulkConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {bulk.selectedKeys.size} selected coupon{bulk.selectedKeys.size === 1 ? "" : "s"}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              They will be removed permanently. Existing orders that already used them keep
+              their discount.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkBusy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-primary-foreground hover:bg-destructive/90"
+              disabled={bulkBusy}
+              onClick={(event) => {
+                event.preventDefault()
+                void bulkDelete()
+              }}
+            >
+              {bulkBusy ? "Deleting…" : "Delete selected"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

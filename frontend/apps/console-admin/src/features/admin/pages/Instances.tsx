@@ -8,6 +8,7 @@ import { Link } from "react-router-dom"
 import { apiGet } from "@/lib/api"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
+import { BulkActionBar, useBulkSelection } from "@/components/shared/BulkActionBar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -59,6 +60,8 @@ export default function AdminInstancesPage() {
   const [status, setStatus] = useState("all")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
+
+  const bulk = useBulkSelection<AdminInstanceRow>((row) => row.id)
 
   useEffect(() => {
     let cancelled = false
@@ -137,6 +140,8 @@ export default function AdminInstancesPage() {
         </div>
       ) : null}
 
+      <BulkActionBar selectedCount={bulk.selectedKeys.size} actions={[]} />
+
       <SimpleDataTable<AdminInstanceRow>
         columns={[
           {
@@ -201,7 +206,10 @@ export default function AdminInstancesPage() {
         rows={rows}
         loading={loading}
         error={error}
-        getRowKey={(row) => row.id}
+        getRowKey={bulk.getRowKey}
+        selectable
+        selectedKeys={bulk.selectedKeys}
+        onSelectionChange={bulk.onSelectionChange}
         emptyMessage="No instances match these filters."
         skeletonRows={8}
       />

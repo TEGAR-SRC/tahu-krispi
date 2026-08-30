@@ -10,6 +10,7 @@ import { toast } from "sonner"
 import { apiPost, apiPatch, ApiError } from "@/lib/api"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { SimpleDataTable, type SimpleColumn } from "@/components/shared/SimpleDataTable"
+import { BulkActionBar, useBulkSelection } from "@/components/shared/BulkActionBar"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -201,6 +202,9 @@ function optionalNumber(value: string): number | undefined {
 export default function BillingProductsPlansPage() {
   const productTab = usePagedList<ProductRow>("/admin/products")
   const planTab = usePagedList<PlanRow>("/admin/plans")
+
+  const bulkProduct = useBulkSelection<ProductRow>((row) => row.id)
+  const bulkPlan = useBulkSelection<PlanRow>((row) => row.id)
 
   // Product dialog state
   const [productOpen, setProductOpen] = useState(false)
@@ -504,12 +508,16 @@ export default function BillingProductsPlansPage() {
               <PlusIcon /> New product
             </Button>
           </div>
+          <BulkActionBar selectedCount={bulkProduct.selectedKeys.size} actions={[]} />
           <SimpleDataTable
             columns={productColumns}
             rows={productTab.rows}
             loading={productTab.loading}
             error={productTab.error}
-            getRowKey={(product) => product.id}
+            getRowKey={bulkProduct.getRowKey}
+            selectable
+            selectedKeys={bulkProduct.selectedKeys}
+            onSelectionChange={bulkProduct.onSelectionChange}
             emptyMessage="No products yet."
             skeletonRows={5}
           />
@@ -540,12 +548,16 @@ export default function BillingProductsPlansPage() {
               <PlusIcon /> New plan
             </Button>
           </div>
+          <BulkActionBar selectedCount={bulkPlan.selectedKeys.size} actions={[]} />
           <SimpleDataTable
             columns={planColumns}
             rows={planTab.rows}
             loading={planTab.loading}
             error={planTab.error}
-            getRowKey={(plan) => plan.id}
+            getRowKey={bulkPlan.getRowKey}
+            selectable
+            selectedKeys={bulkPlan.selectedKeys}
+            onSelectionChange={bulkPlan.onSelectionChange}
             emptyMessage="No plans yet."
             skeletonRows={5}
           />

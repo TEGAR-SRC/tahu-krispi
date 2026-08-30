@@ -8,6 +8,7 @@ import { toast } from "sonner"
 import { apiDelete, apiGet, apiPost, apiPut, ApiError } from "@/lib/api"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
+import { BulkActionBar, useBulkSelection } from "@/components/shared/BulkActionBar"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -79,6 +80,8 @@ export default function AdminRegionsPoolsPage() {
   const [editorOpen, setEditorOpen] = useState(false)
   const [editing, setEditing] = useState<RegionRow | null>(null)
 
+  const regionBulk = useBulkSelection<RegionRow>((row) => row.id)
+
   useEffect(() => {
     let cancelled = false
     apiGet<RegionRow[]>("/admin/regions", { query: { page, per_page: PER_PAGE } })
@@ -129,6 +132,8 @@ export default function AdminRegionsPoolsPage() {
               Add region
             </Button>
           </div>
+
+          <BulkActionBar selectedCount={regionBulk.selectedKeys.size} actions={[]} />
 
           <SimpleDataTable<RegionRow>
             columns={[
@@ -188,7 +193,10 @@ export default function AdminRegionsPoolsPage() {
             rows={rows}
             loading={loading}
             error={error}
-            getRowKey={(row) => row.id}
+            getRowKey={regionBulk.getRowKey}
+            selectable
+            selectedKeys={regionBulk.selectedKeys}
+            onSelectionChange={regionBulk.onSelectionChange}
             emptyMessage="No regions configured yet."
             skeletonRows={6}
           />
@@ -371,6 +379,28 @@ function PoolsPanel({ providers }: { providers: ProviderLite[] }) {
   const [editing, setEditing] = useState<PoolRow | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<PoolRow | null>(null)
 
+  const poolBulk = useBulkSelection<PoolRow>((pool) => pool.poolid)
+  const [bulkBusy, setBulkBusy] = useState(false)
+  const [bulkConfirmDelete, setBulkConfirmDelete] = useState(false)
+
+  const runBulkDelete = async () => {
+    const targets = poolBulk.resolve(pools)
+    if (targets.length === 0) return
+    setBulkBusy(true)
+    try {
+      await Promise.all(
+        targets.map((pool) => apiDelete(`/admin/providers/${activeProvider}/pools/${pool.poolid}`)),
+      )
+      toast.success(`Deleted ${targets.length} pool${targets.length === 1 ? "" : "s"}`)
+      setReloadTick((tick) => tick + 1)
+      poolBulk.clear()
+    } catch (cause) {
+      toast.error(cause instanceof ApiError ? cause.message : "Delete failed")
+    } finally {
+      setBulkBusy(false)
+    }
+  }
+
   useEffect(() => {
     if (!activeProvider) return
     let cancelled = false
@@ -427,6 +457,19 @@ function PoolsPanel({ providers }: { providers: ProviderLite[] }) {
         </Button>
       </div>
 
+      <BulkActionBar
+        selectedCount={poolBulk.selectedKeys.size}
+        busy={bulkBusy}
+        actions={[
+          {
+            key: "delete",
+            label: "Delete selected",
+            destructive: true,
+            onClick: () => setBulkConfirmDelete(true),
+          },
+        ]}
+      />
+
       <SimpleDataTable<PoolRow>
         columns={[
           {
@@ -471,7 +514,10 @@ function PoolsPanel({ providers }: { providers: ProviderLite[] }) {
         rows={pools}
         loading={loading}
         error={error}
-        getRowKey={(pool) => pool.poolid}
+        getRowKey={poolBulk.getRowKey}
+        selectable
+        selectedKeys={poolBulk.selectedKeys}
+        onSelectionChange={poolBulk.onSelectionChange}
         emptyMessage="No resource pools on this cluster yet."
         skeletonRows={4}
       />

@@ -5,6 +5,7 @@ import { apiGet, apiPost } from "@/lib/api"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { ErrorBanner } from "@/components/shared/ErrorBanner"
+import { BulkActionBar, useBulkSelection } from "@/components/shared/BulkActionBar"
 import {
   Table,
   TableBody,
@@ -13,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -74,6 +76,7 @@ const INSTANCE_STATES = [
 ] as const
 
 type Operation = "suspend" | "unsuspend" | "terminate" | "migrate" | null
+type BulkOperation = "suspend" | "terminate" | null
 
 /** Optional columns; name/status/actions are always shown. */
 const TOGGLEABLE_COLUMNS = ["org_slug", "power_status", "resources", "created_at"] as const
@@ -109,6 +112,10 @@ export default function NocInstancesPage() {
   const [pendingOp, setPendingOp] = useState<Operation>(null)
   const [confirmTerminate, setConfirmTerminate] = useState(false)
   const [targetNode, setTargetNode] = useState("")
+
+  const bulk = useBulkSelection<InstanceRow>((row) => row.id)
+  const [bulkOp, setBulkOp] = useState<BulkOperation>(null)
+  const [bulkBusy, setBulkBusy] = useState(false)
 
   const load = useCallback(
     async (targetPage: number) => {
@@ -182,6 +189,32 @@ export default function NocInstancesPage() {
       }
     },
     [detail, targetNode, load, page, openDetail],
+  )
+
+  const runBulk = useCallback(
+    async (op: Exclude<BulkOperation, null>) => {
+      const targets = bulk.resolve(filtered)
+      if (targets.length === 0) return
+      setBulkBusy(true)
+      try {
+        for (const row of targets) {
+          await apiPost(`/admin/instances/${row.id}/${op}`)
+        }
+        toast.success(
+          op === "suspend"
+            ? `Suspend queued for ${targets.length} instance(s)`
+            : `Termination requested for ${targets.length} instance(s)`,
+        )
+        setBulkOp(null)
+        await load(page)
+        bulk.clear()
+      } catch (cause) {
+        toastApiError(cause, `Could not ${op} selected instances`)
+      } finally {
+        setBulkBusy(false)
+      }
+    },
+    [bulk, filtered, load, page],
   )
 
   // Org filter stays client-side over the fetched page; the backend exposes no
@@ -276,6 +309,20 @@ export default function NocInstancesPage() {
         ))}
       </div>
 
+      <BulkActionBar
+        selectedCount={bulk.selectedKeys.size}
+        busy={bulkBusy}
+        actions={[
+          { key: "suspend", label: "Suspend selected", onClick: () => setBulkOp("suspend") },
+          {
+            key: "terminate",
+            label: "Terminate selected",
+            destructive: true,
+            onClick: () => setBulkOp("terminate"),
+          },
+        ]}
+      />
+
       {error ? (
         <ErrorBanner error={error} />
       ) : loading ? (
@@ -293,6 +340,24 @@ export default function NocInstancesPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox
+                    aria-label="Select all instances on this page"
+                    checked={
+                      filtered.length > 0 &&
+                      filtered.every((row) => bulk.selectedKeys.has(row.id))
+                    }
+                    disabled={filtered.length === 0}
+                    onCheckedChange={(value) => {
+                      const next = new Set(bulk.selectedKeys)
+                      for (const row of filtered) {
+                        if (value) next.add(row.id)
+                        else next.delete(row.id)
+                      }
+                      bulk.onSelectionChange(next)
+                    }}
+                  />
+                </TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Status</TableHead>
                 {[...visibleColumns].map((column) => (
@@ -308,6 +373,20 @@ export default function NocInstancesPage() {
                   className="cursor-pointer"
                   onClick={() => void navigate(`/noc/instances/${row.id}`)}
                 >
+                  <TableCell className="w-10">
+                    <div onClick={(event) => event.stopPropagation()}>
+                      <Checkbox
+                        aria-label={`Select ${row.name}`}
+                        checked={bulk.selectedKeys.has(row.id)}
+                        onCheckedChange={(value) => {
+                          const next = new Set(bulk.selectedKeys)
+                          if (value) next.add(row.id)
+                          else next.delete(row.id)
+                          bulk.onSelectionChange(next)
+                        }}
+                      />
+                    </div>
+                  </TableCell>
                   <TableCell>
                     <div className="min-w-0">
                       <p className="min-w-0 truncate font-medium">{row.name}</p>
@@ -582,6 +661,36 @@ export default function NocInstancesPage() {
             >
               {pendingOp === "terminate" ? <Loader2Icon className="animate-spin" /> : null}
               Request termination
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ---- Bulk operation confirmation ---- */}
+      <AlertDialog open={bulkOp !== null} onOpenChange={(open) => !open && setBulkOp(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {bulkOp === "suspend" ? "Suspend selected instances?" : "Terminate selected instances?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {bulkOp === "terminate"
+                ? "This requests termination for every selected instance and enqueues destructive jobs. The action cannot be undone from the console."
+                : "Every selected instance will have a suspend job queued."}
+              {bulkOp ? ` ${bulk.selectedKeys.size} instance(s) affected.` : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkBusy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={bulkBusy}
+              onClick={(event) => {
+                event.preventDefault()
+                void runBulk(bulkOp as Exclude<BulkOperation, null>)
+              }}
+            >
+              {bulkBusy ? <Loader2Icon className="animate-spin" /> : null}
+              {bulkOp === "suspend" ? "Suspend selected" : "Request termination"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

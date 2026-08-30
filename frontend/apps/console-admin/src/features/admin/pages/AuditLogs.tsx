@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { apiGet } from "@/lib/api"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
+import { BulkActionBar, useBulkSelection } from "@/components/shared/BulkActionBar"
 import { Button } from "@/components/ui/button"
 import type { PagedMeta } from "@/lib/types"
 import { JsonBlock, PaginationBar, SearchFilter } from "./shared"
@@ -55,6 +56,8 @@ export default function AdminAuditLogsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
   const [expandedId, setExpandedId] = useState<number | null>(null)
+
+  const bulk = useBulkSelection<AuditLogRow>((row) => String(row.id))
 
   // Invalid actor filters are surfaced by the API as a validation error; keep
   // the raw input so the user can correct it instead of losing their text.
@@ -225,10 +228,15 @@ export default function AdminAuditLogsPage() {
         rows={rows}
         loading={loading}
         error={error}
-        getRowKey={(row) => String(row.id)}
+        getRowKey={bulk.getRowKey}
+        selectable
+        selectedKeys={bulk.selectedKeys}
+        onSelectionChange={bulk.onSelectionChange}
         emptyMessage="No audit entries match these filters."
         skeletonRows={10}
       />
+
+      <BulkActionBar selectedCount={bulk.selectedKeys.size} actions={[]} />
 
       {/* Raw JSON payload of the expanded entry. */}
       {expandedId !== null && !loading ? (

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 import { apiGet, apiPost, ApiError } from "@/lib/api"
 import { PageHeader } from "@/components/shared/PageHeader"
+import { BulkActionBar, useBulkSelection } from "@/components/shared/BulkActionBar"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
 import {
   AlertDialog,
@@ -48,6 +49,37 @@ export default function OrphansPage() {
   const [resolving, setResolving] = useState<OrphanRow | null>(null)
   const [resolutionNote, setResolutionNote] = useState("")
   const [resolvingBusy, setResolvingBusy] = useState(false)
+
+  const bulk = useBulkSelection<OrphanRow>((row) => row.id)
+  const [bulkResolveOpen, setBulkResolveOpen] = useState(false)
+  const [bulkBusy, setBulkBusy] = useState(false)
+  const [bulkNote, setBulkNote] = useState("")
+
+  const bulkResolve = useCallback(async () => {
+    const targets = bulk.resolve(rows).filter((row) => !row.resolved_at)
+    if (targets.length === 0) return
+    if (bulkNote.trim() === "") {
+      toast.error("A resolution note is required")
+      return
+    }
+    setBulkBusy(true)
+    try {
+      await Promise.all(
+        targets.map((row) =>
+          apiPost(`/admin/orphans/${row.id}/resolve`, { resolution: bulkNote.trim() }),
+        ),
+      )
+      toast.success(`Resolved ${targets.length} orphan${targets.length === 1 ? "" : "s"}`)
+      setBulkResolveOpen(false)
+      setBulkNote("")
+      bulk.clear()
+      setReloadTick((tick) => tick + 1)
+    } catch (cause) {
+      toast.error(cause instanceof ApiError ? cause.message : "Failed to resolve orphans")
+    } finally {
+      setBulkBusy(false)
+    }
+  }, [bulk, rows, bulkNote, reloadTick])
 
   useEffect(() => {
     let cancelled = false
@@ -96,6 +128,21 @@ export default function OrphansPage() {
       <PageHeader
         title="Orphan resources"
         description="Provider-side resources no longer referenced by any platform instance."
+      />
+
+      <BulkActionBar
+        selectedCount={bulk.selectedKeys.size}
+        busy={bulkBusy}
+        actions={[
+          {
+            key: "resolve",
+            label: "Resolve selected",
+            onClick: () => {
+              setBulkNote("")
+              setBulkResolveOpen(true)
+            },
+          },
+        ]}
       />
 
       <SimpleDataTable<OrphanRow>
@@ -176,7 +223,10 @@ export default function OrphansPage() {
         rows={rows}
         loading={loading}
         error={error}
-        getRowKey={(row) => row.id}
+        getRowKey={bulk.getRowKey}
+        selectable
+        selectedKeys={bulk.selectedKeys}
+        onSelectionChange={bulk.onSelectionChange}
         emptyMessage="No orphan resources detected — infrastructure is clean."
         skeletonRows={6}
       />
@@ -216,6 +266,36 @@ export default function OrphansPage() {
               }}
             >
               {resolvingBusy ? "Resolving…" : "Resolve"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={bulkResolveOpen} onOpenChange={setBulkResolveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Resolve {bulk.selectedKeys.size} selected orphan{bulk.selectedKeys.size === 1 ? "" : "s"}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Mark them as handled on the provider side. A single resolution note is
+              applied to all selected. The API requires a non-empty note.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Textarea
+            rows={3}
+            placeholder="What was done with these resources? (required)"
+            value={bulkNote}
+            onChange={(event) => setBulkNote(event.target.value)}
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkBusy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={bulkBusy}
+              onClick={(event) => {
+                event.preventDefault()
+                void bulkResolve()
+              }}
+            >
+              {bulkBusy ? "Resolving…" : "Resolve selected"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

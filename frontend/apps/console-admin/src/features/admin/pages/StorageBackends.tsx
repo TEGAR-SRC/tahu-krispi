@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { apiDelete, apiGet, apiPut, ApiError } from "@/lib/api"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
+import { BulkActionBar, useBulkSelection } from "@/components/shared/BulkActionBar"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -62,6 +63,26 @@ export default function AdminStorageBackendsPage() {
   const [editing, setEditing] = useState<StorageBackendRow | null>(null)
   const [disableTarget, setDisableTarget] = useState<StorageBackendRow | null>(null)
 
+  const bulk = useBulkSelection<StorageBackendRow>((row) => row.code)
+  const [bulkBusy, setBulkBusy] = useState(false)
+  const [bulkConfirmDisable, setBulkConfirmDisable] = useState(false)
+
+  const runBulkDisable = async () => {
+    const targets = bulk.resolve(rows).filter((row) => row.enabled)
+    if (targets.length === 0) return
+    setBulkBusy(true)
+    try {
+      await Promise.all(targets.map((row) => apiDelete(`/admin/storage-backends/${row.code}`)))
+      toast.success(`Disabled ${targets.length} backend${targets.length === 1 ? "" : "s"}`)
+      setReloadTick((tick) => tick + 1)
+      bulk.clear()
+    } catch (cause) {
+      toast.error(cause instanceof ApiError ? cause.message : "Request failed")
+    } finally {
+      setBulkBusy(false)
+    }
+  }
+
   useEffect(() => {
     let cancelled = false
     apiGet<StorageBackendRow[]>("/admin/storage-backends")
@@ -87,6 +108,19 @@ export default function AdminStorageBackendsPage() {
       <PageHeader
         title="Storage Backends"
         description="Object storage used for avatars, documents, ISOs, tickets and invoices."
+      />
+
+      <BulkActionBar
+        selectedCount={bulk.selectedKeys.size}
+        busy={bulkBusy}
+        actions={[
+          {
+            key: "disable",
+            label: "Disable selected",
+            destructive: true,
+            onClick: () => setBulkConfirmDisable(true),
+          },
+        ]}
       />
 
       <SimpleDataTable<StorageBackendRow>
@@ -174,7 +208,10 @@ export default function AdminStorageBackendsPage() {
         rows={rows}
         loading={loading}
         error={error}
-        getRowKey={(row) => row.id}
+        getRowKey={bulk.getRowKey}
+        selectable
+        selectedKeys={bulk.selectedKeys}
+        onSelectionChange={bulk.onSelectionChange}
         emptyMessage="No storage backends configured."
         skeletonRows={5}
       />
@@ -224,6 +261,32 @@ export default function AdminStorageBackendsPage() {
               }}
             >
               Disable backend
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={bulkConfirmDisable} onOpenChange={setBulkConfirmDisable}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Disable {bulk.selectedKeys.size} selected backend{bulk.selectedKeys.size === 1 ? "" : "s"}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Uploads that depend on these categories (e.g. ticket attachments, invoice PDFs)
+              will fail while they are disabled.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-primary-foreground hover:bg-destructive/90"
+              onClick={() => {
+                setBulkConfirmDisable(false)
+                void runBulkDisable()
+              }}
+            >
+              Disable backends
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

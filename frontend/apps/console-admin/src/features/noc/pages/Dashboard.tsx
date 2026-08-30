@@ -5,6 +5,7 @@ import { apiGet } from "@/lib/api"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { StatCard } from "@/components/shared/StatCard"
 import { SimpleDataTable, type SimpleColumn } from "@/components/shared/SimpleDataTable"
+import { BulkActionBar, useBulkSelection } from "@/components/shared/BulkActionBar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -97,6 +98,7 @@ export default function NocDashboardPage() {
   const [jobs, setJobs] = useState<JobRow[]>([])
   const [jobsError, setJobsError] = useState<unknown>(null)
   const [loading, setLoading] = useState(true)
+  const bulkJobs = useBulkSelection<JobRow>((row) => row.id)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -389,6 +391,7 @@ export default function NocDashboardPage() {
           </Button>
         </CardHeader>
         <CardContent>
+          <BulkActionBar selectedCount={bulkJobs.selectedKeys.size} actions={[]} />
           <SimpleDataTable
             columns={jobColumns}
             rows={jobs.slice(0, 8)}
@@ -396,7 +399,10 @@ export default function NocDashboardPage() {
             error={null}
             skeletonRows={5}
             emptyMessage="No jobs recorded yet."
-            getRowKey={(row) => row.id}
+            getRowKey={bulkJobs.getRowKey}
+            selectable
+            selectedKeys={bulkJobs.selectedKeys}
+            onSelectionChange={bulkJobs.onSelectionChange}
           />
           {!providersError && !loading && providers.length > 0 ? (
             <p className="mt-3 flex items-center gap-1 text-xs text-muted-foreground">

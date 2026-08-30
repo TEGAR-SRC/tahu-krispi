@@ -11,6 +11,7 @@ import { apiGet, apiPost, ApiError } from "@/lib/api"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { SimpleDataTable, type SimpleColumn } from "@/components/shared/SimpleDataTable"
 import { ErrorBanner } from "@/components/shared/ErrorBanner"
+import { BulkActionBar, useBulkSelection } from "@/components/shared/BulkActionBar"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -133,6 +134,9 @@ export default function BillingInvoicesPage() {
   const [detailOpenId, setDetailOpenId] = useState<string | null>(null)
   const [voidTarget, setVoidTarget] = useState<InvoiceRow | null>(null)
   const [voiding, setVoiding] = useState(false)
+  const bulk = useBulkSelection<InvoiceRow>((invoice) => invoice.id)
+  const [bulkVoidOpen, setBulkVoidOpen] = useState(false)
+  const [bulkVoiding, setBulkVoiding] = useState(false)
 
   const openDetail = (invoice: InvoiceRow) => {
     setDetailOpenId(invoice.id)
@@ -161,6 +165,34 @@ export default function BillingInvoicesPage() {
       setVoiding(false)
     }
   }
+
+  const confirmBulkVoid = async () => {
+    const targets = bulk.resolve(list.rows).filter(canVoid)
+    if (targets.length === 0) {
+      setBulkVoidOpen(false)
+      return
+    }
+    setBulkVoiding(true)
+    try {
+      for (const invoice of targets) {
+        await apiPost(`/admin/invoices/${invoice.id}/void`)
+      }
+      toast.success(
+        `${targets.length} invoice${targets.length > 1 ? "s" : ""} voided`,
+      )
+      setBulkVoidOpen(false)
+      bulk.clear()
+      list.reload()
+    } catch (cause) {
+      toast.error(
+        cause instanceof ApiError ? cause.message : "Failed to void invoices",
+      )
+    } finally {
+      setBulkVoiding(false)
+    }
+  }
+
+  const voidableCount = bulk.resolve(list.rows).filter(canVoid).length
 
   const columns: Array<SimpleColumn<InvoiceRow>> = [
     {
@@ -271,12 +303,28 @@ export default function BillingInvoicesPage() {
         }
       />
 
+      <BulkActionBar
+        selectedCount={bulk.selectedKeys.size}
+        busy={bulkVoiding}
+        actions={[
+          {
+            key: "void",
+            label: "Void selected",
+            destructive: true,
+            onClick: () => setBulkVoidOpen(true),
+          },
+        ]}
+      />
+
       <SimpleDataTable
         columns={columns}
         rows={list.rows}
         loading={list.loading}
         error={list.error}
-        getRowKey={(row) => row.id}
+        getRowKey={bulk.getRowKey}
+        selectable
+        selectedKeys={bulk.selectedKeys}
+        onSelectionChange={bulk.onSelectionChange}
         emptyMessage="No invoices match this filter."
         skeletonRows={6}
       />
@@ -482,6 +530,36 @@ export default function BillingInvoicesPage() {
               }}
             >
               {voiding ? "Voiding…" : "Void invoice"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={bulkVoidOpen}
+        onOpenChange={(open) => {
+          if (!open && !bulkVoiding) setBulkVoidOpen(false)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Void selected invoices?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {voidableCount} invoice{voidableCount === 1 ? "" : "s"} will be
+              marked void. Paid, partially refunded and already-voided invoices
+              are skipped. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkVoiding}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={bulkVoiding}
+              onClick={(event) => {
+                event.preventDefault()
+                void confirmBulkVoid()
+              }}
+            >
+              {bulkVoiding ? "Voiding…" : "Void selected"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

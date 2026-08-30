@@ -9,6 +9,7 @@ import { toast } from "sonner"
 import { apiGet, apiPost, ApiError } from "@/lib/api"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
+import { BulkActionBar, useBulkSelection } from "@/components/shared/BulkActionBar"
 import { Badge } from "@/components/ui/badge"
 import {
   AlertDialog,
@@ -67,6 +68,29 @@ export default function AdminJobsPage() {
 
   const [cancelTarget, setCancelTarget] = useState<AdminJobRow | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
+
+  const bulk = useBulkSelection<AdminJobRow>((row) => row.id)
+  const [bulkBusy, setBulkBusy] = useState(false)
+  const [bulkConfirmCancel, setBulkConfirmCancel] = useState(false)
+
+  const runBulkAction = useCallback(
+    async (action: "retry" | "cancel") => {
+      const targets = bulk.resolve(rows)
+      if (targets.length === 0) return
+      setBulkBusy(true)
+      try {
+        await Promise.all(targets.map((job) => apiPost(`/admin/jobs/${job.id}/${action}`)))
+        toast.success(`${action === "retry" ? "Re-queued" : "Cancelled"} ${targets.length} job${targets.length === 1 ? "" : "s"}`)
+        await load(true)
+        bulk.clear()
+      } catch (cause) {
+        toast.error(cause instanceof ApiError ? cause.message : "Request failed")
+      } finally {
+        setBulkBusy(false)
+      }
+    },
+    [bulk, rows, load],
+  )
 
   const load = useCallback(
     (silent: boolean) => {
@@ -196,6 +220,24 @@ export default function AdminJobsPage() {
         </div>
       ) : null}
 
+      <BulkActionBar
+        selectedCount={bulk.selectedKeys.size}
+        busy={bulkBusy}
+        actions={[
+          {
+            key: "retry",
+            label: "Retry selected",
+            onClick: () => void runBulkAction("retry"),
+          },
+          {
+            key: "cancel",
+            label: "Cancel selected",
+            destructive: true,
+            onClick: () => setBulkConfirmCancel(true),
+          },
+        ]}
+      />
+
       <SimpleDataTable<AdminJobRow>
         columns={[
           {
@@ -277,7 +319,10 @@ export default function AdminJobsPage() {
         rows={rows}
         loading={loading}
         error={error}
-        getRowKey={(row) => row.id}
+        getRowKey={bulk.getRowKey}
+        selectable
+        selectedKeys={bulk.selectedKeys}
+        onSelectionChange={bulk.onSelectionChange}
         emptyMessage="No jobs match these filters."
         skeletonRows={8}
       />
@@ -307,6 +352,31 @@ export default function AdminJobsPage() {
               }}
             >
               Cancel job
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={bulkConfirmCancel} onOpenChange={setBulkConfirmCancel}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Cancel {bulk.selectedKeys.size} selected job{bulk.selectedKeys.size === 1 ? "" : "s"}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              These jobs will be marked cancelled and never executed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep jobs</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-primary-foreground hover:bg-destructive/90"
+              onClick={() => {
+                setBulkConfirmCancel(false)
+                void runBulkAction("cancel")
+              }}
+            >
+              Cancel jobs
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

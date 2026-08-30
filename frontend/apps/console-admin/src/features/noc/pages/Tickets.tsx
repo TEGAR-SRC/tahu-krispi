@@ -5,6 +5,7 @@ import { apiGet, apiPost } from "@/lib/api"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { ErrorBanner } from "@/components/shared/ErrorBanner"
+import { BulkActionBar, useBulkSelection } from "@/components/shared/BulkActionBar"
 import {
   Table,
   TableBody,
@@ -130,6 +131,10 @@ export default function NocTicketsPage() {
 
   const [activeTicket, setActiveTicket] = useState<TicketRow | null>(null)
 
+  const bulk = useBulkSelection<TicketRow>((row) => row.id)
+  const [confirmBulkClose, setConfirmBulkClose] = useState(false)
+  const [bulkBusy, setBulkBusy] = useState(false)
+
   const load = useCallback(
     async (targetPage: number) => {
       setLoading(true)
@@ -160,6 +165,25 @@ export default function NocTicketsPage() {
   }, [load])
 
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE))
+
+  const runBulkClose = useCallback(async () => {
+    const targets = bulk.resolve(rows)
+    if (targets.length === 0) return
+    setBulkBusy(true)
+    try {
+      for (const ticket of targets) {
+        await apiPost(`/admin/tickets/${ticket.id}/close`)
+      }
+      toast.success(`Closed ${targets.length} ticket(s)`)
+      setConfirmBulkClose(false)
+      await load(page)
+      bulk.clear()
+    } catch (cause) {
+      toastApiError(cause, "Could not close selected tickets")
+    } finally {
+      setBulkBusy(false)
+    }
+  }, [bulk, rows, load, page])
 
   return (
     <div className="flex w-full max-w-full min-w-0 flex-col gap-6">

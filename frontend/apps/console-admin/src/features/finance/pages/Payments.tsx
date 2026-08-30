@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useState } from "react"
 import { CheckIcon, Loader2Icon, SearchIcon } from "lucide-react"
 import { toast } from "sonner"
-import { apiGet, apiPost } from "@/lib/api"
+import { apiGet, apiPost, ApiError } from "@/lib/api"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { SimpleDataTable, type SimpleColumn } from "@/components/shared/SimpleDataTable"
+import { BulkActionBar, useBulkSelection } from "@/components/shared/BulkActionBar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -48,6 +49,32 @@ export default function FinancePaymentsPage() {
   const [error, setError] = useState<unknown>(null)
   const [selected, setSelected] = useState<AdminPaymentRow | null>(null)
   const [approving, setApproving] = useState(false)
+
+  const bulk = useBulkSelection<AdminPaymentRow>((row) => row.id)
+  const [bulkApproving, setBulkApproving] = useState(false)
+
+  const pendingRow = (row: AdminPaymentRow) => row.status === "pending"
+
+  const bulkApprove = useCallback(async () => {
+    const targets = bulk.resolve(rows).filter(pendingRow)
+    if (targets.length === 0) {
+      bulk.clear()
+      return
+    }
+    setBulkApproving(true)
+    try {
+      for (const row of targets) {
+        await apiPost(`/admin/payments/${row.id}/approve`)
+      }
+      toast.success(`Approved ${targets.length} pending payment${targets.length === 1 ? "" : "s"}`)
+      bulk.clear()
+      await loadList()
+    } catch (cause) {
+      toast.error(cause instanceof ApiError ? cause.message : "Failed to approve payments")
+    } finally {
+      setBulkApproving(false)
+    }
+  }, [bulk, rows, loadList])
 
   const loadList = useCallback(async () => {
     setLoading(true)
@@ -119,6 +146,18 @@ export default function FinancePaymentsPage() {
         </form>
       </div>
 
+      <BulkActionBar
+        selectedCount={bulk.selectedKeys.size}
+        actions={[
+          {
+            key: "approve",
+            label: "Approve selected",
+            onClick: () => void bulkApprove(),
+          },
+        ]}
+        busy={bulkApproving}
+      />
+
       <SimpleDataTable
         columns={[
           {
@@ -155,7 +194,10 @@ export default function FinancePaymentsPage() {
         rows={rows}
         loading={loading}
         error={error}
-        getRowKey={(row) => row.id}
+        selectable
+        getRowKey={bulk.getRowKey}
+        selectedKeys={bulk.selectedKeys}
+        onSelectionChange={bulk.onSelectionChange}
         emptyMessage="No payments match this filter."
       />
 

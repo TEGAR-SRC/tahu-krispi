@@ -6,6 +6,7 @@ import { apiGet, apiPost, ApiError } from "@/lib/api"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { SimpleDataTable, type SimpleColumn } from "@/components/shared/SimpleDataTable"
+import { BulkActionBar, useBulkSelection } from "@/components/shared/BulkActionBar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -91,6 +92,39 @@ export default function FinanceInvoicesPage() {
   const [detailError, setDetailError] = useState<unknown>(null)
   const [confirmVoid, setConfirmVoid] = useState(false)
   const [voiding, setVoiding] = useState(false)
+
+  const bulk = useBulkSelection<AdminInvoiceRow>((row) => row.id)
+  const [confirmBulkVoid, setConfirmBulkVoid] = useState(false)
+  const [bulkVoiding, setBulkVoiding] = useState(false)
+
+  const voidableRow = (row: AdminInvoiceRow) =>
+    row.status !== "paid" &&
+    row.status !== "void" &&
+    row.status !== "refunded" &&
+    row.status !== "partially_refunded"
+
+  const bulkVoidInvoices = useCallback(async () => {
+    const targets = bulk.resolve(rows).filter(voidableRow)
+    if (targets.length === 0) {
+      bulk.clear()
+      setConfirmBulkVoid(false)
+      return
+    }
+    setBulkVoiding(true)
+    try {
+      for (const row of targets) {
+        await apiPost(`/admin/invoices/${row.id}/void`)
+      }
+      toast.success(`Voided ${targets.length} invoice${targets.length === 1 ? "" : "s"}`)
+      setConfirmBulkVoid(false)
+      bulk.clear()
+      await loadList()
+    } catch (cause) {
+      toast.error(cause instanceof ApiError ? cause.message : "Failed to void invoices")
+    } finally {
+      setBulkVoiding(false)
+    }
+  }, [bulk, rows, loadList])
 
   const loadList = useCallback(async () => {
     setLoading(true)
@@ -200,6 +234,19 @@ export default function FinanceInvoicesPage() {
         </form>
       </div>
 
+      <BulkActionBar
+        selectedCount={bulk.selectedKeys.size}
+        actions={[
+          {
+            key: "void",
+            label: "Void selected",
+            destructive: true,
+            onClick: () => setConfirmBulkVoid(true),
+          },
+        ]}
+        busy={bulkVoiding}
+      />
+
       <SimpleDataTable
         columns={[
           {
@@ -250,7 +297,10 @@ export default function FinanceInvoicesPage() {
         rows={rows}
         loading={loading}
         error={error}
-        getRowKey={(row) => row.id}
+        selectable
+        getRowKey={bulk.getRowKey}
+        selectedKeys={bulk.selectedKeys}
+        onSelectionChange={bulk.onSelectionChange}
         emptyMessage="No invoices match this filter."
       />
 
@@ -389,6 +439,31 @@ export default function FinanceInvoicesPage() {
           ) : null}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={confirmBulkVoid} onOpenChange={setConfirmBulkVoid}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Void selected invoices?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {bulk.resolve(rows).filter(voidableRow).length} selected invoice
+              {bulk.resolve(rows).filter(voidableRow).length === 1 ? "" : "s"} will be voided. This
+              cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep invoices</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={bulkVoiding}
+              onClick={(event) => {
+                event.preventDefault()
+                void bulkVoidInvoices()
+              }}
+            >
+              {bulkVoiding ? "Voiding…" : "Void invoices"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={confirmVoid} onOpenChange={setConfirmVoid}>
         <AlertDialogContent>

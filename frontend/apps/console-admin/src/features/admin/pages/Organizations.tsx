@@ -7,6 +7,7 @@ import { Link } from "react-router-dom"
 import { apiGet } from "@/lib/api"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
+import { BulkActionBar, useBulkSelection } from "@/components/shared/BulkActionBar"
 import { Button } from "@/components/ui/button"
 import type { PagedMeta } from "@/lib/types"
 import { PaginationBar, StatusBadge } from "./shared"
@@ -21,6 +22,8 @@ export default function OrganizationsPage() {
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
+
+  const bulk = useBulkSelection<AdminOrgRow>((row) => row.id)
 
   useEffect(() => {
     let cancelled = false
@@ -48,6 +51,8 @@ export default function OrganizationsPage() {
         title="Organizations"
         description="Every customer organization on the platform, newest first."
       />
+
+      <BulkActionBar selectedCount={bulk.selectedKeys.size} actions={[]} />
 
       <SimpleDataTable<AdminOrgRow>
         columns={[
@@ -114,7 +119,10 @@ export default function OrganizationsPage() {
         rows={rows}
         loading={loading}
         error={error}
-        getRowKey={(row) => row.id}
+        getRowKey={bulk.getRowKey}
+        selectable
+        selectedKeys={bulk.selectedKeys}
+        onSelectionChange={bulk.onSelectionChange}
         emptyMessage="No organizations yet."
         skeletonRows={8}
       />
