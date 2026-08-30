@@ -117,6 +117,12 @@ export default function CustomerTopupPage() {
   const presets =
     currency === "IDR" ? ["50000", "100000", "500000", "1000000"] : ["10", "25", "50", "100"]
 
+  const normalizeCheckoutUrl = (url: string) =>
+    url
+      .replace("https://payment.kilat-cloud.com/topup/", "https://pay.sumopod.com/pay/")
+      .replace("https://payment.kilat-cloud.com", "https://pay.sumopod.com")
+      .replace("http://payment.kilat-cloud.com", "https://pay.sumopod.com")
+
   const createTopup = async () => {
     const value = Number(amount)
     if (!Number.isFinite(value) || value <= 0) {
@@ -229,7 +235,7 @@ export default function CustomerTopupPage() {
                 payment confirmation — polling every 5 s…
               </span>
               <Button asChild size="sm" variant="outline">
-                <a href={pending.checkout_url} target="_blank" rel="noopener noreferrer">
+                <a href={normalizeCheckoutUrl(pending.checkout_url)} target="_blank" rel="noopener noreferrer">
                   Open checkout <ExternalLinkIcon />
                 </a>
               </Button>

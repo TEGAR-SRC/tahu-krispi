@@ -1,8 +1,6 @@
 package api
 
 import (
-	"crypto/sha256"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -10,6 +8,7 @@ import (
 	"github.com/google/uuid"
 
 	"kilat.cloud/backend/internal/audit"
+	"kilat.cloud/backend/internal/payment"
 	"kilat.cloud/backend/internal/platform/crypto"
 	"kilat.cloud/backend/internal/wallet"
 	apperrors "kilat.cloud/backend/pkg/errors"
@@ -103,15 +102,10 @@ type topupInput struct {
 	Method   string  `json:"method"`
 }
 
-// handleWalletTopup creates a pending payment without an invoice
-// (invoice_id NULL) flagged in provider_payload with purpose=wallet_topup.
-// The webhook worker credits the wallet when the gateway reports it paid.
-//
-// The checkout URL is a gateway-neutral deep link: no external payment
-// provider is wired up yet, so it points at Kilat Cloud's own topup page
-// keyed by the payment public_id. When a hosted-checkout gateway is
-// configured this URL becomes the provider redirect target; the ciphertext
-// column keeps it encrypted at rest either way.
+// handleWalletTopup creates a pending wallet top-up via the payment service.
+// It always goes through the configured payment provider (SumoPod in prod)
+// so the checkout_url is a real https://pay.sumopod.com/pay/... link, not the
+// old hard-coded https://payment.* deep link that caused 1014/NXDOMAIN.
 func (s *Server) handleWalletTopup(c fiber.Ctx) error {
 	orgID := mustOrgID(c)
 	userID := mustUserID(c)
@@ -126,56 +120,27 @@ func (s *Server) handleWalletTopup(c fiber.Ctx) error {
 	if currency == "" {
 		currency = "IDR"
 	}
-
-	publicID, err := randomPaymentPublicID()
+	p, err := s.paymentSvc.CreatePayment(c.Context(), payment.CreatePaymentInput{
+		OrganizationID: orgID,
+		InvoiceID:      uuid.Nil,
+		Currency:       currency,
+		Amount:         in.Amount,
+		Method:         in.Method,
+	})
 	if err != nil {
 		return mw.WriteError(c, err)
 	}
-	// Gateway-neutral deep link; see comment on the handler.
-	checkoutURL := fmt.Sprintf("https://payment.%s/topup/%s", s.cfg.AppDomain, publicID)
-	key := sha256.Sum256([]byte("checkout:" + s.cfg.SecretEncryptionKey))
-	urlCipher, err := crypto.Encrypt(key[:], []byte(checkoutURL))
-	if err != nil {
-		return mw.WriteError(c, fmt.Errorf("encrypt checkout url: %w", err))
-	}
-	payload, err := json.Marshal(map[string]any{
-		"purpose":         "wallet_topup",
-		"organization_id": orgID,
-		"amount":          in.Amount,
-		"currency":        currency,
-	})
-	if err != nil {
-		return mw.WriteError(c, fmt.Errorf("marshal provider payload: %w", err))
-	}
-
-	var (
-		id        uuid.UUID
-		status    string
-		expiresAt *time.Time
-	)
-	err = s.db.QueryRow(c.Context(), `
-INSERT INTO payments(public_id, organization_id, invoice_id, provider, method, currency,
-                     amount, status, expires_at, checkout_url_ciphertext, provider_payload)
-VALUES ($1,$2,NULL,$3,NULLIF($4,''),$5,$6,'pending', now()+interval '24 hours', $7, $8::jsonb)
-RETURNING id, status::text, expires_at`,
-		publicID, orgID, s.cfg.PaymentProvider, in.Method, currency, in.Amount, urlCipher, payload).
-		Scan(&id, &status, &expiresAt)
-	if err != nil {
-		return mw.WriteError(c, fmt.Errorf("insert topup payment: %w", err))
-	}
-
 	s.auditSvc.Log(c.Context(), auditEntry(c, orgID, &userID, "wallet.topup_request",
-		"payment", id, map[string]any{"amount": in.Amount, "currency": currency, "method": in.Method}))
-
+		"payment", p.ID, map[string]any{"amount": in.Amount, "currency": currency, "method": in.Method}))
 	return mw.JSON(c, 201, fiber.Map{
-		"id":           id,
-		"public_id":    publicID,
-		"status":       status,
+		"id":           p.ID,
+		"public_id":    p.PublicID,
+		"status":       p.Status,
 		"amount":       in.Amount,
 		"currency":     currency,
 		"method":       in.Method,
-		"checkout_url": checkoutURL,
-		"expires_at":   expiresAt,
+		"checkout_url": p.CheckoutURL,
+		"expires_at":   nil,
 	}, nil)
 }
 

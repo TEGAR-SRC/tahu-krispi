@@ -92,12 +92,16 @@ func (s *Service) CreatePayment(ctx context.Context, in CreatePaymentInput) (*Pa
 	if err != nil {
 		return nil, err
 	}
+	var invoiceID interface{} = in.InvoiceID
+	if in.InvoiceID == uuid.Nil {
+		invoiceID = nil
+	}
 	row := s.db.QueryRow(ctx, `
 INSERT INTO payments(organization_id, invoice_id, provider, method, currency, amount,
                      checkout_url_ciphertext, status, expires_at)
 VALUES ($1,$2,$3,NULLIF($4,''),$5,$6,$7,'pending', now()+interval '24 hours')
 RETURNING id, public_id, status::text`,
-		in.OrganizationID, in.InvoiceID, s.provider, in.Method, in.Currency, in.Amount, urlCipher)
+		in.OrganizationID, invoiceID, s.provider, in.Method, in.Currency, in.Amount, urlCipher)
 	var p Payment
 	if err := row.Scan(&p.ID, &p.PublicID, &p.Status); err != nil {
 		return nil, fmt.Errorf("insert payment: %w", err)
@@ -117,12 +121,16 @@ func (s *Service) createSumopodPayment(ctx context.Context, in CreatePaymentInpu
 	if err != nil {
 		return nil, err
 	}
+	var invoiceID interface{} = in.InvoiceID
+	if in.InvoiceID == uuid.Nil {
+		invoiceID = nil
+	}
 	row := s.db.QueryRow(ctx, `
 INSERT INTO payments(organization_id, invoice_id, provider, method, currency, amount,
                      checkout_url_ciphertext, status, expires_at)
 VALUES ($1,$2,$3,NULLIF($4,''),$5,$6,$7,'pending', now()+interval '24 hours')
 RETURNING id, public_id, status::text`,
-		in.OrganizationID, in.InvoiceID, s.provider, in.Method, in.Currency, in.Amount, urlCipher)
+		in.OrganizationID, invoiceID, s.provider, in.Method, in.Currency, in.Amount, urlCipher)
 	var p Payment
 	if err := row.Scan(&p.ID, &p.PublicID, &p.Status); err != nil {
 		return nil, fmt.Errorf("insert payment: %w", err)
@@ -141,8 +149,13 @@ RETURNING id, public_id, status::text`,
 	}
 	// Only attach return URLs when they are https (SumoPod rejects localhost http).
 	if strings.HasPrefix(s.consoleBaseURL, "https://") {
-		reqBody["success_return_url"] = strings.TrimRight(s.consoleBaseURL, "/") + "/app/invoices/" + in.InvoiceID.String() + "?payment=success"
-		reqBody["cancel_return_url"] = strings.TrimRight(s.consoleBaseURL, "/") + "/app/invoices/" + in.InvoiceID.String() + "?payment=cancel"
+		if in.InvoiceID == uuid.Nil {
+			reqBody["success_return_url"] = strings.TrimRight(s.consoleBaseURL, "/") + "/app/wallet?payment=success"
+			reqBody["cancel_return_url"] = strings.TrimRight(s.consoleBaseURL, "/") + "/app/wallet?payment=cancel"
+		} else {
+			reqBody["success_return_url"] = strings.TrimRight(s.consoleBaseURL, "/") + "/app/invoices/" + in.InvoiceID.String() + "?payment=success"
+			reqBody["cancel_return_url"] = strings.TrimRight(s.consoleBaseURL, "/") + "/app/invoices/" + in.InvoiceID.String() + "?payment=cancel"
+		}
 	}
 	if in.Method != "" {
 		reqBody["payment_method_type_code"] = strings.ToUpper(in.Method)
@@ -179,11 +192,26 @@ RETURNING id, public_id, status::text`,
 		return nil, fmt.Errorf("decode SumoPod response: %w", err)
 	}
 	// Normalisasi payment_link_url: jika SumoPod masih balikin custom domain lama payment.kilat-cloud.com (yang 1014/NXDOMAIN),
-	// paksa ke default pay.sumopod.com yang ada di docs (https://pay.sumopod.com/pay/uuid).
-	if strings.Contains(sp.PaymentLinkURL, "payment.kilat-cloud.com") {
-		sp.PaymentLinkURL = strings.ReplaceAll(sp.PaymentLinkURL, "https://payment.kilat-cloud.com/topup/", "https://pay.sumopod.com/pay/")
-		sp.PaymentLinkURL = strings.ReplaceAll(sp.PaymentLinkURL, "https://payment.kilat-cloud.com", "https://pay.sumopod.com")
-		sp.PaymentLinkURL = strings.ReplaceAll(sp.PaymentLinkURL, "http://payment.kilat-cloud.com", "https://pay.sumopod.com")
+	// paksa ke default pay.sumopod.com yang ada di docs (https://pay.sumopod.com/pay/uuid). Handle semua varian host/path.
+	origLink := sp.PaymentLinkURL
+	if strings.Contains(origLink, "kilat-cloud.com") {
+		// Extract pay ID (pay_xxx) dari URL apapun yang mengandung kilat-cloud.com
+		if idx := strings.Index(origLink, "pay_"); idx != -1 {
+			payID := origLink[idx:]
+			// payID may have query params, trim at ? or &
+			if q := strings.Index(payID, "?"); q != -1 {
+				payID = payID[:q]
+			}
+			if q := strings.Index(payID, "&"); q != -1 {
+				payID = payID[:q]
+			}
+			sp.PaymentLinkURL = "https://pay.sumopod.com/pay/" + payID
+		} else {
+			sp.PaymentLinkURL = strings.ReplaceAll(origLink, "https://payment.kilat-cloud.com/topup/", "https://pay.sumopod.com/pay/")
+			sp.PaymentLinkURL = strings.ReplaceAll(sp.PaymentLinkURL, "https://payment.kilat-cloud.com", "https://pay.sumopod.com")
+			sp.PaymentLinkURL = strings.ReplaceAll(sp.PaymentLinkURL, "http://payment.kilat-cloud.com", "https://pay.sumopod.com")
+			sp.PaymentLinkURL = strings.ReplaceAll(sp.PaymentLinkURL, "payment.kilat-cloud.com", "pay.sumopod.com")
+		}
 	}
 	// Persist SumoPod's external ids and the real checkout link.
 	linkCipher, _ := encryptString(s.webhookSecret+":checkout", sp.PaymentLinkURL)
@@ -234,6 +262,12 @@ WHERE id=$1 AND status IN ('unpaid','overdue')`, invoiceID)
 }
 
 func (s *Service) buildCheckoutURL(in CreatePaymentInput) string {
+	if in.InvoiceID == uuid.Nil {
+		// Wallet top-up placeholder (overwritten by SumoPod link when provider=sumopod)
+		token := signPayload(fmt.Sprintf("topup:%.2f:%d", in.Amount, timeNowUnix()), s.webhookSecret)
+		return fmt.Sprintf("/v1/wallet/topup/%s?sig=%s&amount=%.2f&currency=%s",
+			token[:8], token, in.Amount, in.Currency)
+	}
 	token := signPayload(fmt.Sprintf("%s:%.2f:%d", in.InvoiceID, in.Amount, timeNowUnix()), s.webhookSecret)
 	return fmt.Sprintf("/v1/payments/checkout/%s?sig=%s&amount=%.2f&currency=%s",
 		in.InvoiceID, token, in.Amount, in.Currency)

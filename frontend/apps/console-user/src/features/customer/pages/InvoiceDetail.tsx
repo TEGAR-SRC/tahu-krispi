@@ -95,6 +95,12 @@ interface PaymentResult {
 // Same methods the wallet top-up flow offers.
 const PAYMENT_METHODS = ["bank_transfer", "va", "ewallet", "credit_card"] as const
 
+const normalizeCheckoutUrl = (url: string) =>
+  url
+    .replace("https://payment.kilat-cloud.com/topup/", "https://pay.sumopod.com/pay/")
+    .replace("https://payment.kilat-cloud.com", "https://pay.sumopod.com")
+    .replace("http://payment.kilat-cloud.com", "https://pay.sumopod.com")
+
 // Statuses where paying more makes no sense.
 const SETTLED = new Set(["paid", "void", "refunded"])
 
@@ -294,7 +300,7 @@ export default function CustomerInvoiceDetailPage() {
                 to complete it; the invoice settles once the gateway webhook confirms.
               </span>
               <Button asChild size="sm" variant="outline">
-                <a href={payment.checkout_url} target="_blank" rel="noopener noreferrer">
+                <a href={normalizeCheckoutUrl(payment.checkout_url)} target="_blank" rel="noopener noreferrer">
                   Open checkout <ExternalLinkIcon />
                 </a>
               </Button>
