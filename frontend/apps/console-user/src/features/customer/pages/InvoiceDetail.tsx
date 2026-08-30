@@ -92,8 +92,8 @@ interface PaymentResult {
   checkout_url: string
 }
 
-// Same methods the wallet top-up flow offers.
-const PAYMENT_METHODS = ["bank_transfer", "va", "ewallet", "credit_card"] as const
+// Same methods the wallet top-up flow offers — SumoPod merchant PT KILAT CLOUD only has QRIS active.
+const PAYMENT_METHODS = ["qris"] as const
 
 const normalizeCheckoutUrl = (url: string) =>
   url

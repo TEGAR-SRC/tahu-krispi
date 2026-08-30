@@ -157,7 +157,12 @@ RETURNING id, public_id, status::text`,
 			reqBody["cancel_return_url"] = strings.TrimRight(s.consoleBaseURL, "/") + "/app/invoices/" + in.InvoiceID.String() + "?payment=cancel"
 		}
 	}
-	if in.Method != "" {
+	// Only QRIS is active for PT KILAT CLOUD (SumoPod dashboard: qris 0.7%+300). Other codes like BANK_TRANSFER/VA/EWALLET return 400 BAD_REQUEST.
+	// Normalize and only send if it's a known active code; otherwise let SumoPod show the default checkout (all active methods).
+	normalizedMethod := strings.ToLower(strings.TrimSpace(in.Method))
+	if normalizedMethod == "qris" || normalizedMethod == "qr" {
+		reqBody["payment_method_type_code"] = "QRIS"
+	} else if normalizedMethod != "" && normalizedMethod != "bank_transfer" && normalizedMethod != "va" && normalizedMethod != "ewallet" && normalizedMethod != "credit_card" {
 		reqBody["payment_method_type_code"] = strings.ToUpper(in.Method)
 	}
 	bodyJSON, _ := json.Marshal(reqBody)
@@ -175,7 +180,24 @@ RETURNING id, public_id, status::text`,
 	}
 	defer resp.Body.Close()
 	respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 32*1024))
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+	if resp.StatusCode == 400 && strings.Contains(string(respBody), "payment_method_type_code") {
+		// Retry without the method code — SumoPod will show the default QRIS checkout.
+		delete(reqBody, "payment_method_type_code")
+		bodyJSON2, _ := json.Marshal(reqBody)
+		httpReq2, _ := http.NewRequestWithContext(ctx, "POST", strings.TrimRight(s.sumopodBaseURL, "/")+"/api/v1/payments", bytes.NewReader(bodyJSON2))
+		httpReq2.Header.Set("Content-Type", "application/json")
+		httpReq2.Header.Set("X-Api-Key", s.sumopodAPIKey)
+		if resp2, err2 := client.Do(httpReq2); err2 == nil {
+			defer resp2.Body.Close()
+			respBody2, _ := io.ReadAll(io.LimitReader(resp2.Body, 32*1024))
+			if resp2.StatusCode >= 200 && resp2.StatusCode < 300 {
+				respBody = respBody2
+				resp = resp2
+			} else {
+				return nil, apperrors.New(apperrors.CodeProviderUnavailable, fmt.Sprintf("SumoPod create payment failed %d: %s", resp2.StatusCode, string(respBody2)))
+			}
+		}
+	} else if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return nil, apperrors.New(apperrors.CodeProviderUnavailable, fmt.Sprintf("SumoPod create payment failed %d: %s", resp.StatusCode, string(respBody)))
 	}
 	var sp struct {

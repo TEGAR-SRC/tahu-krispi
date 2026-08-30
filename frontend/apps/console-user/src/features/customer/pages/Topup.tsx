@@ -49,7 +49,7 @@ interface TopupResult {
   checkout_url: string
 }
 
-const METHODS = ["bank_transfer", "va", "ewallet", "credit_card"] as const
+const METHODS = ["qris"] as const
 
 export default function CustomerTopupPage() {
   const { orgId } = useOrg()
@@ -58,7 +58,7 @@ export default function CustomerTopupPage() {
   const [error, setError] = useState<unknown>(null)
 
   const [amount, setAmount] = useState("")
-  const [method, setMethod] = useState<string>("bank_transfer")
+  const [method, setMethod] = useState<string>("qris")
   const [creating, setCreating] = useState(false)
 
   // Pending top-up: poll the balance until it rises above the snapshot taken
