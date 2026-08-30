@@ -1,8 +1,8 @@
 // Multipart upload helper with progress reporting. The JSON helpers in
 // src/lib/api.ts cannot stream FormData with progress events, so uploads
 // (ISOs, avatars, ticket attachments) go through XMLHttpRequest here and keep
-// using the same /api/v1 prefix + bearer token as the rest of the app.
-import { getToken } from "@/lib/api"
+// using the same API base + bearer token as the rest of the app.
+import { API_BASE, getToken } from "@/lib/api"
 
 export class UploadError extends Error {
   status: number
@@ -33,7 +33,7 @@ export function uploadMultipart(
 ): Promise<UploadResult> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest()
-    xhr.open("POST", `/api/v1${path.startsWith("/") ? path : `/${path}`}`)
+    xhr.open("POST", `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`)
     xhr.responseType = "text"
     const token = getToken()
     if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`)

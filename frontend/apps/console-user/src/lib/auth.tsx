@@ -114,19 +114,10 @@ async function probe(path: string, token: string): Promise<number> {
  * every authenticated user resolves to "customer". Throws when the token is
  * already expired (every probe answered 401).
  */
-export async function resolveRole(token: string): Promise<AppRole> {
-  const attempts: Array<{ path: string; role: AppRole }> = [
-    { path: "/admin/audit-logs?limit=1", role: "customer" },
-    { path: "/admin/finance/summary?days=1", role: "customer" },
-    { path: "/admin/providers", role: "customer" },
-  ]
-  let sawAuthError = false
-  for (const attempt of attempts) {
-    const status = await probe(attempt.path, token)
-    if (status >= 200 && status < 300) return attempt.role
-    if (status === 401) sawAuthError = true
-  }
-  if (sawAuthError) throw new Error("Session expired")
+export async function resolveRole(_token: string): Promise<AppRole> {
+  // User console is customer-only — no admin probe needed. Probing /admin/* from
+  // api-user.kilat-cloud.com is blocked by audience scoping (403) and only
+  // pollutes the console with expected failures.
   return "customer"
 }
 
