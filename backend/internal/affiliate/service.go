@@ -230,18 +230,19 @@ func RecordCommissionForInvoice(ctx context.Context, db *pgxpool.Pool, encKey []
 	defer tx.Rollback(ctx)
 
 	var enabled bool
-	var percentStr, minStr string
+	var percentStr, bonusStr, minStr string
 	err = tx.QueryRow(ctx, `
-SELECT enabled, commission_percent::text, min_invoice_total::text
-FROM affiliate_settings WHERE id=true`).Scan(&enabled, &percentStr, &minStr)
+SELECT enabled, commission_percent::text, referee_bonus_percent::text, min_invoice_total::text
+FROM affiliate_settings WHERE id=true`).Scan(&enabled, &percentStr, &bonusStr, &minStr)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return tx.Commit(ctx) // no program configured; nothing to do
 	}
 	if err != nil {
 		return err
 	}
-	var percent, minTotal float64
+	var percent, bonusPercent, minTotal float64
 	fmt.Sscanf(percentStr, "%f", &percent)
+	fmt.Sscanf(bonusStr, "%f", &bonusPercent)
 	fmt.Sscanf(minStr, "%f", &minTotal)
 
 	var orgID uuid.UUID
@@ -292,13 +293,31 @@ SELECT referred_by FROM users WHERE id=$1 AND deleted_at IS NULL`, *payer).Scan(
 	if commission <= 0 {
 		return nil
 	}
+	// Referrer's commission earning (idempotent per invoice + earning_type).
 	if _, err := tx.Exec(ctx, `
 INSERT INTO affiliate_earnings(referrer_user_id, referee_user_id, invoice_id,
-                              base_amount, commission_amount, currency, status)
-VALUES ($1,$2,$3,$4,$5,$6,'approved')
-ON CONFLICT (invoice_id) DO NOTHING`,
+                              base_amount, commission_amount, currency, status, earning_type)
+VALUES ($1,$2,$3,$4,$5,$6,'approved','referrer_commission')
+ON CONFLICT (invoice_id, earning_type) DO NOTHING`,
 		*referrer, *payer, invoiceID, base, commission, currency); err != nil {
 		return fmt.Errorf("insert affiliate earning: %w", err)
+	}
+	// Referee bonus: the configured referee_bonus_percent is paid to the payer
+	// (the referred user) as a separate earning row, so it accrues and is
+	// withdrawable just like the referrer's commission.
+	if bonusPercent > 0 {
+		bonus := computeCommission(base, bonusPercent)
+		if bonus > 0 {
+			if _, err := tx.Exec(ctx, `
+INSERT INTO affiliate_earnings(referrer_user_id, referee_user_id, invoice_id,
+                              base_amount, commission_amount, referee_bonus_amount,
+                              currency, status, earning_type)
+VALUES ($1,$2,$3,$4,$5,$6,$7,'approved','referee_bonus')
+ON CONFLICT (invoice_id, earning_type) DO NOTHING`,
+				*referrer, *payer, invoiceID, base, bonus, bonus, currency); err != nil {
+				return fmt.Errorf("insert referee bonus earning: %w", err)
+			}
+		}
 	}
 	return tx.Commit(ctx)
 }
@@ -333,7 +352,9 @@ SELECT EXISTS(SELECT 1 FROM organization_members WHERE organization_id=$1 AND us
 	rows, err := tx.Query(ctx, `
 SELECT id, currency::text, commission_amount::text
 FROM affiliate_earnings
-WHERE referrer_user_id=$1 AND status='approved'
+WHERE status='approved'
+  AND ((earning_type='referrer_commission' AND referrer_user_id=$1)
+       OR (earning_type='referee_bonus' AND referee_user_id=$1))
 ORDER BY id
 FOR UPDATE`, userID)
 	if err != nil {
@@ -380,7 +401,9 @@ RETURNING id`, orgID, cur).Scan(&walletID); err != nil {
 		}
 		res, err := tx.Exec(ctx, `
 UPDATE affiliate_earnings SET status='paid', paid_at=now()
-WHERE referrer_user_id=$1 AND status='approved' AND currency=$2`, userID, cur)
+WHERE status='approved' AND currency=$2
+  AND ((earning_type='referrer_commission' AND referrer_user_id=$1)
+       OR (earning_type='referee_bonus' AND referee_user_id=$1))`, userID, cur)
 		if err != nil {
 			return nil, err
 		}

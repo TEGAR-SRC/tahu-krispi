@@ -180,7 +180,7 @@ func (s *Server) handleOAuthCallback(c fiber.Ctx) error {
 		q := url.Values{}
 		q.Set("mfa_required", "1")
 		q.Set("preauth_token", preauth)
-		return c.Redirect().To(s.oauthConsoleURL("/oauth/callback?" + q.Encode()))
+		return c.Redirect().To(s.oauthConsoleURL("/oauth/callback#" + q.Encode()))
 	}
 
 	// Normal path: issue a full session and redirect with tokens to the
@@ -201,10 +201,12 @@ func (s *Server) handleOAuthCallback(c fiber.Ctx) error {
 		RequestID: auditRequestID(c),
 	})
 
-	q := url.Values{}
-	q.Set("access_token", at)
-	q.Set("refresh_token", rawRefresh)
-	return c.Redirect().To(s.oauthConsoleURL("/oauth/callback?" + q.Encode()))
+	// Tokens are delivered in the URL fragment (#...) so they never appear in
+	// proxy/CDN/server access logs and don't persist in browser history.
+	frag := url.Values{}
+	frag.Set("access_token", at)
+	frag.Set("refresh_token", rawRefresh)
+	return c.Redirect().To(s.oauthConsoleURL("/oauth/callback#" + frag.Encode()))
 }
 
 type oauthProfile struct {

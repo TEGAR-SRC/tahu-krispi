@@ -4,7 +4,6 @@
 package onidel
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -27,39 +26,61 @@ func (c *Client) UploadMeasuredBootImage(ctx context.Context, teamID, filename, 
 	if filename == "" {
 		return nil, fmt.Errorf("onidel: measured boot upload requires a filename")
 	}
-	var buf bytes.Buffer
-	mw := multipart.NewWriter(&buf)
-	if err := mw.WriteField("team_id", teamID); err != nil {
-		return nil, err
-	}
-	if description != "" {
-		if err := mw.WriteField("description", description); err != nil {
-			return nil, err
+	// Stream the multipart body through a pipe instead of buffering the whole
+	// image in memory, so a 512MB upload doesn't hold ~512MB (plus the source)
+	// in RAM.
+	pr, pw := io.Pipe()
+	mw := multipart.NewWriter(pw)
+	writeErr := make(chan error, 1)
+	go func() {
+		var werr error
+		defer func() {
+			if err := mw.Close(); err != nil && werr == nil {
+				werr = err
+			}
+			pw.CloseWithError(werr)
+			writeErr <- werr
+		}()
+		if err := mw.WriteField("team_id", teamID); err != nil {
+			werr = err
+			return
 		}
-	}
-	part, err := mw.CreateFormFile("file", filename)
-	if err != nil {
-		return nil, err
-	}
-	if _, err := io.CopyN(part, data, size); err != nil {
-		return nil, fmt.Errorf("onidel: reading measured boot image: %w", err)
-	}
-	if err := mw.Close(); err != nil {
-		return nil, err
-	}
+		if description != "" {
+			if err := mw.WriteField("description", description); err != nil {
+				werr = err
+				return
+			}
+		}
+		part, err := mw.CreateFormFile("file", filename)
+		if err != nil {
+			werr = err
+			return
+		}
+		if _, err := io.CopyN(part, data, size); err != nil {
+			werr = fmt.Errorf("onidel: reading measured boot image: %w", err)
+			return
+		}
+	}()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/measured-boot-images", &buf)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/measured-boot-images", pr)
 	if err != nil {
+		pw.CloseWithError(err)
 		return nil, err
 	}
 	req.Header.Set("Authorization", "Token "+c.apiKey)
 	req.Header.Set("Content-Type", mw.FormDataContentType())
+	req.ContentLength = -1
 	resp, err := c.http.Do(req)
 	if err != nil {
+		pw.CloseWithError(err)
+		<-writeErr
 		return nil, fmt.Errorf("onidel request: %w", err)
 	}
 	defer resp.Body.Close()
 	respBytes, _ := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
+	if werr := <-writeErr; werr != nil {
+		return nil, werr
+	}
 	if resp.StatusCode >= 400 {
 		return nil, &APIError{StatusCode: resp.StatusCode, Body: string(respBytes)}
 	}

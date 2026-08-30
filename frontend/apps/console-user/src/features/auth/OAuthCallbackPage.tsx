@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react"
-import { Link, useNavigate, useSearchParams } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,11 +10,17 @@ import { ErrorBanner } from "@/components/shared/ErrorBanner"
 import { setToken } from "@/lib/api"
 import { homePathFor, useAuth } from "@/lib/auth"
 
+// Tokens arrive in the URL fragment (#...) so they never hit server logs.
+function hashParams(): URLSearchParams {
+  const h = window.location.hash.replace(/^#/, "")
+  return new URLSearchParams(h)
+}
+
 export default function OAuthCallbackPage() {
-  const [params] = useSearchParams()
   const navigate = useNavigate()
   const { loginMFA } = useAuth()
 
+  const params = hashParams()
   const accessToken = params.get("access_token")
   const refreshToken = params.get("refresh_token")
   const mfaRequired = params.get("mfa_required") === "1"

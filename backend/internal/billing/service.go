@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -299,9 +300,10 @@ UPDATE invoices SET status='paid', paid_at=now(), amount_paid=$2, amount_due=0 W
 		return err
 	}
 	// Post-commit affiliate accrual: a failure here must not roll back or
-	// fail the settled payment; RecordCommissionForInvoice is idempotent and
-	// retried by the payment-webhook path when reconciliation re-processes.
-	_ = affiliate.RecordCommissionForInvoice(ctx, s.db, nil, invoiceID)
+	// fail the settled payment; it is logged so it isn't silently lost.
+	if err := affiliate.RecordCommissionForInvoice(ctx, s.db, nil, invoiceID); err != nil {
+		log.Printf("billing: accrue affiliate commission for invoice %s failed: %v", invoiceID, err)
+	}
 	return nil
 }
 

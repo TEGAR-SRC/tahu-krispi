@@ -6,6 +6,7 @@ package api
 import (
 	"errors"
 	"strconv"
+	"strings"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
@@ -144,6 +145,23 @@ func (s *Server) handleMFAConfirmTOTP(c fiber.Ctx) error {
 
 func (s *Server) handleMFADisable(c fiber.Ctx) error {
 	userID := mustUserID(c)
+	// Re-authentication: disabling the only second factor must require a valid
+	// current TOTP/recovery code so a stolen session token can't silently
+	// remove the account's MFA.
+	var in struct {
+		Code string `json:"code"`
+	}
+	_ = c.Bind().Body(&in)
+	if strings.TrimSpace(in.Code) == "" {
+		return mw.WriteError(c, apperrors.New(apperrors.CodeValidation, "current MFA code is required to disable MFA"))
+	}
+	ok, err := s.mfaMgr.VerifySecondFactor(c.Context(), userID, strings.TrimSpace(in.Code))
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	if !ok {
+		return mw.WriteError(c, apperrors.New(apperrors.CodeInvalidCredentials, "invalid MFA code"))
+	}
 	if err := s.mfaMgr.Disable(c.Context(), userID); err != nil {
 		return mw.WriteError(c, err)
 	}

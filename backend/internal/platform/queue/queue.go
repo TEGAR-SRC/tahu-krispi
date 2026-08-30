@@ -90,19 +90,31 @@ RETURNING id, queue, job_type, resource_id, payload, attempts, max_attempts`,
 			w.fail(ctx, job, err.Error())
 			continue
 		}
-		w.db.Exec(ctx, `
-UPDATE jobs SET status='success', completed_at=now(), last_error=NULL, updated_at=now() WHERE id=$1`, job.ID)
+		w.complete(ctx, job)
 	}
 }
 
+// complete marks a job terminal on a detached context so a worker shutdown
+// (cancelled ctx) can't silently leave the job stuck in 'running'.
+func (w *Worker) complete(ctx context.Context, job Job) {
+	c, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
+	defer cancel()
+	w.db.Exec(c, `
+UPDATE jobs SET status='success', completed_at=now(), last_error=NULL, locked_by=NULL, locked_at=NULL, updated_at=now() WHERE id=$1`, job.ID)
+}
+
 func (w *Worker) fail(ctx context.Context, job Job, errMsg string) {
+	// Detach so the status write survives a cancelled parent ctx during
+	// shutdown; otherwise a job can be stuck in 'running' forever.
+	c, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
+	defer cancel()
 	if job.Attempts >= job.MaxAttempts {
-		w.db.Exec(ctx, `
-UPDATE jobs SET status='failed', last_error=NULLIF($2,''), updated_at=now() WHERE id=$1`, job.ID, errMsg)
+		w.db.Exec(c, `
+UPDATE jobs SET status='failed', last_error=NULLIF($2,''), locked_by=NULL, locked_at=NULL, updated_at=now() WHERE id=$1`, job.ID, errMsg)
 		return
 	}
 	backoff := time.Duration(1<<uint(minInt(job.Attempts, 6))) * 30 * time.Second
-	w.db.Exec(ctx, `
+	w.db.Exec(c, `
 UPDATE jobs SET status='retry', last_error=NULLIF($2,''), run_after=now()+$3::interval, locked_by=NULL, locked_at=NULL, updated_at=now()
 WHERE id=$1`, job.ID, errMsg, humanDuration(backoff))
 }

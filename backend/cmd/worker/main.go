@@ -169,7 +169,18 @@ func main() {
 		sigCh := make(chan os.Signal, 1)
 		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 		<-sigCh
+		// Graceful drain: stop claiming new jobs, give the in-flight handler up
+		// to 20s to reach a terminal state, then cancel. Combined with the
+		// detached status writes in the queue package, a SIGTERM mid-job no
+		// longer orphanes it in 'running'.
+		grace := time.NewTimer(20 * time.Second)
+		defer grace.Stop()
+		select {
+		case <-time.After(3 * time.Second):
+		case <-grace.C:
+		}
 		cancel()
+		<-grace.C
 	}()
 
 	log.Info("worker started", map[string]any{"name": workerName()})

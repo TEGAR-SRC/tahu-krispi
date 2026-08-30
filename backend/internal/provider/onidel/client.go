@@ -76,8 +76,8 @@ func (c *Client) do(ctx context.Context, method, path string, body any, out any)
 			lastErr = fmt.Errorf("onidel request: %w", err)
 			continue
 		}
-		defer resp.Body.Close()
 		respBytes, _ := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
+		resp.Body.Close()
 		if resp.StatusCode >= 400 {
 			return &APIError{StatusCode: resp.StatusCode, Body: string(respBytes)}
 		}

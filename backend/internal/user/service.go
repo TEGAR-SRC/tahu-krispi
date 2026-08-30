@@ -343,14 +343,39 @@ func (s *Service) CompleteLoginWithTOTP(ctx context.Context, preauthToken, code 
 	if err != nil {
 		return nil, apperrors.New(apperrors.CodeInvalidCredentials, "preauth token invalid or expired; please log in again")
 	}
+
+	// Per-account second-factor lockout: after MFA_MAX_ATTEMPTS consecutive
+	// failures the account is locked for MFA_LOCKOUT seconds, independent of
+	// the per-IP limiter, so an attacker who holds the password can't brute
+	// force the TOTP/recovery code by rotating IPs.
+	const mfaMaxAttempts = 5
+	const mfaLockout = 15 * time.Minute
+	lockKey := "kc:mfa:lockout:" + userID.String()
+	n, lerr := s.rdb.Get(ctx, lockKey).Int()
+	if lerr == nil && n >= mfaMaxAttempts {
+		return nil, apperrors.New(apperrors.CodeAccountLocked, "too many failed login attempts; try again in 15 minutes")
+	}
+	if lerr != nil && !errors.Is(lerr, goredis.Nil) {
+		return nil, lerr
+	}
+
 	ok, err := s.mfaMgr.VerifySecondFactor(ctx, userID, code)
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
 		s.recordAuthEvent(ctx, userID, "login_mfa_failed", false, ip, ua)
+		// Count the failure; reset on success below.
+		c, cerr := s.rdb.Incr(ctx, lockKey).Result()
+		if cerr != nil {
+			return nil, cerr
+		}
+		if c == 1 {
+			_ = s.rdb.Expire(ctx, lockKey, mfaLockout).Err()
+		}
 		return nil, apperrors.New(apperrors.CodeInvalidCredentials, "invalid TOTP code")
 	}
+	_ = s.rdb.Del(ctx, lockKey)
 	s.recordAuthEvent(ctx, userID, "login_mfa_ok", true, ip, ua)
 
 	var emailStatus, phoneStatus string

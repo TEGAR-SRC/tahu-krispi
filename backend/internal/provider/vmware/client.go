@@ -12,6 +12,7 @@ package vmware
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -58,6 +59,9 @@ func NewClient(baseURL, username, password string, insecure bool) (*Client, erro
 	u, err := soap.ParseURL(strings.TrimSpace(baseURL))
 	if err != nil {
 		return nil, apperrors.Newf(apperrors.CodeValidation, "vmware: invalid baseURL %q: %v", baseURL, err)
+	}
+	if insecure {
+		log.Printf("WARNING: VMware provider TLS certificate verification is DISABLED for %s (metadata.insecure=true) — MITM exposure", baseURL)
 	}
 	return &Client{
 		u:        u,

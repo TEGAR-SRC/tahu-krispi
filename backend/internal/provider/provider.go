@@ -386,7 +386,8 @@ func RegisterFactory(code string, factory func() (ComputeProvider, error)) {
 }
 
 // Lookup resolves a provider by code, building it through its registered
-// factory when needed.
+// factory when needed. Double-checked locking prevents two concurrent first
+// lookups from constructing two independent adapters.
 func Lookup(code string) (ComputeProvider, error) {
 	mu.RLock()
 	p, ok := registry[code]
@@ -394,9 +395,12 @@ func Lookup(code string) (ComputeProvider, error) {
 	if ok {
 		return p, nil
 	}
-	mu.RLock()
+	mu.Lock()
+	defer mu.Unlock()
+	if p, ok := registry[code]; ok { // another goroutine built it while we waited
+		return p, nil
+	}
 	factory, ok := factories[code]
-	mu.RUnlock()
 	if !ok {
 		return nil, apperrors.Newf(apperrors.CodeProviderUnavailable, "provider %q is not registered", code)
 	}
@@ -404,8 +408,6 @@ func Lookup(code string) (ComputeProvider, error) {
 	if err != nil {
 		return nil, err
 	}
-	mu.Lock()
 	registry[code] = p
-	mu.Unlock()
 	return p, nil
 }

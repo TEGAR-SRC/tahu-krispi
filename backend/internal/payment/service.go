@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -403,12 +404,17 @@ RETURNING id`, orgID, currency).Scan(&walletID); werr != nil {
 		// recorded payment and is retried by the next reconciliation pass
 		// (ProcessTransitions re-flags the subscription as past_due).
 		subSvc := subscription.NewService(s.db, 0)
-		_ = subSvc.AdvancePeriodAfterPayment(ctx, *followups.advanceSubscription)
+		if err := subSvc.AdvancePeriodAfterPayment(ctx, *followups.advanceSubscription); err != nil {
+			log.Printf("payment: advance subscription %s after webhook failed: %v", followups.advanceSubscription, err)
+		}
 	}
 	if followups.affiliateInvoice != nil {
 		// Referral commission accrual for the settled invoice; idempotent per
-		// invoice, best-effort like every other post-commit side effect here.
-		_ = affiliate.RecordCommissionForInvoice(ctx, s.db, nil, *followups.affiliateInvoice)
+		// invoice. A failure is logged so it isn't silently lost and can be
+		// re-accrued by re-processing the invoice.
+		if err := affiliate.RecordCommissionForInvoice(ctx, s.db, nil, *followups.affiliateInvoice); err != nil {
+			log.Printf("payment: accrue affiliate commission for invoice %s failed: %v", followups.affiliateInvoice, err)
+		}
 	}
 	return nil
 }

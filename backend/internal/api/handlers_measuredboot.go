@@ -1,9 +1,7 @@
 package api
 
 import (
-	"bytes"
 	"context"
-	"io"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
@@ -129,16 +127,12 @@ func (s *Server) handleUploadMeasuredBootImage(c fiber.Ctx) error {
 		return mw.WriteError(c, errValidation("cannot read uploaded file"))
 	}
 	defer f.Close()
-	data, err := io.ReadAll(io.LimitReader(f, maxMeasuredBootImageBytes+1))
-	if err != nil {
-		return mw.WriteError(c, errValidation("cannot read uploaded file"))
-	}
-	if int64(len(data)) > maxMeasuredBootImageBytes {
-		return mw.WriteError(c, vErrField("file", "maximum size is 512MB"))
-	}
 
 	description := c.FormValue("description")
-	img, err := s.prov.UploadMeasuredBootImage(ctx, teamExt, fh.Filename, description, bytes.NewReader(data), int64(len(data)))
+	// Stream the file directly instead of buffering 512MB into memory and
+	// copying it again into a multipart body (avoids ~1GB+ per upload under
+	// concurrency). fh.Size was already validated above.
+	img, err := s.prov.UploadMeasuredBootImage(ctx, teamExt, fh.Filename, description, f, fh.Size)
 	if err != nil {
 		return mw.WriteError(c, err)
 	}
@@ -158,7 +152,7 @@ INSERT INTO measured_boot_images(organization_id, provider_id, external_image_id
                                  name, filename, description, size_bytes)
 VALUES ($1,$2,$3,$4,NULLIF($5,''),NULLIF($6,''),$7)
 RETURNING id, created_at::text`,
-		orgID, providerID, extAny, name, fh.Filename, description, int64(len(data))).
+		orgID, providerID, extAny, name, fh.Filename, description, fh.Size).
 		Scan(&imageID, &createdAt)
 	if err != nil {
 		return mw.WriteError(c, err)
@@ -170,7 +164,7 @@ RETURNING id, created_at::text`,
 		Name:        name,
 		Filename:    fh.Filename,
 		Description: description,
-		SizeBytes:   int64(len(data)),
+		SizeBytes:   fh.Size,
 		CreatedAt:   createdAt,
 	}, nil)
 }

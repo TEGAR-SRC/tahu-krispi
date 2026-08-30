@@ -45,6 +45,14 @@ func Run(ctx context.Context, databaseURL string) error {
 }
 
 func run(ctx context.Context, conn *pgx.Conn) error {
+	// Serialize migrations across multiple API pods / migrate invocations so
+	// two workers on a fresh DB can't both apply the (not fully idempotent)
+	// base schema. Released when the connection closes.
+	if _, err := conn.Exec(ctx, `SELECT pg_advisory_lock(7230217)`); err != nil {
+		return fmt.Errorf("acquire migration lock: %w", err)
+	}
+	defer conn.Exec(ctx, `SELECT pg_advisory_unlock(7230217)`)
+
 	// Base schema: apply once (guarded; the file itself is not fully IF NOT EXISTS).
 	var baseApplied bool
 	err := conn.QueryRow(ctx, `SELECT to_regclass('app.users') IS NOT NULL`).Scan(&baseApplied)
