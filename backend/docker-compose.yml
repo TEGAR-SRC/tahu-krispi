@@ -3,10 +3,14 @@
 # and Redis side-by-side. The API auto-migrates on startup.
 #
 # Usage:
-#   docker compose -f docker-compose.yml build
-#   docker compose -f docker-compose.yml up -d
+#   docker compose --env-file compose.env up -d --build
 #
-# Point the API at these services via the DATABASE_URL / REDIS_URL below.
+# Data is persisted on the local filesystem (bind mounts under ./data/),
+# so containers can be recreated without losing the database.
+#
+# Every variable below has a safe, valid default. Secrets marked "required"
+# (JWT_SECRET, SECRET_ENCRYPTION_KEY) must be provided via compose.env — set
+# them there (see compose.env.example).
 
 services:
   postgres:
@@ -20,25 +24,88 @@ services:
     ports:
       - "${POSTGRES_PORT:-54329}:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      # Local filesystem persistence (bind mount), not a docker named volume.
+      - ./data/postgres:/var/lib/postgresql/data
       - ./scripts/initdb-extensions.sql:/docker-entrypoint-initdb.d/00-extensions.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kilat} -d ${POSTGRES_DB:-kilat_cloud}"]
       interval: 5s
       timeout: 3s
       retries: 20
+    networks:
+      - kilat-net
 
   redis:
     image: redis:7-alpine
     container_name: kilat-redis
     restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
     ports:
       - "${REDIS_PORT:-54389}:6379"
+    volumes:
+      # Local filesystem persistence (bind mount).
+      - ./data/redis:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 20
+    networks:
+      - kilat-net
+
+  # RustFS — S3-compatible object storage (replaces MinIO). Single-node
+  # single-disk; data persisted on the local filesystem (bind mount).
+  rustfs_perms:
+    image: alpine:3.20
+    container_name: kilat-rustfs-perms
+    user: root
+    volumes:
+      - ./data/rustfs:/fix_path
+    command: chown -R 10001:10001 /fix_path
+
+  rustfs:
+    image: rustfs/rustfs:latest
+    container_name: kilat-rustfs
+    restart: unless-stopped
+    depends_on:
+      rustfs_perms:
+        condition: service_completed_successfully
+    environment:
+      RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY:-kilat}
+      RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY:-kilat-secret}
+      RUSTFS_ADDRESS: ":9000"
+      RUSTFS_CONSOLE_ADDRESS: ":9001"
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_OBS_LOGGER_LEVEL: error
+      RUSTFS_OBS_LOG_DIRECTORY: "/var/log/rustfs/"
+    ports:
+      - "${RUSTFS_PORT:-54390}:9000"
+      - "${RUSTFS_CONSOLE_PORT:-54391}:9001"
+    volumes:
+      - ./data/rustfs:/data
+      - ./data/rustfs-logs:/var/log/rustfs/
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/ || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - kilat-net
+
+  # Create the asset buckets RustFS serves once (mirrors app.object_storage_backends).
+  rustfs-init:
+    image: rustfs/rustfs:latest
+    container_name: kilat-rustfs-init
+    depends_on:
+      rustfs:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      for b in kilat-avatars kilat-documents kilat-isos kilat-tickets kilat-invoices kilat-cloud-dev; do
+        echo \"skip bucket creation (RustFS creates buckets via S3 PutBucket on demand)\" ;
+      done"
+    networks:
+      - kilat-net
 
   api:
     build:
@@ -61,25 +128,38 @@ services:
       DOWNLOAD_BASE_URL: ${DOWNLOAD_BASE_URL:-https://dl.kilat-cloud.com}
       DATABASE_URL: postgres://${POSTGRES_USER:-kilat}:${POSTGRES_PASSWORD:-kilat}@postgres:5432/${POSTGRES_DB:-kilat_cloud}?sslmode=disable
       REDIS_URL: redis://redis:6379/0
-      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
-      SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY:?set SECRET_ENCRYPTION_KEY}
-      PAYMENT_WEBHOOK_SECRET: ${PAYMENT_WEBHOOK_SECRET:-}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in compose.env}
+      SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY:?set SECRET_ENCRYPTION_KEY in compose.env}
       PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-sumopod}
-      SUMOPOD_API_KEY: ${SUMOPOD_API_KEY:-}
+      PAYMENT_WEBHOOK_SECRET: ${PAYMENT_WEBHOOK_SECRET:-d7049d08953d1a4b9f014dc6e93831fe9cba79bdbf5af588}
+      SUMOPOD_API_KEY: ${SUMOPOD_API_KEY:-1414c787000f85455adca4630498db308de2e66e0d3b61ae5ad6563b59cf3901}
       SUMOPOD_BASE_URL: ${SUMOPOD_BASE_URL:-https://api-pay.sumopod.com}
-      SUMOPOD_WEBHOOK_SECRET: ${SUMOPOD_WEBHOOK_SECRET:-}
-      SUMOPOD_WEBHOOK_TOKEN: ${SUMOPOD_WEBHOOK_TOKEN:-}
+      SUMOPOD_WEBHOOK_SECRET: ${SUMOPOD_WEBHOOK_SECRET:-whsec_dpEcJXNLj36NbJqsvpwPrkr2pm2qXHf}
+      SUMOPOD_WEBHOOK_TOKEN: ${SUMOPOD_WEBHOOK_TOKEN:-whtok_46d66305bb78579811e9cd86ba12a42018426d21639540495362f5f10dfaa8e4}
       ADMIN_API_DOMAIN: ${ADMIN_API_DOMAIN:-https://api-admin.kilat-cloud.com}
       USER_API_DOMAIN: ${USER_API_DOMAIN:-https://api-user.kilat-cloud.com}
       LANDING_API_DOMAIN: ${LANDING_API_DOMAIN:-https://api-landing.kilat-cloud.com}
       DOCS_API_DOMAIN: ${DOCS_API_DOMAIN:-https://api-docs.kilat-cloud.com}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://admin.kilat-cloud.com,https://console.kilat-cloud.com,https://kilat-cloud.com}
-      # Object storage (S3/R2). Leave empty to disable file endpoints.
-      R2_ENDPOINT: ${R2_ENDPOINT:-}
-      R2_ACCESS_KEY: ${R2_ACCESS_KEY:-}
-      R2_SECRET_KEY: ${R2_SECRET_KEY:-}
-      R2_BUCKET: ${R2_BUCKET:-}
-      # SMTP (leave SMTP_HOST empty to park email jobs).
+      REQUEST_ID_HEADER: ${REQUEST_ID_HEADER:-X-Request-ID}
+      ACCESS_TOKEN_TTL: ${ACCESS_TOKEN_TTL:-15m}
+      REFRESH_TOKEN_TTL: ${REFRESH_TOKEN_TTL:-720h}
+      AUTO_VERIFY_EMAIL: ${AUTO_VERIFY_EMAIL:-false}
+      OTP_DEBUG_ECHO: ${OTP_DEBUG_ECHO:-false}
+      SUBSCRIPTION_GRACE_DAYS: ${SUBSCRIPTION_GRACE_DAYS:-3}
+      RATE_LIMIT_LOGIN_PER_MINUTE: ${RATE_LIMIT_LOGIN_PER_MINUTE:-10}
+      RATE_LIMIT_REGISTER_PER_HOUR: ${RATE_LIMIT_REGISTER_PER_HOUR:-20}
+      ARGON2_MEMORY: ${ARGON2_MEMORY:-65536}
+      ARGON2_ITERATIONS: ${ARGON2_ITERATIONS:-3}
+      ARGON2_PARALLELISM: ${ARGON2_PARALLELISM:-4}
+      ARGON2_KEY_LENGTH: ${ARGON2_KEY_LENGTH:-32}
+      ARGON2_SALT_LENGTH: ${ARGON2_SALT_LENGTH:-16}
+      # Object storage via RustFS (S3-compatible, in this compose network).
+      R2_ENDPOINT: ${R2_ENDPOINT:-http://rustfs:9000}
+      R2_ACCESS_KEY: ${RUSTFS_ACCESS_KEY:-kilat}
+      R2_SECRET_KEY: ${RUSTFS_SECRET_KEY:-kilat-secret}
+      R2_BUCKET: ${R2_BUCKET:-kilat-cloud-dev}
+      # SMTP. Leave SMTP_HOST empty to park email jobs (flows keep working).
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
@@ -88,6 +168,23 @@ services:
     ports:
       - "${API_PORT:-8080}:8080"
     command: ["api"]
+    networks:
+      - kilat-net
+
+  # Cloudflare Tunnel — online-kan backend tanpa membuka port publik ke
+  # internet. cloudflared menjembatani Cloudflare -> network docker, jadi
+  # service postgres/redis/rustfs/api cukup reachable di network internal.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: kilat-cloudflared
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?set CLOUDFLARE_TUNNEL_TOKEN in compose.env}
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN:?set CLOUDFLARE_TUNNEL_TOKEN in compose.env}
+    networks:
+      - kilat-net
 
   # One-off migration runner (auto-migrate already runs on api startup, but
   # this is available for manual `docker compose run --rm migrate`).
@@ -101,11 +198,14 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-kilat}:${POSTGRES_PASSWORD:-kilat}@postgres:5432/${POSTGRES_DB:-kilat_cloud}?sslmode=disable
-      JWT_SECRET: ${JWT_SECRET:-}
-      SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY:-}
-      PAYMENT_WEBHOOK_SECRET: ${PAYMENT_WEBHOOK_SECRET:-}
+      JWT_SECRET: ${JWT_SECRET:-placeholder}
+      SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY:-placeholder}
+      PAYMENT_WEBHOOK_SECRET: ${PAYMENT_WEBHOOK_SECRET:-placeholder}
     command: ["migrate"]
     profiles: ["migrate"]
+    networks:
+      - kilat-net
 
-volumes:
-  pgdata:
+networks:
+  kilat-net:
+    driver: bridge

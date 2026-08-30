@@ -12,7 +12,7 @@ services:
     ports:
       - "54329:5432"
     volumes:
-      - kilat_pgdata:/var/lib/postgresql/data
+      - ./data/postgres:/var/lib/postgresql/data
       # Enable required extensions on first boot (schema also creates them).
       - ./scripts/initdb-extensions.sql:/docker-entrypoint-initdb.d/00-extensions.sql:ro
     healthcheck:
@@ -24,48 +24,50 @@ services:
   redis:
     image: redis:7-alpine
     container_name: kilat-redis
+    command: ["redis-server", "--appendonly", "yes"]
     ports:
       - "54389:6379"
+    volumes:
+      - ./data/redis:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 20
 
-  # S3-compatible storage for internal uploads (ISO files, ticket attachments,
-  # avatars/documents). Point R2_ENDPOINT at http://localhost:54390 for local dev.
-  minio:
-    image: minio/minio:latest
-    container_name: kilat-minio
-    command: server /data --console-address ":9001"
+  # S3-compatible storage via RustFS for internal uploads (ISO files, ticket
+  # attachments, avatars/documents). Point R2_ENDPOINT at http://localhost:54390
+  # for local dev. Data persisted on the local filesystem (bind mount).
+  rustfs_perms:
+    image: alpine:3.20
+    container_name: kilat-rustfs-perms
+    user: root
+    volumes:
+      - ./data/rustfs:/fix_path
+    command: chown -R 10001:10001 /fix_path
+
+  rustfs:
+    image: rustfs/rustfs:latest
+    container_name: kilat-rustfs
+    depends_on:
+      rustfs_perms:
+        condition: service_completed_successfully
     environment:
-      MINIO_ROOT_USER: kilat
-      MINIO_ROOT_PASSWORD: kilat-secret
+      RUSTFS_ACCESS_KEY: kilat
+      RUSTFS_SECRET_KEY: kilat-secret
+      RUSTFS_ADDRESS: ":9000"
+      RUSTFS_CONSOLE_ADDRESS: ":9001"
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_OBS_LOGGER_LEVEL: error
+      RUSTFS_OBS_LOG_DIRECTORY: "/var/log/rustfs/"
     ports:
       - "54390:9000"
       - "54391:9001"
     volumes:
-      - kilat_minio:/data
+      - ./data/rustfs:/data
+      - ./data/rustfs-logs:/var/log/rustfs/
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/ || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 20
-
-  # Creates one dedicated bucket per asset category on first boot
-  # (mirrors app.object_storage_backends seeded rows).
-  minio-init:
-    image: minio/mc:latest
-    depends_on:
-      minio:
-        condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-      mc alias set local http://minio:9000 kilat kilat-secret &&
-      for b in kilat-avatars kilat-documents kilat-isos kilat-tickets kilat-invoices kilat-cloud-dev; do
-        mc mb --ignore-existing local/$$b;
-      done"
-
-volumes:
-  kilat_pgdata:
-  kilat_minio:
