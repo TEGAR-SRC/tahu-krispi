@@ -178,6 +178,13 @@ RETURNING id, public_id, status::text`,
 	if err := json.Unmarshal(respBody, &sp); err != nil {
 		return nil, fmt.Errorf("decode SumoPod response: %w", err)
 	}
+	// Normalisasi payment_link_url: jika SumoPod masih balikin custom domain lama payment.kilat-cloud.com (yang 1014/NXDOMAIN),
+	// paksa ke default pay.sumopod.com yang ada di docs (https://pay.sumopod.com/pay/uuid).
+	if strings.Contains(sp.PaymentLinkURL, "payment.kilat-cloud.com") {
+		sp.PaymentLinkURL = strings.ReplaceAll(sp.PaymentLinkURL, "https://payment.kilat-cloud.com/topup/", "https://pay.sumopod.com/pay/")
+		sp.PaymentLinkURL = strings.ReplaceAll(sp.PaymentLinkURL, "https://payment.kilat-cloud.com", "https://pay.sumopod.com")
+		sp.PaymentLinkURL = strings.ReplaceAll(sp.PaymentLinkURL, "http://payment.kilat-cloud.com", "https://pay.sumopod.com")
+	}
 	// Persist SumoPod's external ids and the real checkout link.
 	linkCipher, _ := encryptString(s.webhookSecret+":checkout", sp.PaymentLinkURL)
 	providerPayload, _ := json.Marshal(map[string]any{
