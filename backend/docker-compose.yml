@@ -87,18 +87,29 @@ services:
     networks:
       - kilat-net
 
-  # Create the asset buckets RustFS serves once (mirrors app.object_storage_backends).
+  # Bootstrap: create the buckets RustFS serves. Uses the MinIO client (mc)
+  # image, which is S3-compatible and available, so buckets are actually made
+  # (the rustfs/rustfs image has no shell tools to do this). `--ignore-existing`
+  # makes it idempotent across restarts.
   rustfs-init:
-    image: rustfs/rustfs:latest
+    image: minio/mc:latest
     container_name: kilat-rustfs-init
     depends_on:
       rustfs:
         condition: service_started
+    environment:
+      RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY:-kilat}
+      RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY:-kilat-secret}
+      R2_BUCKET: ${R2_BUCKET:-kilat-cloud-dev}
     entrypoint: >
       /bin/sh -c "
-      for b in kilat-avatars kilat-documents kilat-isos kilat-tickets kilat-invoices kilat-cloud-dev; do
-        echo \"skip bucket creation (RustFS creates buckets via S3 PutBucket on demand)\" ;
-      done"
+      until mc alias set rustfs http://rustfs:9000 $${RUSTFS_ACCESS_KEY} $${RUSTFS_SECRET_KEY} >/dev/null 2>&1; do
+        echo 'waiting for rustfs...'; sleep 2;
+      done;
+      for b in kilat-avatars kilat-documents kilat-isos kilat-tickets kilat-invoices $${R2_BUCKET}; do
+        mc mb --ignore-existing rustfs/$${b} || echo \"bucket $${b} error\";
+      done;
+      echo 'rustfs buckets ready'"
     networks:
       - kilat-net
 
