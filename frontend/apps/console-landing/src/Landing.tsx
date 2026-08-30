@@ -2,6 +2,7 @@
 // sections from the public GET /landing endpoint. Content is managed by
 // staff (admin/NOC) in the console-admin app under Landing Content.
 import { useEffect, useState } from "react"
+import { Link } from "react-router-dom"
 import { Spinner } from "./components/ui/spinner"
 import { apiGet, resolveMediaUrl } from "./lib/api"
 
@@ -188,19 +189,24 @@ export default function LandingPage() {
     <div className="min-h-svh w-full bg-background">
       <header className="flex w-full items-center justify-between border-b px-6 py-4">
         <span className="text-lg font-semibold">Kilat Cloud</span>
-        <div className="flex items-center gap-2">
-          <a
-            href="https://console.kilat-cloud.com/login"
-            className="inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium hover:bg-accent"
-          >
-            Sign in
-          </a>
-          <a
-            href="https://console.kilat-cloud.com/signup"
-            className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-          >
-            Get started
-          </a>
+        <div className="flex items-center gap-4">
+          <Link to="/blog" className="text-sm font-medium text-muted-foreground hover:text-primary">
+            Blog
+          </Link>
+          <div className="flex items-center gap-2">
+            <a
+              href="https://console.kilat-cloud.com/login"
+              className="inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium hover:bg-accent"
+            >
+              Sign in
+            </a>
+            <a
+              href="https://console.kilat-cloud.com/signup"
+              className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              Get started
+            </a>
+          </div>
         </div>
       </header>
       {ordered.length === 0 ? (

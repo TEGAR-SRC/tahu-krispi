@@ -40,6 +40,7 @@ export const adminNav: ConsoleNavSection[] = [
       { title: "Audit logs", url: "/admin/audit-logs", icon: ScrollTextIcon },
       { title: "Landing content", url: "/admin/landing", icon: ScrollTextIcon },
       { title: "Documentation", url: "/admin/docs", icon: ScrollTextIcon },
+      { title: "Blog", url: "/admin/blog", icon: ScrollTextIcon },
     ],
   },
   {

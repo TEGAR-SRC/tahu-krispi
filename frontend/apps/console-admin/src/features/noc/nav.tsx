@@ -34,6 +34,7 @@ export const nocNav: ConsoleNavSection[] = [
       { title: "Security", url: "/noc/security", icon: ShieldHalfIcon },
       { title: "Landing content", url: "/noc/landing", icon: ScrollTextIcon },
       { title: "Documentation", url: "/noc/docs", icon: ScrollTextIcon },
+      { title: "Blog", url: "/noc/blog", icon: ScrollTextIcon },
     ],
   },
 ]

@@ -266,6 +266,9 @@ func (s *Server) registerRoutes() {
 	// Documentation (public, published only).
 	v1.Get("/docs", s.handlePublicDocs)
 	v1.Get("/docs/:slug", s.handlePublicDocBySlug)
+	// Blog (public, published only).
+	v1.Get("/blog", s.handlePublicBlog)
+	v1.Get("/blog/:slug", s.handlePublicBlogBySlug)
 	// Public media (landing/docs images & logos).
 	v1.Get("/media/:id", s.handleGetMedia)
 
@@ -540,6 +543,11 @@ func (s *Server) registerRoutes() {
 	admin.Post("/docs", s.requireStaff("marketing"), s.handleCreateDoc)
 	admin.Put("/docs/:id", s.requireStaff("marketing"), s.handleUpdateDoc)
 	admin.Delete("/docs/:id", s.requireStaff("marketing"), s.handleDeleteDoc)
+	// Blog editor (platform admin + NOC).
+	admin.Get("/blog", s.requireStaff("marketing"), s.handleListBlogPosts)
+	admin.Post("/blog", s.requireStaff("marketing"), s.handleCreateBlogPost)
+	admin.Put("/blog/:id", s.requireStaff("marketing"), s.handleUpdateBlogPost)
+	admin.Delete("/blog/:id", s.requireStaff("marketing"), s.handleDeleteBlogPost)
 	// Media uploads (logos/images) for landing & docs (platform admin + NOC).
 	admin.Post("/media", s.requireStaff("marketing"), s.handleUploadMedia)
 	admin.Get("/media", s.requireStaff("marketing"), s.handleListMedia)
