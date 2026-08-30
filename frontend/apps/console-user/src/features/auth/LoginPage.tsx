@@ -20,7 +20,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { ErrorBanner } from "@/components/shared/ErrorBanner"
 import { Spinner } from "@/components/ui/spinner"
-import { apiPost, setToken } from "@/lib/api"
+import { ApiError, apiPost, setToken } from "@/lib/api"
 import { homePathFor, useAuth } from "@/lib/auth"
 
 // ---- WebAuthn helpers --------------------------------------------------------
@@ -107,6 +107,7 @@ export default function LoginPage() {
   // Second-factor step state: set once the backend answers mfa_required.
   const [mfaToken, setMfaToken] = useState<string | null>(null)
   const [mfaCode, setMfaCode] = useState("")
+  const [resending, setResending] = useState(false)
 
   // Already signed in: send the user to their role's home.
   useEffect(() => {
@@ -131,6 +132,26 @@ export default function LoginPage() {
       setError(cause)
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleResendVerification = async () => {
+    if (!email) {
+      toast.error("Masukkan email terlebih dahulu")
+      return
+    }
+    setResending(true)
+    try {
+      await apiPost("/auth/email/resend-public", { email })
+      toast.success("Email verifikasi dikirim — cek inbox kamu (otomatis setelah daftar).")
+    } catch (cause) {
+      if (cause instanceof ApiError && cause.code === "CONFLICT") {
+        toast.error("Email sudah terverifikasi, silakan login.")
+      } else {
+        toast.error(cause instanceof Error ? cause.message : "Gagal mengirim email verifikasi")
+      }
+    } finally {
+      setResending(false)
     }
   }
 
@@ -314,6 +335,28 @@ export default function LoginPage() {
                 <form onSubmit={handleSubmit}>
                   <FieldGroup>
                     {error ? <ErrorBanner error={error} /> : null}
+                    {error instanceof ApiError && error.code === "EMAIL_NOT_VERIFIED" ? (
+                      <div className="rounded-md border bg-amber-50 p-3 text-sm dark:bg-amber-950/30">
+                        <p className="font-medium">Email belum diverifikasi.</p>
+                        <p className="mt-1 text-muted-foreground">
+                          Email verifikasi otomatis dikirim setelah pendaftaran. Cek inbox & folder spam.
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => void handleResendVerification()}
+                            disabled={resending || !email}
+                          >
+                            {resending ? <Spinner className="size-4" /> : null} Kirim ulang email verifikasi
+                          </Button>
+                          <Button type="button" variant="ghost" size="sm" asChild>
+                            <Link to={`/verify-email?email=${encodeURIComponent(email)}`}>Buka halaman verifikasi</Link>
+                          </Button>
+                        </div>
+                      </div>
+                    ) : null}
                     <Field>
                       <FieldLabel htmlFor="login-email">Email</FieldLabel>
                       <Input

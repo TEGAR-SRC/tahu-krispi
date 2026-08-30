@@ -137,8 +137,8 @@ function PasswordCard() {
       toast.error("New passwords do not match")
       return
     }
-    if (next.length < 8) {
-      toast.error("New password must be at least 8 characters")
+    if (next.length < 10) {
+      toast.error("New password must be at least 10 characters")
       return
     }
     setBusy(true)
@@ -162,7 +162,7 @@ function PasswordCard() {
     <Card>
       <CardHeader>
         <CardTitle>Password</CardTitle>
-        <CardDescription>Use at least 8 characters; a passphrase works best.</CardDescription>
+        <CardDescription>Use at least 10 characters; a passphrase works best.</CardDescription>
       </CardHeader>
       <CardContent className="grid w-full max-w-full min-w-0 max-w-xl gap-3">
         <div className="space-y-1.5">

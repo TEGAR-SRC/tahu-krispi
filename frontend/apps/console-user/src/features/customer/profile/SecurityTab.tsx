@@ -67,8 +67,8 @@ function PasswordCard() {
       toast.error("Both fields are required")
       return
     }
-    if (next.length < 8) {
-      toast.error("New password must be at least 8 characters")
+    if (next.length < 10) {
+      toast.error("New password must be at least 10 characters")
       return
     }
     setBusy(true)

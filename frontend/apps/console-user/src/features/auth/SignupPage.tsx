@@ -28,6 +28,8 @@ import {
 import { ErrorBanner } from "@/components/shared/ErrorBanner"
 import { Spinner } from "@/components/ui/spinner"
 import { homePathFor, useAuth, type RegisterPayload } from "@/lib/auth"
+import { ApiError } from "@/lib/api"
+import { toast } from "sonner"
 
 // Common locales
 const LOCALES = [
@@ -128,6 +130,19 @@ export default function SignupPage() {
         navigate(homePathFor(result.role), { replace: true })
       }
     } catch (cause) {
+      if (cause instanceof ApiError && cause.code === "EMAIL_NOT_VERIFIED") {
+        toast.success("Akun berhasil dibuat! Cek email kamu untuk link verifikasi (otomatis terkirim).")
+        navigate(`/verify-email?email=${encodeURIComponent(email)}`, { replace: true })
+        return
+      }
+      if (cause instanceof ApiError && cause.code === "EMAIL_ALREADY_EXISTS") {
+        setError(
+          new Error(
+            "Email sudah terdaftar. Silakan masuk dengan akun tersebut, atau gunakan 'Lupa password' jika lupa kata sandi. Jika belum verifikasi email, buka halaman verifikasi untuk kirim ulang.",
+          ),
+        )
+        return
+      }
       setError(cause)
     } finally {
       setSubmitting(false)
@@ -306,7 +321,7 @@ export default function SignupPage() {
                         id="signup-password"
                         type={showPassword ? "text" : "password"}
                         autoComplete="new-password"
-                        minLength={8}
+                        minLength={10}
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
@@ -325,7 +340,7 @@ export default function SignupPage() {
                         )}
                       </button>
                     </div>
-                    <FieldDescription>Minimal 8 karakter.</FieldDescription>
+                    <FieldDescription>Minimal 10 karakter.</FieldDescription>
                   </Field>
 
                   {/* Row 7: Confirm Password */}
@@ -338,7 +353,7 @@ export default function SignupPage() {
                         id="signup-confirm-password"
                         type={showConfirmPassword ? "text" : "password"}
                         autoComplete="new-password"
-                        minLength={8}
+                        minLength={10}
                         required
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}

@@ -2,13 +2,16 @@ package user
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
 	"kilat.cloud/backend/internal/platform/crypto"
+	"kilat.cloud/backend/internal/platform/mail"
 	apperrors "kilat.cloud/backend/pkg/errors"
 	v "kilat.cloud/backend/pkg/validation"
 )
@@ -93,6 +96,14 @@ func (s *Service) ForgotPassword(ctx context.Context, email string) (*ForgotPass
 	hash := crypto.HashToken(token)
 	ttl := 30 * time.Minute
 	_, _ = s.rdb.Set(ctx, fmt.Sprintf("kc:pwreset:%s", hash), userID.String(), ttl).Result()
+	if s.mailSender != nil {
+		resetLink := strings.TrimSuffix(s.cfg.ConsoleBaseURL, "/") + "/reset-password?token=" + token
+		subject, textBody, htmlBody := mail.ResetPassword(resetLink)
+		sendCtx, cancel := context.WithTimeout(ctx, 12*time.Second)
+		_ = s.mailSender.Send(sendCtx, normalized, subject, textBody, htmlBody)
+		cancel()
+		// A not-configured SMTP is not an error for the caller; the token is still stored for manual delivery.
+	}
 	s.recordAuthEvent(ctx, userID, "forgot_password_requested", true, "", "")
 	return &ForgotPasswordOutput{TokenSent: true}, nil
 }
@@ -173,10 +184,11 @@ WHERE id=$1 AND email_status <> 'verified'`, userID)
 	return nil
 }
 
-// ResendEmailVerification issues a new verification token (rate-limited by caller).
+// ResendEmailVerification issues a new verification token (rate-limited by caller) and sends the email.
 func (s *Service) ResendEmailVerification(ctx context.Context, userID uuid.UUID) error {
+	var email string
 	var emailStatus string
-	err := s.db.QueryRow(ctx, `SELECT email_status::text FROM users WHERE id=$1`, userID).Scan(&emailStatus)
+	err := s.db.QueryRow(ctx, `SELECT email::text, email_status::text FROM users WHERE id=$1`, userID).Scan(&email, &emailStatus)
 	if err == pgx.ErrNoRows {
 		return apperrors.New(apperrors.CodeNotFound, "user not found")
 	}
@@ -186,12 +198,10 @@ func (s *Service) ResendEmailVerification(ctx context.Context, userID uuid.UUID)
 	if emailStatus == "verified" {
 		return apperrors.New(apperrors.CodeConflict, "email already verified")
 	}
-	token, err := crypto.RandomToken(24)
-	if err != nil {
+	// sendVerificationEmail generates the token, stores it, and sends the email (best-effort).
+	if err := s.sendVerificationEmail(ctx, email, userID); err != nil && !errors.Is(err, mail.ErrNotConfigured) {
 		return err
 	}
-	hash := crypto.HashToken(token)
-	s.rdb.Set(ctx, fmt.Sprintf("kc:otp:email:%s", hash), userID.String(), 24*time.Hour)
 	return nil
 }
 

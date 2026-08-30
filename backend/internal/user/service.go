@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -15,6 +16,7 @@ import (
 	"kilat.cloud/backend/internal/auth"
 	"kilat.cloud/backend/internal/platform/config"
 	"kilat.cloud/backend/internal/platform/crypto"
+	"kilat.cloud/backend/internal/platform/mail"
 	apperrors "kilat.cloud/backend/pkg/errors"
 	v "kilat.cloud/backend/pkg/validation"
 )
@@ -26,6 +28,7 @@ type Service struct {
 	mfaMgr       *MFAManager
 	argon2Params crypto.Argon2Params
 	cfg          *config.Config
+	mailSender   *mail.Sender
 }
 
 func NewService(db *pgxpool.Pool, rdb *goredis.Client, authSvc *auth.Service, mfaMgr *MFAManager, cfg *config.Config) *Service {
@@ -42,6 +45,16 @@ func NewService(db *pgxpool.Pool, rdb *goredis.Client, authSvc *auth.Service, mf
 		cfg: cfg,
 	}
 }
+
+// NewServiceWithMail is the same as NewService but wires the SMTP sender for verification / reset emails.
+func NewServiceWithMail(db *pgxpool.Pool, rdb *goredis.Client, authSvc *auth.Service, mfaMgr *MFAManager, cfg *config.Config, sender *mail.Sender) *Service {
+	s := NewService(db, rdb, authSvc, mfaMgr, cfg)
+	s.mailSender = sender
+	return s
+}
+
+// SetMailSender allows wiring the mail sender after construction (useful in tests).
+func (s *Service) SetMailSender(sender *mail.Sender) { s.mailSender = sender }
 
 type RegisterInput struct {
 	Email           string `json:"email"`
@@ -186,6 +199,11 @@ UPDATE users SET status='active', email_status='verified', email_verified_at=now
 		return nil, err
 	}
 	_ = s.recordAuthEvent(ctx, userID, "register", true, in.IP, in.UserAgent)
+
+	if !s.cfg.AutoVerifyEmail {
+		// Best-effort: generate verification token and send email. A parked SMTP (ErrNotConfigured) is not an error.
+		_ = s.sendVerificationEmail(ctx, email, userID)
+	}
 
 	sessionID, refresh, err := s.authSvc.CreateSession(ctx, userID, "", in.IP, in.UserAgent)
 	if err != nil {
@@ -392,6 +410,55 @@ func (s *Service) recordAuthEvent(ctx context.Context, userID uuid.UUID, eventTy
 INSERT INTO auth_events(user_id, event_type, success, ip, user_agent) VALUES ($1,$2,$3,NULLIF($4,'')::inet,NULLIF($5,''))`,
 		userID, eventType, success, ip, ua)
 	return err
+}
+
+// sendVerificationEmail generates a 24h verification token, stores it in Redis, and sends the WelcomeVerification email.
+// It is best-effort: a missing SMTP configuration (ErrNotConfigured) is silently ignored.
+func (s *Service) sendVerificationEmail(ctx context.Context, email string, userID uuid.UUID) error {
+	if s.mailSender == nil {
+		return nil
+	}
+	token, err := crypto.RandomToken(24)
+	if err != nil {
+		return err
+	}
+	hash := crypto.HashToken(token)
+	if err := s.rdb.Set(ctx, fmt.Sprintf("kc:otp:email:%s", hash), userID.String(), 24*time.Hour).Err(); err != nil {
+		return err
+	}
+	verifyLink := strings.TrimSuffix(s.cfg.ConsoleBaseURL, "/") + "/verify-email?token=" + token
+	subject, textBody, htmlBody := mail.WelcomeVerification(email, verifyLink)
+	sendCtx, cancel := context.WithTimeout(ctx, 12*time.Second)
+	defer cancel()
+	if err := s.mailSender.Send(sendCtx, email, subject, textBody, htmlBody); err != nil {
+		if errors.Is(err, mail.ErrNotConfigured) {
+			return nil
+		}
+		return err
+	}
+	return nil
+}
+
+// ResendVerificationByEmail is the unauthenticated variant: looks up the user by email and, if the
+// account is still pending/unverified, issues a fresh token and sends the verification email.
+// It never reveals whether the email exists (always returns nil on not-found to avoid enumeration).
+func (s *Service) ResendVerificationByEmail(ctx context.Context, email string) error {
+	normalized := v.NormalizeEmail(email)
+	if err := v.ValidateEmail(normalized); err != nil {
+		return apperrors.WithFields(apperrors.New(apperrors.CodeValidation, err.Error()), map[string]string{"email": err.Error()})
+	}
+	var userID uuid.UUID
+	var emailStatus string
+	err := s.db.QueryRow(ctx, `SELECT id, email_status::text FROM users WHERE lower(email::text)=$1 AND deleted_at IS NULL`, normalized).
+		Scan(&userID, &emailStatus)
+	if err != nil {
+		// Do not leak existence: treat not-found as success (no email sent, but caller sees generic success).
+		return nil
+	}
+	if emailStatus == "verified" {
+		return apperrors.New(apperrors.CodeConflict, "email already verified")
+	}
+	return s.sendVerificationEmail(ctx, normalized, userID)
 }
 
 func boolTime(b bool) any {

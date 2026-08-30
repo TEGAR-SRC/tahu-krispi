@@ -25,8 +25,8 @@ export default function ResetPasswordPage() {
       setError(new Error("Passwords do not match"))
       return
     }
-    if (password.length < 8) {
-      setError(new Error("Password must be at least 8 characters"))
+    if (password.length < 10) {
+      setError(new Error("Password must be at least 10 characters"))
       return
     }
     setSubmitting(true)
@@ -80,7 +80,7 @@ export default function ResetPasswordPage() {
                       id="reset-password"
                       type="password"
                       autoComplete="new-password"
-                      minLength={8}
+                      minLength={10}
                       required
                       value={password}
                       onChange={(event) => setPassword(event.target.value)}
@@ -92,12 +92,12 @@ export default function ResetPasswordPage() {
                       id="reset-confirm-password"
                       type="password"
                       autoComplete="new-password"
-                      minLength={8}
+                      minLength={10}
                       required
                       value={confirmPassword}
                       onChange={(event) => setConfirmPassword(event.target.value)}
                     />
-                    <FieldDescription>Must be at least 8 characters long.</FieldDescription>
+                    <FieldDescription>Must be at least 10 characters long.</FieldDescription>
                   </Field>
                   <Field>
                     <Button type="submit" disabled={submitting}>

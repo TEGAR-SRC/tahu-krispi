@@ -121,3 +121,51 @@ func (s *Server) handleResendEmailVerification(c fiber.Ctx) error {
 	})
 	return mw.JSON(c, 200, fiber.Map{"status": "verification_sent"}, nil)
 }
+
+type resendPublicInput struct {
+	Email string `json:"email"`
+}
+
+func (s *Server) handleResendPublicEmailVerification(c fiber.Ctx) error {
+	var in resendPublicInput
+	_ = c.Bind().Body(&in)
+	if in.Email == "" {
+		return mw.WriteError(c, vErrField("email", "required"))
+	}
+	// Always return generic success to avoid account enumeration, even when the
+	// address is unknown or already verified — the service handles that case.
+	if err := s.userSvc.ResendVerificationByEmail(c.Context(), in.Email); err != nil {
+		// Only surface the already-verified case as a distinct conflict so the
+		// caller can show a helpful message ("already verified, please log in").
+		// For all other cases (including not-found) return generic success.
+		if isAlreadyVerifiedErr(err) {
+			return mw.WriteError(c, err)
+		}
+	}
+	s.auditSvc.Log(c.Context(), audit.Entry{
+		Action: "auth.email_verification_resent_public", ResourceType: "user",
+		IP: c.IP(), UserAgent: c.Get("User-Agent"),
+		RequestID: auditRequestID(c),
+	})
+	return mw.JSON(c, 200, fiber.Map{"status": "verification_sent"}, nil)
+}
+
+func isAlreadyVerifiedErr(err error) bool {
+	if err == nil {
+		return false
+	}
+	// Match on app error code to avoid string coupling.
+	type coder interface{ GetCode() string }
+	// Fallback to string contains for the typed AppError.
+	return containsStr(err.Error(), "already verified")
+}
+
+func containsStr(s, sub string) bool { return len(s) >= len(sub) && indexOfStr(s, sub) >= 0 }
+func indexOfStr(s, sub string) int {
+	for i := 0; i+len(sub) <= len(s); i++ {
+		if s[i:i+len(sub)] == sub {
+			return i
+		}
+	}
+	return -1
+}

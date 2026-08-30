@@ -91,11 +91,15 @@ func NewServer(cfg *config.Config, log *logger.Logger, db *pgxpool.Pool, rdb *go
 	proxmox.RegisterFactoryFromDB(db, encKey)
 	vmware.RegisterFactoryFromDB(db, encKey)
 
+	mailSender := mailpkg.NewSender(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPassword, cfg.SMTPFrom)
+	userSvc := user.NewService(db, rdb, authSvc, user.NewMFAManager(db, encKey), cfg)
+	userSvc.SetMailSender(mailSender)
+
 	s := &Server{
 		cfg: cfg, log: log, db: db, rdb: rdb,
 		encKey:       encKey,
 		authSvc:      authSvc,
-		userSvc:      user.NewService(db, rdb, authSvc, user.NewMFAManager(db, encKey), cfg),
+		userSvc:      userSvc,
 		userRepo:     user.NewRepository(db),
 		mfaMgr:       user.NewMFAManager(db, encKey),
 		passkeyMgr:   passkeyMgr,
@@ -113,7 +117,7 @@ func NewServer(cfg *config.Config, log *logger.Logger, db *pgxpool.Pool, rdb *go
 		notifSvc:     notification.NewService(db),
 		webhookSvc:   webhook.NewService(db),
 		auditSvc:     audit.NewService(db),
-		mailSender:   mailpkg.NewSender(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPassword, cfg.SMTPFrom),
+		mailSender:   mailSender,
 	}
 	s.prov = onidelAdapter
 	mw.ServerErrorLogger = func(code, msg string) {
@@ -214,6 +218,7 @@ func (s *Server) registerRoutes() {
 	v1.Post("/auth/password/reset", authLimiter, s.handleResetPassword)
 	v1.Post("/auth/email/verify", s.handleVerifyEmail)
 	v1.Post("/auth/email/resend", authLimiter, s.handleResendEmailVerification)
+	v1.Post("/auth/email/resend-public", authLimiter, s.handleResendPublicEmailVerification)
 
 	v1.Get("/me", s.authAny(), s.handleMe)
 	v1.Patch("/me/profile", s.authJWT(), s.handleUpdateProfile)
