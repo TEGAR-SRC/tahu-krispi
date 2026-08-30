@@ -96,12 +96,23 @@ func (s *Service) CreatePayment(ctx context.Context, in CreatePaymentInput) (*Pa
 	if in.InvoiceID == uuid.Nil {
 		invoiceID = nil
 	}
+	// For wallet top-ups the worker's applyPaid looks for provider_payload->>'purpose'='wallet_topup' when invoice_id IS NULL.
+	var providerPayload interface{}
+	if in.InvoiceID == uuid.Nil {
+		b, _ := json.Marshal(map[string]any{
+			"purpose":         "wallet_topup",
+			"organization_id": in.OrganizationID.String(),
+			"amount":          in.Amount,
+			"currency":        in.Currency,
+		})
+		providerPayload = string(b)
+	}
 	row := s.db.QueryRow(ctx, `
 INSERT INTO payments(organization_id, invoice_id, provider, method, currency, amount,
-                     checkout_url_ciphertext, status, expires_at)
-VALUES ($1,$2,$3,NULLIF($4,''),$5,$6,$7,'pending', now()+interval '24 hours')
+                     checkout_url_ciphertext, status, expires_at, provider_payload)
+VALUES ($1,$2,$3,NULLIF($4,''),$5,$6,$7,'pending', now()+interval '24 hours', COALESCE($8::jsonb, '{}'::jsonb))
 RETURNING id, public_id, status::text`,
-		in.OrganizationID, invoiceID, s.provider, in.Method, in.Currency, in.Amount, urlCipher)
+		in.OrganizationID, invoiceID, s.provider, in.Method, in.Currency, in.Amount, urlCipher, providerPayload)
 	var p Payment
 	if err := row.Scan(&p.ID, &p.PublicID, &p.Status); err != nil {
 		return nil, fmt.Errorf("insert payment: %w", err)
@@ -236,15 +247,23 @@ RETURNING id, public_id, status::text`,
 		}
 	}
 	// Persist SumoPod's external ids and the real checkout link.
-	linkCipher, _ := encryptString(s.webhookSecret+":checkout", sp.PaymentLinkURL)
-	providerPayload, _ := json.Marshal(map[string]any{
+	// For wallet top-ups (invoice_id == nil) we must mark purpose so applyPaid can credit the wallet.
+	payloadMap := map[string]any{
 		"sumopod_payment_id": sp.PaymentID,
 		"sumopod_order_id":   sp.OrderID,
 		"sumopod_fee":        sp.Fee,
 		"sumopod_net_amount": sp.NetAmount,
 		"sumopod_expires_at": sp.ExpiresAt,
 		"raw_response":       json.RawMessage(respBody),
-	})
+	}
+	if in.InvoiceID == uuid.Nil {
+		payloadMap["purpose"] = "wallet_topup"
+		payloadMap["organization_id"] = in.OrganizationID.String()
+		payloadMap["amount"] = in.Amount
+		payloadMap["currency"] = in.Currency
+	}
+	linkCipher, _ := encryptString(s.webhookSecret+":checkout", sp.PaymentLinkURL)
+	providerPayload, _ := json.Marshal(payloadMap)
 	var expiresAt *time.Time
 	if sp.ExpiresAt != "" {
 		if t, err := time.Parse(time.RFC3339, sp.ExpiresAt); err == nil {
