@@ -22,7 +22,9 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kilat}
       POSTGRES_DB: ${POSTGRES_DB:-kilat_cloud}
     ports:
-      - "${POSTGRES_PORT:-54329}:5432"
+      # Bind to host loopback only — infra is reached via the internal
+      # kilat-net network (cloudflared/API), not from the public internet.
+      - "127.0.0.1:${POSTGRES_PORT:-54329}:5432"
     volumes:
       # Local filesystem persistence (bind mount), not a docker named volume.
       - ./data/postgres:/var/lib/postgresql/data
@@ -41,7 +43,7 @@ services:
     restart: unless-stopped
     command: ["redis-server", "--appendonly", "yes"]
     ports:
-      - "${REDIS_PORT:-54389}:6379"
+      - "127.0.0.1:${REDIS_PORT:-54389}:6379"
     volumes:
       # Local filesystem persistence (bind mount).
       - ./data/redis:/data
@@ -61,7 +63,8 @@ services:
     user: root
     volumes:
       - ./data/rustfs:/fix_path
-    command: chown -R 10001:10001 /fix_path
+      - ./data/rustfs-logs:/fix_path_logs
+    command: chown -R 10001:10001 /fix_path /fix_path_logs
 
   rustfs:
     image: rustfs/rustfs:latest
@@ -79,8 +82,8 @@ services:
       RUSTFS_OBS_LOGGER_LEVEL: error
       RUSTFS_OBS_LOG_DIRECTORY: "/var/log/rustfs/"
     ports:
-      - "${RUSTFS_PORT:-54390}:9000"
-      - "${RUSTFS_CONSOLE_PORT:-54391}:9001"
+      - "127.0.0.1:${RUSTFS_PORT:-54390}:9000"
+      - "127.0.0.1:${RUSTFS_CONSOLE_PORT:-54391}:9001"
     volumes:
       - ./data/rustfs:/data
       - ./data/rustfs-logs:/var/log/rustfs/
