@@ -654,3 +654,73 @@ ON CONFLICT (organization_id, currency) DO NOTHING`, orgID, currency); err != ni
 		"direction": direction, "amount": in.Amount, "balance": balance,
 	}, nil)
 }
+
+func (s *Server) adminApprovePayment(c fiber.Ctx) error {
+	paymentID, err := uuid.Parse(c.Params("payment_id"))
+	if err != nil {
+		return mw.WriteError(c, apperrors.New(apperrors.CodeValidation, "invalid payment id"))
+	}
+	ctx := c.Context()
+	var (
+		publicID  string
+		orgID     uuid.UUID
+		invoiceID *uuid.UUID
+		currency  string
+		amountStr string
+		status    string
+	)
+	err = s.db.QueryRow(ctx, `
+SELECT public_id, organization_id, invoice_id, currency::text, amount::text, status::text
+FROM payments WHERE id=$1`, paymentID).Scan(&publicID, &orgID, &invoiceID, &currency, &amountStr, &status)
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			return mw.WriteError(c, apperrors.New(apperrors.CodeNotFound, "payment not found"))
+		}
+		return mw.WriteError(c, err)
+	}
+	if status != "pending" {
+		return mw.WriteError(c, apperrors.New(apperrors.CodeValidation, "only pending payments can be approved"))
+	}
+	var amount float64
+	fmt.Sscanf(amountStr, "%f", &amount)
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	defer tx.Rollback(ctx)
+	if _, err := tx.Exec(ctx, `UPDATE payments SET status='paid', paid_at=now() WHERE id=$1`, paymentID); err != nil {
+		return mw.WriteError(c, err)
+	}
+	if invoiceID == nil {
+		// Wallet top-up: credit organization wallet idempotently.
+		walletSvc := wallet.NewService(s.db)
+		var walletID uuid.UUID
+		if err := tx.QueryRow(ctx, `INSERT INTO wallets(organization_id, currency) VALUES ($1,$2) ON CONFLICT (organization_id, currency) DO UPDATE SET updated_at=now() RETURNING id`, orgID, currency).Scan(&walletID); err != nil {
+			return mw.WriteError(c, err)
+		}
+		if err := walletSvc.ApplyTransaction(ctx, tx, walletID, "credit", amount, "topup", &paymentID, "topup-"+paymentID.String(), "wallet topup "+publicID+" (admin approved)"); err != nil {
+			if err.Error() == "" || !isIdempotencyConflict(err) {
+				return mw.WriteError(c, err)
+			}
+			// already credited — continue as success
+		}
+	}
+	if invoiceID != nil {
+		_, _ = tx.Exec(ctx, `UPDATE invoices SET status='paid', paid_at=now(), amount_paid=total, amount_due=0 WHERE id=$1 AND status IN ('unpaid','overdue')`, *invoiceID)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return mw.WriteError(c, err)
+	}
+	s.admAuditMeta(c, "admin.payment.approve", "payment", &paymentID, map[string]any{"public_id": publicID, "amount": amount, "currency": currency})
+	return mw.JSON(c, 200, fiber.Map{"status": "paid", "public_id": publicID}, nil)
+}
+
+func isIdempotencyConflict(err error) bool {
+	if err == nil {
+		return false
+	}
+	if ae, ok := err.(*apperrors.AppError); ok && ae.Code == apperrors.CodeIdempotencyConflict {
+		return true
+	}
+	return strings.Contains(err.Error(), "idempotency key already used")
+}

@@ -4,8 +4,9 @@
 // is linked to an invoice, its webhook events via
 // GET /admin/invoices/:invoice_id (payment_events are only exposed there).
 import { useMemo, useState, type ReactNode } from "react"
-import { EyeIcon } from "lucide-react"
-import { apiGet } from "@/lib/api"
+import { CheckIcon, EyeIcon, Loader2Icon } from "lucide-react"
+import { toast } from "sonner"
+import { apiGet, apiPost } from "@/lib/api"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { SimpleDataTable, type SimpleColumn } from "@/components/shared/SimpleDataTable"
 import { Button } from "@/components/ui/button"
@@ -104,6 +105,7 @@ export default function BillingPaymentsPage() {
   const [detail, setDetail] = useState<PaymentRow | null>(null)
   const [events, setEvents] = useState<PaymentEvent[] | null>(null)
   const [eventsLoading, setEventsLoading] = useState(false)
+  const [approving, setApproving] = useState(false)
 
   const openDetail = (row: PaymentRow) => {
     setDetail(row)
@@ -272,6 +274,31 @@ export default function BillingPaymentsPage() {
                 <DetailField label="Created" value={formatDateTime(detail.created_at)} />
                 <DetailField label="Paid at" value={formatDateTime(detail.paid_at)} />
               </div>
+
+              {detail?.status === "pending" ? (
+                <div className="flex justify-end gap-2">
+                  <Button
+                    disabled={approving}
+                    onClick={async () => {
+                      if (!detail) return
+                      setApproving(true)
+                      try {
+                        await apiPost(`/admin/payments/${detail.id}/approve`)
+                        toast.success(`Payment ${detail.public_id} approved`)
+                        setDetail(null)
+                        list.reload()
+                      } catch (e) {
+                        toast.error(e instanceof Error ? e.message : "Approve failed")
+                      } finally {
+                        setApproving(false)
+                      }
+                    }}
+                  >
+                    {approving ? <Loader2Icon className="size-4 animate-spin" /> : <CheckIcon className="size-4" />}
+                    Approve pending
+                  </Button>
+                </div>
+              ) : null}
 
               {detail.invoice_id ? (
                 <>

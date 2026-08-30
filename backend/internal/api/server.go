@@ -585,6 +585,7 @@ func (s *Server) registerRoutes() {
 	admin.Get("/invoices", s.requireStaff("billing"), s.adminListInvoices)
 	admin.Post("/invoices/:invoice_id/void", s.requireStaff("billing"), s.adminVoidInvoice)
 	admin.Get("/payments", s.requireStaff("billing"), s.adminListPayments)
+	admin.Post("/payments/:payment_id/approve", s.requireStaff("billing"), s.adminApprovePayment)
 	admin.Get("/finance/summary", s.requireStaff("auto"), s.adminFinanceSummary)
 	admin.Post("/wallets/:org_id/adjust", s.requireStaff("billing"), s.adminAdjustWallet)
 	admin.Get("/instances", s.requireStaff("infra"), s.adminListInstances)
