@@ -180,6 +180,41 @@ services:
     networks:
       - kilat-net
 
+  worker:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    container_name: kilat-worker
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      APP_PORT: ${APP_PORT:-8080}
+      DATABASE_URL: postgres://${POSTGRES_USER:-kilat}:${POSTGRES_PASSWORD:-kilat}@postgres:5432/${POSTGRES_DB:-kilat_cloud}?sslmode=disable
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in compose.env}
+      SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY:?set SECRET_ENCRYPTION_KEY in compose.env}
+      PAYMENT_WEBHOOK_SECRET: ${PAYMENT_WEBHOOK_SECRET:?set PAYMENT_WEBHOOK_SECRET in compose.env}
+      SUMOPOD_API_KEY: ${SUMOPOD_API_KEY:-change-me}
+      RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY:-kilat}
+      RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY:-kilat-secret}
+      R2_ENDPOINT: ${R2_ENDPOINT:-http://rustfs:9000}
+      R2_ACCESS_KEY: ${RUSTFS_ACCESS_KEY:-kilat}
+      R2_SECRET_KEY: ${RUSTFS_SECRET_KEY:-kilat-secret}
+      R2_BUCKET: ${R2_BUCKET:-kilat-cloud-dev}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-noreply@kilat-cloud.com}
+    command: ["worker"]
+    networks:
+      - kilat-net
+
   # Cloudflare Tunnel — online-kan backend tanpa membuka port publik ke
   # internet. cloudflared menjembatani Cloudflare -> network docker, jadi
   # service postgres/redis/rustfs/api cukup reachable di network internal.
