@@ -137,8 +137,11 @@ func NewServer(cfg *config.Config, log *logger.Logger, db *pgxpool.Pool, rdb *go
 	app.Use(recover.New())
 	app.Use(mw.RequestID())
 	app.Use(mw.SecurityHeaders())
-	app.Use(s.resolveAudience)
-	app.Use(s.enforceAudienceScope)
+	// CORS must run before any auth/audience middleware so browser preflight
+	// (OPTIONS) is always answered with the correct CORS headers. Otherwise an
+	// OPTIONS that is rejected by audience scoping returns 403 without
+	// Access-Control-Allow-* headers, which browsers surface as "Failed to
+	// fetch" while the actual request never reaches the handler.
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     strings.Split(s.cfg.CORSOrigins(), ","),
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
@@ -146,6 +149,8 @@ func NewServer(cfg *config.Config, log *logger.Logger, db *pgxpool.Pool, rdb *go
 		AllowCredentials: true,
 		MaxAge:           86400,
 	}))
+	app.Use(s.resolveAudience)
+	app.Use(s.enforceAudienceScope)
 	app.Use(func(c fiber.Ctx) error {
 		start := time.Now()
 		err := c.Next()
