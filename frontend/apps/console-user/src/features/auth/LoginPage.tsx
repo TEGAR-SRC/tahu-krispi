@@ -357,6 +357,25 @@ export default function LoginPage() {
                         </div>
                       </div>
                     ) : null}
+                    {error instanceof ApiError &&
+                    error.code === "INVALID_CREDENTIALS" &&
+                    (error.message.includes("not registered") ||
+                      JSON.stringify(error.details ?? "").includes("belum terdaftar")) ? (
+                      <div className="rounded-md border bg-blue-50 p-3 text-sm dark:bg-blue-950/30">
+                        <p className="font-medium">Akun belum terdaftar.</p>
+                        <p className="mt-1 text-muted-foreground">
+                          Email ini belum punya akun di Kilat Cloud. Silakan daftar dulu — data lama hilang setelah DB wipe 10:56 (sudah fix persistent volume).
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <Button type="button" size="sm" asChild>
+                            <Link to={`/signup?email=${encodeURIComponent(email)}`}>Daftar sekarang</Link>
+                          </Button>
+                          <Button type="button" variant="ghost" size="sm" asChild>
+                            <Link to="/signup">Ke halaman daftar</Link>
+                          </Button>
+                        </div>
+                      </div>
+                    ) : null}
                     <Field>
                       <FieldLabel htmlFor="login-email">Email</FieldLabel>
                       <Input

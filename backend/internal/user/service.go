@@ -262,7 +262,9 @@ FROM users WHERE lower(email::text)=$1 AND deleted_at IS NULL`, email).
 		Scan(&userID, &pwHash, &status, &lockedUntil, &emailStatus, &phoneStatus, &failedCount, &pwVersion, &forceChange)
 	if err == pgx.ErrNoRows {
 		s.recordAuthEvent(ctx, uuid.Nil, "login", false, in.IP, in.UserAgent)
-		return nil, apperrors.New(apperrors.CodeInvalidCredentials, "invalid credentials")
+		return nil, apperrors.WithFields(
+			apperrors.New(apperrors.CodeInvalidCredentials, "email not registered"),
+			map[string]string{"email": "email belum terdaftar, silakan daftar terlebih dahulu"})
 	}
 	if err != nil {
 		return nil, err
