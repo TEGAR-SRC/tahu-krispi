@@ -106,9 +106,10 @@ func (s *Service) Register(ctx context.Context, in RegisterInput) (*LoginOutput,
 	if err := v.ValidateEmail(email); err != nil {
 		// Map to Indonesian-friendly field message while keeping the original error for debugging.
 		fieldMsg := err.Error()
-		if fieldMsg == "email is required" {
+		switch fieldMsg {
+		case "email is required":
 			fieldMsg = "email wajib diisi"
-		} else if fieldMsg == "invalid email format" {
+		case "invalid email format":
 			fieldMsg = "format email tidak valid"
 		}
 		return nil, apperrors.WithFields(apperrors.New(apperrors.CodeValidation, err.Error()), map[string]string{"email": fieldMsg})
@@ -118,9 +119,10 @@ func (s *Service) Register(ctx context.Context, in RegisterInput) (*LoginOutput,
 		p, err := v.NormalizePhoneE164(in.Phone, "")
 		if err != nil {
 			fieldMsg := err.Error()
-			if fieldMsg == "phone is required" {
+			switch fieldMsg {
+			case "phone is required":
 				fieldMsg = "nomor telepon wajib diisi"
-			} else if fieldMsg == "invalid phone length" {
+			case "invalid phone length":
 				fieldMsg = "panjang nomor telepon tidak valid, gunakan format +628..."
 			}
 			return nil, apperrors.WithFields(apperrors.New(apperrors.CodeValidation, err.Error()), map[string]string{"phone": fieldMsg})
@@ -327,6 +329,7 @@ WHERE id=$1`, userID, in.IP, in.UserAgent)
 }
 
 func defaultScopesFor(emailStatus, phoneStatus string) []string {
+	_ = phoneStatus // reserved for future phone-verified scopes; keep param to avoid breaking callers
 	scopes := []string{"profile.read"}
 	if emailStatus == "verified" {
 		scopes = append(scopes, "instances.read", "instances.create")
@@ -481,9 +484,10 @@ func (s *Service) ResendVerificationByEmail(ctx context.Context, email string) e
 	normalized := v.NormalizeEmail(email)
 	if err := v.ValidateEmail(normalized); err != nil {
 		fieldMsg := err.Error()
-		if fieldMsg == "email is required" {
+		switch fieldMsg {
+		case "email is required":
 			fieldMsg = "email wajib diisi"
-		} else if fieldMsg == "invalid email format" {
+		case "invalid email format":
 			fieldMsg = "format email tidak valid"
 		}
 		return apperrors.WithFields(apperrors.New(apperrors.CodeValidation, err.Error()), map[string]string{"email": fieldMsg})

@@ -100,9 +100,10 @@ func (s *Service) ForgotPassword(ctx context.Context, email string) (*ForgotPass
 	normalized := v.NormalizeEmail(email)
 	if err := v.ValidateEmail(normalized); err != nil {
 		fieldMsg := err.Error()
-		if fieldMsg == "email is required" {
+		switch fieldMsg {
+		case "email is required":
 			fieldMsg = "email wajib diisi"
-		} else if fieldMsg == "invalid email format" {
+		case "invalid email format":
 			fieldMsg = "format email tidak valid"
 		}
 		return nil, apperrors.WithFields(apperrors.New(apperrors.CodeValidation, err.Error()), map[string]string{"email": fieldMsg})
