@@ -49,7 +49,7 @@ pkg/
   validation/   email/phone(E.164)/username/CIDR normalization & checks
 scripts/
   gen-env.sh    generates a complete local .env
-  smoke.sh      end-to-end endpoint smoke test (62 checks)
+  smoke.sh      end-to-end endpoint smoke test (59 checks)
   initdb-extensions.sql
 ```
 
@@ -64,7 +64,7 @@ make up             # docker compose -f docker-compose.yml up -d postgres redis 
 # Option B: local services (Homebrew postgresql@16 + redis)
 # createdb kilat_cloud && createuser-compatible setup as in DATABASE_URL
 
-make migrate        # base schema + migrations 000002..000005 (idempotent)
+make migrate        # base schema + migrations 000002..000023 (idempotent)
 make api            # HTTP API on :8080 (set APP_PORT to override, e.g. 8081)
 make worker         # job worker
 ```

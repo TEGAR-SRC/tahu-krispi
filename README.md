@@ -109,7 +109,7 @@ tahu-krispi/
 │   ├── cmd/
 │   │   ├── api/        # HTTP server entry point
 │   │   ├── worker/     # durable job worker (provisioning, renewals, email, webhook, iso)
-│   │   └── migrate/    # base schema + versioned migrations (000001..000023)
+│   │   └── migrate/    # base schema + versioned migrations (000002..000023)
 │   ├── internal/
 │   │   ├── api/        # Fiber server, semua handler, auth/idempotency/audience middleware
 │   │   ├── auth/       # JWT, refresh-token sessions, revoke
@@ -352,7 +352,7 @@ make fmt            # gofmt -w .
 make vet            # go vet ./...
 make test           # go test ./...
 make build          # go build ./...
-make smoke          # end-to-end smoke test (62 checks)
+make smoke          # end-to-end smoke test (59 checks)
 make rbac           # matriks role admin/finance/noc
 ```
 
