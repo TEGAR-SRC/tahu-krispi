@@ -30,7 +30,7 @@ GOOGLE_CLIENT_SECRET=
 GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
 
-# Local dev services (docker compose -f docker-compose.dev.yml up -d)
+# Local dev services (docker compose -f docker-compose.yml up -d postgres redis rustfs)
 DATABASE_URL=postgres://kilat:kilat@localhost:54329/kilat_cloud?sslmode=disable
 REDIS_URL=redis://localhost:54389/0
 

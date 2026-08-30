@@ -58,8 +58,8 @@ scripts/
 ```bash
 make env            # generate .env (or cp .env.example .env and fill values)
 
-# Option A: docker compose (postgres + redis dev containers)
-make up             # docker compose -f docker-compose.dev.yml up -d
+# Start dev infra (postgres + redis + rustfs). API/worker run via `go run`.
+make up             # docker compose -f docker-compose.yml up -d postgres redis rustfs...
 
 # Option B: local services (Homebrew postgresql@16 + redis)
 # createdb kilat_cloud && createuser-compatible setup as in DATABASE_URL
@@ -74,20 +74,27 @@ Required env vars (fail-fast): `DATABASE_URL`, `REDIS_URL`, `JWT_SECRET`, `SECRE
 ### Docker deployment
 
 The backend ships a multi-stage Dockerfile (`backend/Dockerfile`, static no-cgo
-binary) plus a compose file that runs API + PostgreSQL + Redis together. The
-API auto-migrates on startup, so a fresh deploy is self-healing.
+binary) plus a single compose file (`backend/docker-compose.yml`) that runs the
+full stack: API + PostgreSQL + Redis + RustFS (S3) + Cloudflare Tunnel. The API
+auto-migrates on startup, so a fresh deploy is self-healing. Data persists on
+the local filesystem via bind mounts under `backend/data/`.
 
 ```bash
-# 1) prepare env for compose (postgres/redis + app secrets)
-cp backend/compose.env.example backend/compose.env   # edit JWT_SECRET, SECRET_ENCRYPTION_KEY, ...
+# 1) prepare env for compose (secrets + Cloudflare tunnel token)
+cp backend/compose.env.example backend/compose.env   # edit JWT_SECRET, SECRET_ENCRYPTION_KEY, CLOUDFLARE_TUNNEL_TOKEN
 
-# 2) build & run (API + postgres + redis)
+# 2) build & run the full stack
 docker compose -f backend/docker-compose.yml --env-file backend/compose.env up -d --build
 
 # 3) optional manual migration
 docker compose -f backend/docker-compose.yml --env-file backend/compose.env \
   --profile migrate run --rm migrate
+
+# 4) only infra (dev): postgres + redis + rustfs
+docker compose -f backend/docker-compose.yml --env-file backend/compose.env up -d postgres redis rustfs
 ```
+
+For Cloudflare Tunnel routing, see `docs/DEPLOY_CLOUDFLARE_TUNNEL.md`.
 
 Build context is the repo root:
 
