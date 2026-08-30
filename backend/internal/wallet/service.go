@@ -72,7 +72,7 @@ SELECT balance::text FROM wallets WHERE id=$1 FOR UPDATE`, walletID).Scan(&balan
 	}
 	var balanceBefore float64
 	fmt.Sscanf(balanceText, "%f", &balanceBefore)
-	balanceAfter := balanceBefore
+	var balanceAfter float64
 	switch direction {
 	case "credit":
 		balanceAfter = balanceBefore + amount

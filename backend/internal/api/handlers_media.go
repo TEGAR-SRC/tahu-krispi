@@ -17,11 +17,11 @@ import (
 const maxMediaBytes = 10 << 20 // 10 MB
 
 var mediaMimeExts = map[string]string{
-	"image/jpeg": ".jpg",
-	"image/png":  ".png",
-	"image/webp": ".webp",
-	"image/gif":  ".gif",
-	"image/svg+xml": ".svg",
+	"image/jpeg":      ".jpg",
+	"image/png":       ".png",
+	"image/webp":      ".webp",
+	"image/gif":       ".gif",
+	"image/svg+xml":   ".svg",
 	"application/pdf": ".pdf",
 }
 

@@ -118,7 +118,7 @@ func (s *Server) handlePasskeyLogin(c fiber.Ctx) error {
 		s.auditSvc.Log(c.Context(), audit.Entry{
 			ActorUserID: &userID, Action: "auth.passkey_login_mfa_required", ResourceType: "user",
 			ResourceID: &userID,
-			IP: c.IP(), UserAgent: c.Get("User-Agent"),
+			IP:         c.IP(), UserAgent: c.Get("User-Agent"),
 			RequestID: auditRequestID(c),
 		})
 		return mw.JSON(c, 200, fiber.Map{
@@ -141,7 +141,7 @@ func (s *Server) handlePasskeyLogin(c fiber.Ctx) error {
 	s.auditSvc.Log(c.Context(), audit.Entry{
 		ActorUserID: &userID, Action: "auth.passkey_login", ResourceType: "user",
 		ResourceID: &userID,
-		IP: c.IP(), UserAgent: c.Get("User-Agent"),
+		IP:         c.IP(), UserAgent: c.Get("User-Agent"),
 		RequestID: auditRequestID(c),
 	})
 

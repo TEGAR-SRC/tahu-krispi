@@ -22,10 +22,10 @@ import (
 )
 
 const (
-	passkeySessionTTL     = 5 * time.Minute
-	passkeySessionPrefix  = "kc:webauthn:reg:"
-	passkeyAuthnPrefix    = "kc:webauthn:authn:"
-	passkeyRPDisplayName  = "Kilat Cloud"
+	passkeySessionTTL    = 5 * time.Minute
+	passkeySessionPrefix = "kc:webauthn:reg:"
+	passkeyAuthnPrefix   = "kc:webauthn:authn:"
+	passkeyRPDisplayName = "Kilat Cloud"
 )
 
 // PasskeyManager manages WebAuthn/passkey enrolment. Registration is a
