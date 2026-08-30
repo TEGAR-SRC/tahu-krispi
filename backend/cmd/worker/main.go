@@ -48,6 +48,7 @@ import (
 	"kilat.cloud/backend/internal/wallet"
 	"kilat.cloud/backend/internal/webhook"
 	apperrors "kilat.cloud/backend/pkg/errors"
+	"kilat.cloud/backend/pkg/ssrf"
 )
 
 const (
@@ -2090,6 +2091,23 @@ WHERE ci.id=$1 AND ci.deleted_at IS NULL`, isoID).
 		return nil // already registered by an earlier run
 	}
 
+	// CAS gate to serialize concurrent iso_register_provider jobs for the same
+	// ISO. Only the job that flips register_status to 'registering' proceeds;
+	// a second concurrent job sees 0 rows affected and returns, leaving the
+	// first (or a later retry) to finish. This closes the ListISOs→CreateISOByURL
+	// window that could otherwise push duplicate provider ISOs.
+	tag, uerr := a.db.Exec(ctx, `
+UPDATE custom_isos SET register_status='registering', updated_at=now()
+WHERE id=$1 AND deleted_at IS NULL
+  AND register_status IS DISTINCT FROM 'active'
+  AND register_status IS DISTINCT FROM 'registering'`, isoID)
+	if uerr != nil {
+		return fmt.Errorf("claim custom iso for registration: %w", uerr)
+	}
+	if tag.RowsAffected() == 0 {
+		return nil // another worker is already registering this ISO
+	}
+
 	finalAttempt := job.Attempts >= job.MaxAttempts
 	failFinal := func(reason error) error {
 		if finalAttempt {
@@ -2146,6 +2164,13 @@ WHERE ci.id=$1 AND ci.deleted_at IS NULL`, isoID).
 		}
 		url = purl
 	case sourceURL != nil && *sourceURL != "":
+		// Re-validate the stored source URL before handing it to the provider
+		// to fetch. The provider re-resolves DNS at fetch time, so this cannot
+		// fully prevent DNS-rebinding, but it rejects internal/metadata hosts
+		// at the moment the job runs (defense-in-depth beyond the API check).
+		if _, serr := ssrf.Validate(*sourceURL); serr != nil {
+			return failFinal(fmt.Errorf("custom iso source URL rejected: %w", serr))
+		}
 		url = *sourceURL
 	default:
 		return failFinal(errors.New("custom iso has neither storage_key nor source_url"))

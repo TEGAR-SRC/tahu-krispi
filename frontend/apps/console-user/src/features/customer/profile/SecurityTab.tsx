@@ -112,6 +112,7 @@ function MfaCard() {
   const [status, setStatus] = useState<{ enabled: boolean; recovery_codes_remaining: number } | null>(null)
   const [setup, setSetup] = useState<{ secret: string; otpauth_url: string } | null>(null)
   const [code, setCode] = useState("")
+  const [disableCode, setDisableCode] = useState("")
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([])
   const [disableOpen, setDisableOpen] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -162,11 +163,16 @@ function MfaCard() {
   }
 
   const disable = async () => {
+    if (!disableCode.trim()) {
+      toast.error("Enter your current 6-digit code")
+      return
+    }
     setBusy(true)
     try {
-      await apiPost("/me/mfa/totp/disable")
+      await apiPost("/me/mfa/totp/disable", { code: disableCode.trim() })
       toast.success("MFA disabled")
       setDisableOpen(false)
+      setDisableCode("")
       await load()
     } catch (cause) {
       toast.error(cause instanceof ApiError ? cause.message : "Failed to disable MFA")
@@ -260,12 +266,25 @@ function MfaCard() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Disable two-factor authentication?</AlertDialogTitle>
-            <AlertDialogDescription>Your account will be protected by password only.</AlertDialogDescription>
+            <AlertDialogDescription>
+              Your account will be protected by password only. Enter your current 6-digit code to confirm.
+            </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="flex flex-col gap-2">
+            <Input
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              placeholder="000000"
+              maxLength={6}
+              value={disableCode}
+              onChange={(e) => setDisableCode(e.target.value.replace(/\D/g, ""))}
+            />
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-primary-foreground hover:bg-destructive/90"
+              disabled={busy || disableCode.length !== 6}
               onClick={(event) => {
                 event.preventDefault()
                 void disable()

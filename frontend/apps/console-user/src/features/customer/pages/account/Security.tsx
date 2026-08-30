@@ -215,6 +215,7 @@ function MfaCard() {
 
   const [setup, setSetup] = useState<{ secret: string; otpauth_url: string } | null>(null)
   const [code, setCode] = useState("")
+  const [disableCode, setDisableCode] = useState("")
   const [busy, setBusy] = useState(false)
   const [revealedCodes, setRevealedCodes] = useState<string[] | null>(null)
   const [codesCopied, setCodesCopied] = useState(false)
@@ -267,10 +268,15 @@ function MfaCard() {
   }
 
   const disable = async () => {
+    if (!disableCode.trim()) {
+      toast.error("Enter your current 6-digit code")
+      return
+    }
     setBusy(true)
     try {
-      await apiPost("/me/mfa/totp/disable")
+      await apiPost("/me/mfa/totp/disable", { code: disableCode.trim() })
       toast.success("Two-factor authentication disabled")
+      setDisableCode("")
       setRevealedCodes(null)
       await load()
     } catch (cause) {
@@ -364,12 +370,25 @@ function MfaCard() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Disable two-factor authentication?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Your account will be protected by password only until you enable it again.
+                    Your account will be protected by password only until you enable it again. Enter your current 6-digit code to confirm.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
+                <div className="flex flex-col gap-2">
+                  <Input
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    placeholder="000000"
+                    maxLength={6}
+                    value={disableCode}
+                    onChange={(e) => setDisableCode(e.target.value.replace(/\D/g, ""))}
+                  />
+                </div>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Keep it on</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => void disable()}>
+                  <AlertDialogAction
+                    disabled={busy || disableCode.length !== 6}
+                    onClick={() => void disable()}
+                  >
                     Disable 2FA
                   </AlertDialogAction>
                 </AlertDialogFooter>
