@@ -9,9 +9,13 @@
 !.env.production
 !**/.env.production
 
-# Build artifacts / binaries
-**/api
-**/worker
+# Build artifacts / binaries (local binaries at backend/ root only — do NOT
+# use **/api or **/worker: those also match cmd/api & cmd/worker source dirs
+# and would break the Docker build).
+backend/api
+backend/worker
+backend/api.exe
+backend/worker.exe
 *.log
 tmp/
 **/tmp-*
