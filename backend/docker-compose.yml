@@ -41,7 +41,7 @@ services:
     image: redis:7-alpine
     container_name: kilat-redis
     restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes"]
+    command: ["redis-server", "--appendonly", "yes", "--save", ""]
     ports:
       - "127.0.0.1:${REDIS_PORT:-54389}:6379"
     volumes:
@@ -51,7 +51,9 @@ services:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
-      retries: 20
+      retries: 30
+      start_period: 30s
+      start_interval: 2s
     networks:
       - kilat-net
 
