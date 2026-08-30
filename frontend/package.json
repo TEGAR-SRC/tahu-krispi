@@ -7,15 +7,17 @@
   "scripts": {
     "dev:admin": "npm run dev -w apps/console-admin",
     "dev:user": "npm run dev -w apps/console-user",
+    "dev:auth": "npm run dev -w apps/console-auth",
     "dev:landing": "npm run dev -w apps/console-landing",
     "dev:docs": "npm run dev -w apps/console-docs",
     "build:admin": "npm run build -w apps/console-admin",
     "build:user": "npm run build -w apps/console-user",
+    "build:auth": "npm run build -w apps/console-auth",
     "build:landing": "npm run build -w apps/console-landing",
     "build:docs": "npm run build -w apps/console-docs",
-    "build": "npm run build -w apps/console-admin && npm run build -w apps/console-user && npm run build -w apps/console-landing && npm run build -w apps/console-docs",
-    "typecheck": "npm run typecheck -w apps/console-admin && npm run typecheck -w apps/console-user && npm run typecheck -w apps/console-landing && npm run typecheck -w apps/console-docs",
-    "lint": "npm run lint -w apps/console-admin && npm run lint -w apps/console-user && npm run lint -w apps/console-landing && npm run lint -w apps/console-docs"
+    "build": "npm run build -w apps/console-admin && npm run build -w apps/console-user && npm run build -w apps/console-auth && npm run build -w apps/console-landing && npm run build -w apps/console-docs",
+    "typecheck": "npm run typecheck -w apps/console-admin && npm run typecheck -w apps/console-user && npm run typecheck -w apps/console-auth && npm run typecheck -w apps/console-landing && npm run typecheck -w apps/console-docs",
+    "lint": "npm run lint -w apps/console-admin && npm run lint -w apps/console-user && npm run lint -w apps/console-auth && npm run lint -w apps/console-landing && npm run lint -w apps/console-docs"
   },
   "devDependencies": {
     "@eslint/js": "^10",
