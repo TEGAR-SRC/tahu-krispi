@@ -26,8 +26,7 @@ services:
       # kilat-net network (cloudflared/API), not from the public internet.
       - "127.0.0.1:${POSTGRES_PORT:-54329}:5432"
     volumes:
-      # Local filesystem persistence (bind mount), not a docker named volume.
-      - ./data/postgres:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
       - ./scripts/initdb-extensions.sql:/docker-entrypoint-initdb.d/00-extensions.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kilat} -d ${POSTGRES_DB:-kilat_cloud}"]
@@ -45,8 +44,7 @@ services:
     ports:
       - "127.0.0.1:${REDIS_PORT:-54389}:6379"
     volumes:
-      # Local filesystem persistence (bind mount).
-      - ./data/redis:/data
+      - redisdata:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -64,8 +62,8 @@ services:
     container_name: kilat-rustfs-perms
     user: root
     volumes:
-      - ./data/rustfs:/fix_path
-      - ./data/rustfs-logs:/fix_path_logs
+      - rustfsdata:/fix_path
+      - rustfslogs:/fix_path_logs
     command: chown -R 10001:10001 /fix_path /fix_path_logs
 
   rustfs:
@@ -87,8 +85,8 @@ services:
       - "127.0.0.1:${RUSTFS_PORT:-54390}:9000"
       - "127.0.0.1:${RUSTFS_CONSOLE_PORT:-54391}:9001"
     volumes:
-      - ./data/rustfs:/data
-      - ./data/rustfs-logs:/var/log/rustfs/
+      - rustfsdata:/data
+      - rustfslogs:/var/log/rustfs/
     networks:
       - kilat-net
 
@@ -251,6 +249,12 @@ services:
     profiles: ["migrate"]
     networks:
       - kilat-net
+
+volumes:
+  pgdata:
+  redisdata:
+  rustfsdata:
+  rustfslogs:
 
 networks:
   kilat-net:

@@ -36,6 +36,7 @@ import (
 	"kilat.cloud/backend/internal/platform/crypto"
 	"kilat.cloud/backend/internal/platform/logger"
 	mailpkg "kilat.cloud/backend/internal/platform/mail"
+	"kilat.cloud/backend/internal/platform/migrate"
 	objstore "kilat.cloud/backend/internal/platform/objectstorage"
 	"kilat.cloud/backend/internal/platform/postgres"
 	"kilat.cloud/backend/internal/platform/queue"
@@ -92,6 +93,10 @@ func main() {
 		os.Exit(1)
 	}
 	defer db.Close()
+	if err := migrate.Run(ctx, cfg.DatabaseURL); err != nil {
+		log.Error("migrations failed", map[string]any{"error": err.Error()})
+		os.Exit(1)
+	}
 	rdb, err := redisclient.New(ctx, cfg.RedisURL)
 	if err != nil {
 		log.Error("redis init failed", map[string]any{"error": err.Error()})
