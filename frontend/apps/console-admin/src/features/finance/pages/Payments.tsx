@@ -1,7 +1,9 @@
 // Admin payments ledger (read-only: the API exposes no admin payment
 // mutations): status/provider filtered paged table with a row detail dialog.
 import { useCallback, useEffect, useState } from "react"
-import { apiGet } from "@/lib/api"
+import { CheckIcon, Loader2Icon, SearchIcon } from "lucide-react"
+import { toast } from "sonner"
+import { apiGet, apiPost } from "@/lib/api"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { SimpleDataTable, type SimpleColumn } from "@/components/shared/SimpleDataTable"
 import { Button } from "@/components/ui/button"
@@ -13,7 +15,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { SearchIcon } from "lucide-react"
 import {
   DetailRow,
   FilterChips,
@@ -46,6 +47,7 @@ export default function FinancePaymentsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
   const [selected, setSelected] = useState<AdminPaymentRow | null>(null)
+  const [approving, setApproving] = useState(false)
 
   const loadList = useCallback(async () => {
     setLoading(true)
@@ -173,7 +175,31 @@ export default function FinancePaymentsPage() {
             </DialogDescription>
           </DialogHeader>
           {selected ? (
-            <div>
+            <div className="space-y-4">
+              {selected.status === "pending" ? (
+                <div className="flex justify-end">
+                  <Button
+                    disabled={approving}
+                    onClick={async () => {
+                      if (!selected) return
+                      setApproving(true)
+                      try {
+                        await apiPost(`/admin/payments/${selected.id}/approve`)
+                        toast.success(`Payment ${selected.public_id} approved`)
+                        setSelected(null)
+                        await loadList()
+                      } catch (e) {
+                        toast.error(e instanceof Error ? e.message : "Approve failed")
+                      } finally {
+                        setApproving(false)
+                      }
+                    }}
+                  >
+                    {approving ? <Loader2Icon className="size-4 animate-spin" /> : <CheckIcon className="size-4" />}
+                    Approve pending
+                  </Button>
+                </div>
+              ) : null}
               <DetailRow label="Status">
                 <StatusBadge status={selected.status} />
               </DetailRow>
