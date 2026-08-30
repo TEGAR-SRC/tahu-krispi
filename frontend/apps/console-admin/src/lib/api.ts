@@ -130,8 +130,13 @@ async function request<T>(
     ...authHeaders(),
     ...opts?.headers,
   }
-  if (body !== undefined) {
+  const isFormData = typeof FormData !== "undefined" && body instanceof FormData
+  if (body !== undefined && !isFormData) {
     headers["Content-Type"] = "application/json"
+  }
+  // FormData: never set Content-Type manually — the browser adds the boundary.
+  if (isFormData) {
+    delete headers["Content-Type"]
   }
 
   let response: Response
@@ -139,7 +144,12 @@ async function request<T>(
     response = await fetch(url, {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body:
+        body === undefined
+          ? undefined
+          : isFormData
+            ? (body as FormData)
+            : JSON.stringify(body),
     })
   } catch (cause) {
     throw new ApiError("network_error", "Network request failed", 0, cause)

@@ -263,6 +263,11 @@ func (s *Server) registerRoutes() {
 
 	// Landing / marketing content (public, published sections only).
 	v1.Get("/landing", s.handlePublicLanding)
+	// Documentation (public, published only).
+	v1.Get("/docs", s.handlePublicDocs)
+	v1.Get("/docs/:slug", s.handlePublicDocBySlug)
+	// Public media (landing/docs images & logos).
+	v1.Get("/media/:id", s.handleGetMedia)
 
 	// Organizations.
 	v1.Get("/organizations", s.authAny(), s.handleListOrganizations)
@@ -530,6 +535,15 @@ func (s *Server) registerRoutes() {
 	admin.Post("/landing", s.requireStaff("marketing"), s.handleCreateLandingSection)
 	admin.Put("/landing/:id", s.requireStaff("marketing"), s.handleUpdateLandingSection)
 	admin.Delete("/landing/:id", s.requireStaff("marketing"), s.handleDeleteLandingSection)
+	// Documentation editor (platform admin + NOC).
+	admin.Get("/docs", s.requireStaff("marketing"), s.handleListDocs)
+	admin.Post("/docs", s.requireStaff("marketing"), s.handleCreateDoc)
+	admin.Put("/docs/:id", s.requireStaff("marketing"), s.handleUpdateDoc)
+	admin.Delete("/docs/:id", s.requireStaff("marketing"), s.handleDeleteDoc)
+	// Media uploads (logos/images) for landing & docs (platform admin + NOC).
+	admin.Post("/media", s.requireStaff("marketing"), s.handleUploadMedia)
+	admin.Get("/media", s.requireStaff("marketing"), s.handleListMedia)
+	admin.Delete("/media/:id", s.requireStaff("marketing"), s.handleDeleteMedia)
 	admin.Post("/plans/:plan_id/prices", s.requireStaff("billing"), s.adminUpsertPlanPrice)
 	admin.Get("/custom-rates", s.requireStaff("billing"), s.adminListCustomRates)
 	admin.Post("/custom-rates", s.requireStaff("billing"), s.adminUpsertCustomRate)

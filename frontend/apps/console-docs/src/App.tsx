@@ -4,7 +4,7 @@ import remarkGfm from "remark-gfm"
 import rehypeHighlight from "rehype-highlight"
 import { Link, Navigate, useLocation, useParams } from "react-router-dom"
 import { FileTextIcon, SearchIcon, BookOpenIcon, MenuIcon } from "lucide-react"
-import { docs, getDoc, type DocEntry } from "./docs"
+import { fetchDoc, fetchDocs, type DocEntry } from "./docs"
 import "highlight.js/styles/github-dark.css"
 
 function MarkdownView({ content }: { content: string }) {
@@ -55,10 +55,12 @@ function MarkdownView({ content }: { content: string }) {
 }
 
 function Sidebar({
+  docs,
   query,
   onQueryChange,
   onCloseMobile,
 }: {
+  docs: DocEntry[]
   query: string
   onQueryChange: (value: string) => void
   onCloseMobile?: () => void
@@ -74,7 +76,7 @@ function Sidebar({
         doc.description.toLowerCase().includes(q) ||
         doc.content.toLowerCase().includes(q),
     )
-  }, [query])
+  }, [docs, query])
 
   return (
     <aside className="flex h-full w-full flex-col gap-4 border-r bg-muted/20 p-4">
@@ -94,7 +96,7 @@ function Sidebar({
       <nav className="flex min-w-0 flex-1 flex-col gap-1 overflow-y-auto">
         {filtered.map((doc) => (
           <Link
-            key={doc.slug}
+            key={doc.id}
             to={`/docs/${doc.slug}`}
             onClick={onCloseMobile}
             className={`flex min-w-0 items-start gap-2 rounded-md px-2 py-1.5 text-sm ${
@@ -118,8 +120,35 @@ function Sidebar({
 
 function DocPage() {
   const { slug } = useParams<{ slug: string }>()
-  const doc: DocEntry | undefined = getDoc(slug ?? "welcome")
-  if (!doc) return <Navigate to="/docs/welcome" replace />
+  const [doc, setDoc] = useState<DocEntry | undefined>()
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    if (!slug) {
+      setLoading(false)
+      return
+    }
+    fetchDoc(slug)
+      .then((data) => {
+        if (!cancelled) setDoc(data)
+      })
+      .catch(() => {
+        if (!cancelled) setDoc(undefined)
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [slug])
+
+  if (loading) {
+    return <div className="px-6 py-16 text-center text-muted-foreground">Loading…</div>
+  }
+  if (!doc) return <Navigate to="/docs" replace />
   return (
     <article className="mx-auto w-full max-w-3xl px-6 py-10">
       <div className="mb-8">
@@ -132,23 +161,55 @@ function DocPage() {
 
 export default function App() {
   const location = useLocation()
+  const [docs, setDocs] = useState<DocEntry[]>([])
+  const [loaded, setLoaded] = useState(false)
   const [query, setQuery] = useState("")
   const [mobileNav, setMobileNav] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    fetchDocs()
+      .then((data) => {
+        if (!cancelled) setDocs(data)
+      })
+      .catch(() => {
+        if (!cancelled) setDocs([])
+      })
+      .finally(() => {
+        if (!cancelled) setLoaded(true)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     setQuery("")
     setMobileNav(false)
   }, [location.pathname])
 
+  // Redirect the index route to the first available doc.
+  useEffect(() => {
+    if (loaded && location.pathname === "/docs" && docs.length > 0) {
+      const first = [...docs].sort((a, b) => a.sort_order - b.sort_order)[0]
+      window.history.replaceState(null, "", `/docs/${first.slug}`)
+    }
+  }, [loaded, docs, location.pathname])
+
   return (
     <div className="flex min-h-svh w-full bg-background">
       <div className="hidden w-64 shrink-0 md:block">
-        <Sidebar query={query} onQueryChange={setQuery} />
+        <Sidebar docs={docs} query={query} onQueryChange={setQuery} />
       </div>
 
       {mobileNav ? (
         <div className="fixed inset-0 z-50 flex bg-background/95 backdrop-blur-sm md:hidden">
-          <Sidebar query={query} onQueryChange={setQuery} onCloseMobile={() => setMobileNav(false)} />
+          <Sidebar
+            docs={docs}
+            query={query}
+            onQueryChange={setQuery}
+            onCloseMobile={() => setMobileNav(false)}
+          />
           <button
             onClick={() => setMobileNav(false)}
             className="absolute right-3 top-3 rounded p-2 text-muted-foreground hover:bg-accent"

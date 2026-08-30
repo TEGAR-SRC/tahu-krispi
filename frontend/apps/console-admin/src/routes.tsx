@@ -27,6 +27,7 @@ const AdminTickets = lazy(() => import("@/features/admin/pages/Tickets"))
 const TicketThread = lazy(() => import("@/features/admin/pages/TicketThread"))
 const AuditLogs = lazy(() => import("@/features/admin/pages/AuditLogs"))
 const LandingContent = lazy(() => import("@/features/admin/pages/Landing"))
+const DocsPage = lazy(() => import("@/features/admin/pages/Docs"))
 const Security = lazy(() => import("@/features/admin/pages/Security"))
 const SecurityIncidents = lazy(() =>
   import("@/features/admin/pages/security/Incidents"),
@@ -483,6 +484,7 @@ export default function AppRoutes() {
           <Route path="tickets/:ticketId" element={<TicketThread />} />
           <Route path="audit-logs" element={<AuditLogs />} />
           <Route path="landing" element={<LandingContent />} />
+          <Route path="docs" element={<DocsPage />} />
 
           <Route path="security" element={<Security />} />
           <Route path="security/incidents" element={<SecurityIncidents />} />
@@ -809,6 +811,7 @@ export default function AppRoutes() {
           <Route path="tickets/:ticketId" element={<NocTicketThread />} />
           <Route path="security" element={<NocSecurity />} />
           <Route path="landing" element={<LandingContent />} />
+          <Route path="docs" element={<DocsPage />} />
         </Route>
 
         <Route

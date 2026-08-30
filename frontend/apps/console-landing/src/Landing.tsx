@@ -3,7 +3,7 @@
 // staff (admin/NOC) in the console-admin app under Landing Content.
 import { useEffect, useState } from "react"
 import { Spinner } from "./components/ui/spinner"
-import { apiGet } from "./lib/api"
+import { apiGet, resolveMediaUrl } from "./lib/api"
 
 interface LandingSection {
   id: string
@@ -44,7 +44,11 @@ function renderSection(section: LandingSection) {
         <section className="border-b py-16 text-center sm:py-24">
           <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-4">
             {section.media_url ? (
-              <img src={section.media_url} alt="" className="mb-2 h-12 w-12 object-contain" />
+              <img
+                src={resolveMediaUrl(section.media_url)}
+                alt=""
+                className="mb-2 h-12 w-12 object-contain"
+              />
             ) : null}
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">{section.title}</h1>
             {section.subtitle ? (

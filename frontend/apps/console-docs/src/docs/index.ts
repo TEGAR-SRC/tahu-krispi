@@ -1,35 +1,22 @@
-import welcome from "./welcome.md?raw"
-import api from "./api.md?raw"
-import deployment from "./deployment.md?raw"
+import { apiGet } from "../lib/api"
 
 export interface DocEntry {
+  id: string
   slug: string
   title: string
   description: string
   content: string
+  sort_order: number
+  published: boolean
 }
 
-export const docs: DocEntry[] = [
-  {
-    slug: "welcome",
-    title: "Welcome",
-    description: "Overview and quick start for Kilat Cloud.",
-    content: welcome,
-  },
-  {
-    slug: "api",
-    title: "API Reference",
-    description: "Public API endpoints and request/response shapes.",
-    content: api,
-  },
-  {
-    slug: "deployment",
-    title: "Deployment Guide",
-    description: "Build and deploy each frontend project.",
-    content: deployment,
-  },
-]
+// Public docs come from the backend (/v1/docs), not bundled files.
+export async function fetchDocs(): Promise<DocEntry[]> {
+  const { data } = await apiGet<DocEntry[]>("/docs")
+  return data
+}
 
-export function getDoc(slug: string): DocEntry | undefined {
-  return docs.find((doc) => doc.slug === slug)
+export async function fetchDoc(slug: string): Promise<DocEntry | undefined> {
+  const { data } = await apiGet<DocEntry>(`/docs/${encodeURIComponent(slug)}`)
+  return data
 }
