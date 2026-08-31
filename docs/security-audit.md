@@ -121,7 +121,9 @@ endpoint customer. Catat sebagai pertimbangan segmentasi jika diperlukan.
 
 ## Temuan low / rekomendasi lanjutan
 
-- **Low:** `POST /v1/auth/email/verify` dan `POST /v1/auth/refresh` tidak ada rate limiter → tambahkan limiter untuk cegah resource-exhaustion.
+- ✅ **Terverifikasi:** lockout per-akun (5 gagal → terkunci 15 mnt) + rate-limit per-IP + MFA lockout → brute-force password & TOTP tertutup.
+- ✅ **Fixed:** `/v1/auth/email/verify` & `/v1/auth/refresh` kini punya rate limiter.
+- **Rekomendasi:** tambahkan header `Content-Security-Policy` pada frontend (Cloudflare Pages / index.html) — API tak render HTML, tapi SPA perlu CSP.
 - **Rekomendasi:** `go install golang.org/x/vuln/cmd/govulncheck@latest && govulncheck ./...` di backend; integrasikan ke CI.
-- **Rekomendasi:** log audit untuk event auth (login sukses/gagal, MFA, perubahan role) sudah ada — pastikan tidak ada data sensitif (token) yang masuk log.
+- **Rekomendasi:** pastikan log audit auth tidak memuat token/secret.
 

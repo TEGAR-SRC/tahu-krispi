@@ -201,6 +201,7 @@ func (s *Server) registerRoutes() {
 
 	authLimiter := mw.RateLimit(s.rdb, "login", s.cfg.RateLimitLoginPerMinute, time.Minute)
 	regLimiter := mw.RateLimit(s.rdb, "register", s.cfg.RateLimitRegisterPerHour, time.Hour)
+	verifyLimiter := mw.RateLimit(s.rdb, "verify", s.cfg.RateLimitLoginPerMinute, time.Minute)
 	idem := s.idempotency()
 
 	// ---- Auth & identity ----
@@ -211,12 +212,12 @@ func (s *Server) registerRoutes() {
 	v1.Post("/auth/passkey/login", authLimiter, s.handlePasskeyLogin)
 	v1.Get("/auth/oauth/:provider", s.handleOAuthLogin)
 	v1.Get("/auth/oauth/:provider/callback", s.handleOAuthCallback)
-	v1.Post("/auth/refresh", s.handleRefresh)
+	v1.Post("/auth/refresh", authLimiter, s.handleRefresh)
 	v1.Post("/auth/logout", s.authAny(), s.handleLogout)
 	v1.Post("/auth/logout-all", s.authAny(), s.handleLogoutAll)
 	v1.Post("/auth/password/forgot", authLimiter, s.handleForgotPassword)
 	v1.Post("/auth/password/reset", authLimiter, s.handleResetPassword)
-	v1.Post("/auth/email/verify", s.handleVerifyEmail)
+	v1.Post("/auth/email/verify", verifyLimiter, s.handleVerifyEmail)
 	v1.Post("/auth/email/resend", authLimiter, s.handleResendEmailVerification)
 	v1.Post("/auth/email/resend-public", authLimiter, s.handleResendPublicEmailVerification)
 	v1.Get("/auth/email/status", authLimiter, s.handleCheckEmailStatus)
