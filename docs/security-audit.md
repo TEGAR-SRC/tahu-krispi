@@ -102,6 +102,26 @@ endpoint customer. Catat sebagai pertimbangan segmentasi jika diperlukan.
 | Prioritas | Aksi |
 |-----------|------|
 | P0 | ✅ `withOrg` + verifikasi keanggotaan org (selesai) |
-| P1 | Cek `status='active'` di `requireStaff` + revoke session saat suspend |
+| P1 | ✅ Cek `status='active'` di `requireStaff` (selesai) |
 | P1 | Pasang `govulncheck` di CI + audit dependensi Go berkala |
 | P2 | Pertimbangkan segmentasi `audienceAdmin` |
+
+---
+
+## Cakupan audit tambahan (terverifikasi aman)
+
+| Area | Verifikasi | Hasil |
+|------|-----------|-------|
+| Semua route `/v1/admin/*` | Butuh `requireStaff` | ✅ Tidak ada yang lolos |
+| Semua pembaca `X-Organization-ID` | `withOrg` (RequireMember), api-key handler (`orgSvc.Authorize`), resource-limits (`isOrgMember`) | ✅ Semua validasi keanggotaan |
+| Upload file (avatar/dokumen) | Limit ukuran 5/10MB + MIME whitelist + object key server-generated | ✅ Tidak ada path traversal / file tak dikenal |
+| Proxy `/v1/dokploy/*` | `requireStaff("auto")` → platform_admin only; relay ke base terkonfigurasi | ✅ SSRF terbatas, bukan public |
+| Endpoint auth | Rate limit di login/register/forgot/reset/resend | ⚠️ `/auth/email/verify` & `/auth/refresh` tanpa limiter (low — token high-entropy, tapi DoS kecil) |
+| Dependency | `npm audit` 0 vuln | ✅ |
+
+## Temuan low / rekomendasi lanjutan
+
+- **Low:** `POST /v1/auth/email/verify` dan `POST /v1/auth/refresh` tidak ada rate limiter → tambahkan limiter untuk cegah resource-exhaustion.
+- **Rekomendasi:** `go install golang.org/x/vuln/cmd/govulncheck@latest && govulncheck ./...` di backend; integrasikan ke CI.
+- **Rekomendasi:** log audit untuk event auth (login sukses/gagal, MFA, perubahan role) sudah ada — pastikan tidak ada data sensitif (token) yang masuk log.
+
