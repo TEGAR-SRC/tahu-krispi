@@ -628,7 +628,11 @@ func (s *Server) registerRoutes() {
 	admin.Delete("/dokploy/db/:entity/:remote_id", s.requireStaff("auto"), s.adminDokployDBDelete)
 }
 
-// withOrg extracts the organization id and verifies the user is a member with the given permission.
+// withOrg extracts the organization id and verifies the caller is authorized
+// for it. For a JWT the user must be an active member of the org; for an API
+// key the header org must equal the org the key is bound to. This closes the
+// cross-tenant IDOR where an authenticated caller could pass an arbitrary
+// X-Organization-ID to touch another organization's resources.
 func (s *Server) withOrg(h fiber.Handler) fiber.Handler {
 	return func(c fiber.Ctx) error {
 		orgIDStr := c.Get("X-Organization-ID")
@@ -642,10 +646,22 @@ func (s *Server) withOrg(h fiber.Handler) fiber.Handler {
 		if err != nil {
 			return mw.WriteError(c, errInvalidOrganizationID())
 		}
-		userIDStr, _ := c.Locals(auth.LocalsUserID).(string)
-		userID, _ := uuid.Parse(userIDStr)
+		authType, _ := c.Locals(auth.LocalsAuthType).(string)
+		if authType == "api_key" {
+			bound := mustOrgID(c)
+			if bound == uuid.Nil || bound != orgID {
+				return mw.WriteError(c, apperrors.New(apperrors.CodeForbidden,
+					"api key is not bound to this organization"))
+			}
+		} else {
+			userIDStr, _ := c.Locals(auth.LocalsUserID).(string)
+			userID, _ := uuid.Parse(userIDStr)
+			if _, err := s.orgSvc.RequireMember(c.Context(), orgID, userID); err != nil {
+				return mw.WriteError(c, err)
+			}
+		}
 		c.Locals("org_id", orgID.String())
-		c.Locals("user_id_uuid", userID)
+		c.Locals("user_id_uuid", mustUserID(c))
 		return h(c)
 	}
 }

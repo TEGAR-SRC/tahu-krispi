@@ -146,7 +146,7 @@ func (s *Server) requireStaff(area string) fiber.Handler {
 			staffRole string
 		)
 		err = s.db.QueryRow(c.Context(),
-			`SELECT is_platform_admin, staff_role FROM users WHERE id=$1 AND deleted_at IS NULL`,
+			`SELECT is_platform_admin, staff_role FROM users WHERE id=$1 AND deleted_at IS NULL AND status='active'`,
 			userID).Scan(&isAdmin, &staffRole)
 		if err != nil || (!isAdmin && !iam.StaffCan(iam.StaffRole(staffRole), area)) {
 			return mw.WriteError(c, apperrors.New(apperrors.CodeForbidden, "staff access required"))
