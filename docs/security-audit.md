@@ -1,7 +1,7 @@
 # Kilat Cloud — Security Audit
 
-Audit fokus: **autentikasi & otorisasi** (cegah bypass / IDOR lintas-tenant).
-Scope: `backend/` (Go/Fiber) + `frontend/`. Tanggal: 2026-08-31.
+Audit fokus: **autentikasi & otorisasi** (cegah bypass / IDOR lintas-tenant) + pengarutan kerangka OWASP Top 10.
+Scope: `backend/` (Go/Fiber) + `frontend/`. Tanggal: 2026-08-31 (3 pass: auth/IDOR, infrastructure/input/header, OWASP checklist).
 
 ## Ringkasan eksekutif
 
@@ -19,7 +19,7 @@ header `X-Organization-ID`. Direkomendasikan fix segera.
 | 3 | MEDIUM | Cakupan `audienceAdmin` melayani semua endpoint (by design) | Info |
 | 4 | INFO | JWT hardcoded `alg:HS256`, constant-time, cek exp + revoked session — solid | OK |
 | 5 | INFO | `npm audit` 0 kerentanan; secret tidak ter-commit | OK |
-| 6 | INFO | `govulncheck` belum terpasang (rekomendasi) | Terbuka |
+| 6 | INFO | `govulncheck` belum terpasang — dijalankan di CI | Terbuka |
 
 ---
 
@@ -65,8 +65,7 @@ memeriksa `status`. Jadi staff yang di-suspend (tidak dihapus) tetap dapat
 mengakses `/v1/admin/*` dengan JWT yang belum kedaluwarsa (TTL akses default
 15 menit). Sama untuk route customer JWT — tidak ada cek status per-request.
 
-**Remediasi (rekomendasi):** cek `status='active'` di `requireStaff` (dan
-opsional di `jwtAuth` untuk semua request bertoken), serta putus session
+**Remediasi (rekomendasi):** cek `status='active'` di `requireStaff` ✅ sudah diterapkan (`WHERE status='active'`), serta putus session
 (Redis revoked) saat akun di-suspend.
 
 ---
@@ -131,8 +130,8 @@ endpoint customer. Catat sebagai pertimbangan segmentasi jika diperlukan.
 | Semua pembaca `X-Organization-ID` | `withOrg` (RequireMember), api-key handler (`orgSvc.Authorize`), resource-limits (`isOrgMember`) | ✅ Semua validasi keanggotaan |
 | Upload file (avatar/dokumen) | Limit ukuran 5/10MB + MIME whitelist + object key server-generated | ✅ Tidak ada path traversal / file tak dikenal |
 | Proxy `/v1/dokploy/*` | `requireStaff("auto")` → platform_admin only; relay ke base terkonfigurasi | ✅ SSRF terbatas, bukan public |
-| Endpoint auth | Rate limit di login/register/forgot/reset/resend | ⚠️ `/auth/email/verify` & `/auth/refresh` tanpa limiter (low — token high-entropy, tapi DoS kecil) |
-| Dependency | `npm audit` 0 vuln | ✅ |
+| Endpoint auth | Rate limit di login/register/forgot/reset/resend + verify/refresh | ✅ Semua ter-limit |
+| Dependency | `npm audit` 0 vuln; `govulncheck` di CI (`security.yml`) | ✅ |
 
 ## Temuan low / rekomendasi lanjutan
 
