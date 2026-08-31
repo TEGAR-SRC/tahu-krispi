@@ -123,7 +123,9 @@ endpoint customer. Catat sebagai pertimbangan segmentasi jika diperlukan.
 
 - ✅ **Terverifikasi:** lockout per-akun (5 gagal → terkunci 15 mnt) + rate-limit per-IP + MFA lockout → brute-force password & TOTP tertutup.
 - ✅ **Fixed:** `/v1/auth/email/verify` & `/v1/auth/refresh` kini punya rate limiter.
-- **Rekomendasi:** tambahkan header `Content-Security-Policy` pada frontend (Cloudflare Pages / index.html) — API tak render HTML, tapi SPA perlu CSP.
-- **Rekomendasi:** `go install golang.org/x/vuln/cmd/govulncheck@latest && govulncheck ./...` di backend; integrasikan ke CI.
-- **Rekomendasi:** pastikan log audit auth tidak memuat token/secret.
+- ✅ **Fixed:** CI `govulncheck` (backend) + `gitleaks` (secret scan) di `.github/workflows/security.yml`.
+- **Rekomendasi (dashboard Cloudflare Pages):** set header `Content-Security-Policy` di tiap project SPA:
+  `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.kilat-cloud.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`
+  (Verifikasi dulu bahwa SPA tidak butuh `unsafe-eval`/inline-script sebelum strict.)
+- **Catatan:** token JWT di `localStorage` rentan exfil via XSS. Saat ini tidak ada sink XSS (hanya chart terkontrol), tapi untuk hardening lanjutan pertimbangkan cookie `httpOnly` + CSRF token.
 
