@@ -108,6 +108,21 @@ endpoint customer. Catat sebagai pertimbangan segmentasi jika diperlukan.
 
 ---
 
+## Audit deep-pass (ke-2) — terverifikasi aman
+
+| Area | Hasil |
+|------|-------|
+| SQL injection (builder `admOrgFilter`, `resourcelimits`, dokploy) | ✅ Parameterized / kolom hardcoded — tidak ada SQLi |
+| SSRF (URL ISO) | ✅ `ssrfpkg.Validate` di `handleCreateISO` |
+| Media / object storage | ✅ `/v1/media/:id` publik hanya `landing_media` (marketing); avatar/dokumen scoped ke user (`/me/avatar`) |
+| Eskalaasi role invite | ✅ Role whitelist **tanpa `owner`**; invite butuh `members.write` |
+| Grant admin | ✅ Hanya platform_admin (`staffAreaFor` → `""`) |
+| Revoke session | ✅ logout/logout-all/ganti-password/reset set Redis `kc:session:revoked` yang di-cek `VerifyAccessToken` |
+
+## Catatan defense-in-depth (minor, tidak ada celah terbuka)
+
+- `VerifyAccessToken` mengandalkan Redis revoked key untuk invalidasi pasca ganti-password; tidak membandingkan `pwv` token dengan `password_version` DB. Jika **Redis di-flush** (kehilangan key), akses token lama bisa valid kembali sampai TTL (15 mnt). Mitigasi opsional: cek `password_version` per-request (biaya 1 query DB/request) — tidak diterapkan demi performa, karena jalur normal (RevokeAllSessions) sudah menutup ini.
+
 ## Cakupan audit tambahan (terverifikasi aman)
 
 | Area | Verifikasi | Hasil |
