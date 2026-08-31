@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react"
+import { lazy, Suspense, useEffect } from "react"
 import type { ReactNode } from "react"
 import { Navigate, Route, Routes, Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
@@ -10,9 +10,11 @@ const AdminLayout = lazy(() => import("@/features/admin/AdminLayout"))
 const NocLayout = lazy(() => import("@/features/noc/NocLayout"))
 const FinanceLayout = lazy(() => import("@/features/finance/FinanceLayout"))
 
-// ---- Lazy pages: auth --------------------------------------------------------
-const LoginPage = lazy(() => import("@/features/auth/LoginPage"))
-const SignupPage = lazy(() => import("@/features/auth/SignupPage"))
+// ---- Lazy pages: auth (only OAuthCallback is served locally; the rest
+// redirect to the standalone auth console) -----------------------------------
+const OAuthCallbackPage = lazy(() =>
+  import("@/features/auth/OAuthCallbackPage"),
+)
 
 // ---- Lazy pages: admin -------------------------------------------------------
 const AdminDashboard = lazy(() => import("@/features/admin/pages/Dashboard"))
@@ -371,20 +373,18 @@ const DokploySettingsAi = lazy(() =>
 const DokployCloudOnly = lazy(() =>
   import("@/features/admin/pages/dokploy/app/CloudOnly"),
 )
-const ForgotPasswordPage = lazy(() =>
-  import("@/features/auth/ForgotPasswordPage"),
-)
-const ResetPasswordPage = lazy(() =>
-  import("@/features/auth/ResetPasswordPage"),
-)
-const VerifyEmailPage = lazy(() =>
-  import("@/features/auth/VerifyEmailPage"),
-)
-const OAuthCallbackPage = lazy(() =>
-  import("@/features/auth/OAuthCallbackPage"),
-)
-const TermsPage = lazy(() => import("@/features/auth/TermsPage"))
-const PrivacyPage = lazy(() => import("@/features/auth/PrivacyPage"))
+
+// ---- Auth is hosted on the standalone auth console (auth.kilat-cloud.com) ----
+const AUTH_BASE =
+  (import.meta.env.VITE_AUTH_CONSOLE_URL as string) || "https://auth.kilat-cloud.com"
+
+/** Hard-redirect a legacy auth route to the auth console, preserving query. */
+function AuthRedirect({ path }: { path: string }) {
+  useEffect(() => {
+    window.location.replace(`${AUTH_BASE}${path}${window.location.search}`)
+  }, [path])
+  return null
+}
 
 // ---- Guards -------------------------------------------------------------------
 
@@ -458,14 +458,14 @@ export default function AppRoutes() {
     >
       <Routes>
         <Route path="/" element={<RootRedirect />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route path="/login" element={<AuthRedirect path="/login" />} />
+        <Route path="/signup" element={<AuthRedirect path="/signup" />} />
+        <Route path="/forgot-password" element={<AuthRedirect path="/forgot-password" />} />
+        <Route path="/reset-password" element={<AuthRedirect path="/reset-password" />} />
+        <Route path="/verify-email" element={<AuthRedirect path="/verify-email" />} />
         <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
-        <Route path="/terms" element={<TermsPage />} />
-        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<AuthRedirect path="/terms" />} />
+        <Route path="/privacy" element={<AuthRedirect path="/privacy" />} />
 
         <Route
           path="/admin"

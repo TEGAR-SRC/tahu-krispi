@@ -8,21 +8,11 @@ import { homePathFor, useAuth, type AppRole } from "@/lib/auth"
 // ---- Lazy role layout --------------------------------------------------------
 const CustomerLayout = lazy(() => import("@/features/customer/CustomerLayout"))
 
-// ---- Lazy pages: auth --------------------------------------------------------
-const LoginPage = lazy(() => import("@/features/auth/LoginPage"))
-const SignupPage = lazy(() => import("@/features/auth/SignupPage"))
-const ForgotPasswordPage = lazy(() =>
-  import("@/features/auth/ForgotPasswordPage"),
-)
-const ResetPasswordPage = lazy(() =>
-  import("@/features/auth/ResetPasswordPage"),
-)
-const VerifyEmailPage = lazy(() => import("@/features/auth/VerifyEmailPage"))
-const OAuthCallbackPage = lazy(() =>
-  import("@/features/auth/OAuthCallbackPage"),
-)
-const TermsPage = lazy(() => import("@/features/auth/TermsPage"))
-const PrivacyPage = lazy(() => import("@/features/auth/PrivacyPage"))
+// ---- Auth: redirected to the standalone auth console (auth.kilat-cloud.com) --
+// The /oauth/callback route stays local — it is the handoff target where the
+// auth console delivers the session token in the URL fragment.
+const OAuthCallbackPage = lazy(() => import("@/features/auth/OAuthCallbackPage"))
+import { RedirectToAuth } from "@/components/shared/RedirectToAuth"
 
 // ---- Lazy pages: customer -----------------------------------------------------
 const CustomerOverview = lazy(() => import("@/features/customer/pages/Overview"))
@@ -213,14 +203,14 @@ export default function AppRoutes() {
     >
       <Routes>
         <Route path="/" element={<RootRedirect />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route path="/login" element={<RedirectToAuth path="/login" />} />
+        <Route path="/signup" element={<RedirectToAuth path="/signup" />} />
+        <Route path="/forgot-password" element={<RedirectToAuth path="/forgot-password" />} />
+        <Route path="/reset-password" element={<RedirectToAuth path="/reset-password" />} />
+        <Route path="/verify-email" element={<RedirectToAuth path="/verify-email" />} />
         <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
-        <Route path="/terms" element={<TermsPage />} />
-        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<RedirectToAuth path="/terms" />} />
+        <Route path="/privacy" element={<RedirectToAuth path="/privacy" />} />
 
         <Route
           path="/app"
