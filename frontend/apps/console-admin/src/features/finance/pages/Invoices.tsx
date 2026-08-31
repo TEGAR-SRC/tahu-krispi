@@ -103,6 +103,27 @@ export default function FinanceInvoicesPage() {
     row.status !== "refunded" &&
     row.status !== "partially_refunded"
 
+  const loadList = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const envelope = await apiGet<AdminInvoiceRow[]>("/admin/invoices", {
+        query: {
+          page,
+          per_page: PER_PAGE,
+          status: status === "all" ? undefined : status,
+          search: appliedSearch || undefined,
+        },
+      })
+      setRows(envelope.data)
+      setMeta(envelope.meta ?? null)
+    } catch (cause) {
+      setError(cause)
+    } finally {
+      setLoading(false)
+    }
+  }, [page, status, appliedSearch])
+
   const bulkVoidInvoices = useCallback(async () => {
     const targets = bulk.resolve(rows).filter(voidableRow)
     if (targets.length === 0) {
@@ -125,27 +146,6 @@ export default function FinanceInvoicesPage() {
       setBulkVoiding(false)
     }
   }, [bulk, rows, loadList])
-
-  const loadList = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const envelope = await apiGet<AdminInvoiceRow[]>("/admin/invoices", {
-        query: {
-          page,
-          per_page: PER_PAGE,
-          status: status === "all" ? undefined : status,
-          search: appliedSearch || undefined,
-        },
-      })
-      setRows(envelope.data)
-      setMeta(envelope.meta ?? null)
-    } catch (cause) {
-      setError(cause)
-    } finally {
-      setLoading(false)
-    }
-  }, [page, status, appliedSearch])
 
   useEffect(() => {
     let cancelled = false

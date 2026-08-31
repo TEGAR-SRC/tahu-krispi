@@ -15,7 +15,7 @@ import {
   useState,
   type ReactNode,
 } from "react"
-import { apiGet, apiPost, getToken, setToken, API_BASE } from "./api"
+import { apiGet, apiPost, getToken, setToken } from "./api"
 
 export const API_ORIGIN = "" // same origin; Vite proxies /api -> backend in dev
 
@@ -102,17 +102,9 @@ export function homePathFor(role: AppRole | null): string {
   }
 }
 
-async function probe(path: string, token: string): Promise<number> {
-  const response = await fetch(`${API_ORIGIN}${API_BASE}${path}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-  return response.status
-}
-
 /**
  * Detects the effective console role. The user console is customer-only, so
- * every authenticated user resolves to "customer". Throws when the token is
- * already expired (every probe answered 401).
+ * every authenticated user resolves to "customer".
  */
 export async function resolveRole(_token: string): Promise<AppRole> {
   // User console is customer-only — no admin probe needed. Probing /admin/* from

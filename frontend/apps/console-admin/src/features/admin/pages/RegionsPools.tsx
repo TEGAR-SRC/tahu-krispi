@@ -575,6 +575,32 @@ function PoolsPanel({ providers }: { providers: ProviderLite[] }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={bulkConfirmDelete} onOpenChange={setBulkConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {poolBulk.selectedKeys.size} selected pool{poolBulk.selectedKeys.size === 1 ? "" : "s"}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              They will be removed from the cluster. Members keep their VMs and storages;
+              only the grouping disappears.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkBusy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-primary-foreground hover:bg-destructive/90"
+              disabled={bulkBusy}
+              onClick={(event) => {
+                event.preventDefault()
+                setBulkConfirmDelete(false)
+                void runBulkDelete()
+              }}
+            >
+              {bulkBusy ? "Deleting…" : "Delete selected"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

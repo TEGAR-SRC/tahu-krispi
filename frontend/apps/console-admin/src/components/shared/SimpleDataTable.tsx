@@ -94,10 +94,6 @@ export function SimpleDataTable<T>({
   const allSelected =
     rows.length > 0 && rows.every((row, index) => (selectedKeys ?? new Set()).has(getRowKey ? getRowKey(row, index) : String(index)))
 
-  const someSelected = rows.some((row, index) =>
-    (selectedKeys ?? new Set()).has(getRowKey ? getRowKey(row, index) : String(index)),
-  )
-
   const toggleAll = (checked: boolean) => {
     if (!onSelectionChange) return
     const next = new Set(selectedKeys ?? [])

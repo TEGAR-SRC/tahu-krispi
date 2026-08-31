@@ -113,6 +113,14 @@ export default function NocInstancesPage() {
   const [confirmTerminate, setConfirmTerminate] = useState(false)
   const [targetNode, setTargetNode] = useState("")
 
+  // Org filter stays client-side over the fetched page; the backend exposes no
+  // ?organization= parameter on this endpoint.
+  const filtered = rows.filter((row) =>
+    orgQuery
+      ? `${row.org_slug} ${row.org_public_id}`.toLowerCase().includes(orgQuery.toLowerCase())
+      : true,
+  )
+
   const bulk = useBulkSelection<InstanceRow>((row) => row.id)
   const [bulkOp, setBulkOp] = useState<BulkOperation>(null)
   const [bulkBusy, setBulkBusy] = useState(false)
@@ -215,14 +223,6 @@ export default function NocInstancesPage() {
       }
     },
     [bulk, filtered, load, page],
-  )
-
-  // Org filter stays client-side over the fetched page; the backend exposes no
-  // ?organization= parameter on this endpoint.
-  const filtered = rows.filter((row) =>
-    orgQuery
-      ? `${row.org_slug} ${row.org_public_id}`.toLowerCase().includes(orgQuery.toLowerCase())
-      : true,
   )
 
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE))

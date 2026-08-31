@@ -73,25 +73,6 @@ export default function AdminJobsPage() {
   const [bulkBusy, setBulkBusy] = useState(false)
   const [bulkConfirmCancel, setBulkConfirmCancel] = useState(false)
 
-  const runBulkAction = useCallback(
-    async (action: "retry" | "cancel") => {
-      const targets = bulk.resolve(rows)
-      if (targets.length === 0) return
-      setBulkBusy(true)
-      try {
-        await Promise.all(targets.map((job) => apiPost(`/admin/jobs/${job.id}/${action}`)))
-        toast.success(`${action === "retry" ? "Re-queued" : "Cancelled"} ${targets.length} job${targets.length === 1 ? "" : "s"}`)
-        await load(true)
-        bulk.clear()
-      } catch (cause) {
-        toast.error(cause instanceof ApiError ? cause.message : "Request failed")
-      } finally {
-        setBulkBusy(false)
-      }
-    },
-    [bulk, rows, load],
-  )
-
   const load = useCallback(
     (silent: boolean) => {
       if (!silent) setLoading(true)
@@ -116,6 +97,25 @@ export default function AdminJobsPage() {
         })
     },
     [page, status, queue],
+  )
+
+  const runBulkAction = useCallback(
+    async (action: "retry" | "cancel") => {
+      const targets = bulk.resolve(rows)
+      if (targets.length === 0) return
+      setBulkBusy(true)
+      try {
+        await Promise.all(targets.map((job) => apiPost(`/admin/jobs/${job.id}/${action}`)))
+        toast.success(`${action === "retry" ? "Re-queued" : "Cancelled"} ${targets.length} job${targets.length === 1 ? "" : "s"}`)
+        await load(true)
+        bulk.clear()
+      } catch (cause) {
+        toast.error(cause instanceof ApiError ? cause.message : "Request failed")
+      } finally {
+        setBulkBusy(false)
+      }
+    },
+    [bulk, rows, load],
   )
 
   useEffect(() => {

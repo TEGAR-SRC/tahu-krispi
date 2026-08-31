@@ -122,6 +122,27 @@ export default function FinanceOrdersPage() {
   const voidableRow = (row: AdminOrderRow) =>
     row.status !== "completed" && row.status !== "cancelled"
 
+  const loadList = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const envelope = await apiGet<AdminOrderRow[]>("/admin/orders", {
+        query: {
+          page,
+          per_page: PER_PAGE,
+          status: status === "all" ? undefined : status,
+          search: appliedSearch || undefined,
+        },
+      })
+      setRows(envelope.data)
+      setMeta(envelope.meta ?? null)
+    } catch (cause) {
+      setError(cause)
+    } finally {
+      setLoading(false)
+    }
+  }, [page, status, appliedSearch])
+
   const bulkVoidOrders = useCallback(async () => {
     const targets = bulk.resolve(rows).filter(voidableRow)
     if (targets.length === 0) {
@@ -144,27 +165,6 @@ export default function FinanceOrdersPage() {
       setBulkVoiding(false)
     }
   }, [bulk, rows, loadList])
-
-  const loadList = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const envelope = await apiGet<AdminOrderRow[]>("/admin/orders", {
-        query: {
-          page,
-          per_page: PER_PAGE,
-          status: status === "all" ? undefined : status,
-          search: appliedSearch || undefined,
-        },
-      })
-      setRows(envelope.data)
-      setMeta(envelope.meta ?? null)
-    } catch (cause) {
-      setError(cause)
-    } finally {
-      setLoading(false)
-    }
-  }, [page, status, appliedSearch])
 
   useEffect(() => {
     let cancelled = false

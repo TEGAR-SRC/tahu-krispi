@@ -151,9 +151,6 @@ export default function FinanceCatalogPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
 
-  const bulkProducts = useBulkSelection<Product>((row) => row.id)
-  const bulkPlans = useBulkSelection<Plan>((row) => row.id)
-
   const loadCatalog = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -227,6 +224,7 @@ function ProductsTab({
 }) {
   const [createOpen, setCreateOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Product | null>(null)
+  const bulkProducts = useBulkSelection<Product>((row) => row.id)
 
   return (
     <TabsContent value="products" className="mt-4 space-y-4">
@@ -514,6 +512,7 @@ function PlansTab({
 }) {
   const [productFilter, setProductFilter] = useState<string>("all")
   const [createOpen, setCreateOpen] = useState(false)
+  const bulkPlans = useBulkSelection<Plan>((row) => row.id)
 
   const filtered = useMemo(
     () =>

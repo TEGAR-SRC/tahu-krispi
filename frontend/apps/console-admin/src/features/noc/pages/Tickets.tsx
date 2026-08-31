@@ -216,6 +216,19 @@ export default function NocTicketsPage() {
         </span>
       </div>
 
+      <BulkActionBar
+        selectedCount={bulk.selectedKeys.size}
+        busy={bulkBusy}
+        actions={[
+          {
+            key: "close",
+            label: "Close selected",
+            destructive: true,
+            onClick: () => setConfirmBulkClose(true),
+          },
+        ]}
+      />
+
       {error ? (
         <ErrorBanner error={error} />
       ) : loading ? (
@@ -232,7 +245,24 @@ export default function NocTicketsPage() {
         <div className="rounded-md border">
           <Table>
             <TableHeader>
-              <TableRow>
+                <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox
+                    aria-label="Select all tickets on this page"
+                    checked={
+                      rows.length > 0 && rows.every((row) => bulk.selectedKeys.has(row.id))
+                    }
+                    disabled={rows.length === 0}
+                    onCheckedChange={(value) => {
+                      const next = new Set(bulk.selectedKeys)
+                      for (const row of rows) {
+                        if (value) next.add(row.id)
+                        else next.delete(row.id)
+                      }
+                      bulk.onSelectionChange(next)
+                    }}
+                  />
+                </TableHead>
                 <TableHead className="font-mono text-xs">#</TableHead>
                 <TableHead>Subject</TableHead>
                 <TableHead>Priority</TableHead>
@@ -250,6 +280,20 @@ export default function NocTicketsPage() {
                   className="cursor-pointer"
                   onClick={() => void navigate(`/noc/tickets/${row.id}`)}
                 >
+                  <TableCell className="w-10">
+                    <div onClick={(event) => event.stopPropagation()}>
+                      <Checkbox
+                        aria-label={`Select ${row.ticket_number}`}
+                        checked={bulk.selectedKeys.has(row.id)}
+                        onCheckedChange={(value) => {
+                          const next = new Set(bulk.selectedKeys)
+                          if (value) next.add(row.id)
+                          else next.delete(row.id)
+                          bulk.onSelectionChange(next)
+                        }}
+                      />
+                    </div>
+                  </TableCell>
                   <TableCell className="font-mono text-xs">{row.ticket_number}</TableCell>
                   <TableCell>
                     <div className="min-w-0">
@@ -317,6 +361,32 @@ export default function NocTicketsPage() {
           Next
         </Button>
       </div>
+
+      <AlertDialog open={confirmBulkClose} onOpenChange={setConfirmBulkClose}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Close {bulk.selectedKeys.size} selected ticket{bulk.selectedKeys.size === 1 ? "" : "s"}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Customers can no longer reply to these tickets once they are closed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkBusy}>Keep open</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={bulkBusy}
+              onClick={(event) => {
+                event.preventDefault()
+                void runBulkClose()
+              }}
+            >
+              {bulkBusy ? <Loader2Icon className="animate-spin" /> : null}
+              Close tickets
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {activeTicket ? (
         <ThreadDialog

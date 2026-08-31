@@ -127,6 +127,22 @@ export default function FinanceCouponsPage() {
   const [redemptions, setRedemptions] = useState<RedemptionRow[]>([])
   const [redemptionsLoading, setRedemptionsLoading] = useState(false)
 
+  const loadCoupons = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const envelope = await apiGet<Coupon[]>("/admin/coupons", {
+        query: { page, per_page: 20 },
+      })
+      setRows(envelope.data)
+      setMeta(envelope.meta ?? null)
+    } catch (cause) {
+      setError(cause)
+    } finally {
+      setLoading(false)
+    }
+  }, [page])
+
   const bulkDeleteCoupons = useCallback(async () => {
     const targets = couponBulk.resolve(rows)
     if (targets.length === 0) {
@@ -149,22 +165,6 @@ export default function FinanceCouponsPage() {
       setBulkDeleting(false)
     }
   }, [couponBulk, rows, loadCoupons])
-
-  const loadCoupons = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const envelope = await apiGet<Coupon[]>("/admin/coupons", {
-        query: { page, per_page: 20 },
-      })
-      setRows(envelope.data)
-      setMeta(envelope.meta ?? null)
-    } catch (cause) {
-      setError(cause)
-    } finally {
-      setLoading(false)
-    }
-  }, [page])
 
   useEffect(() => {
     let cancelled = false

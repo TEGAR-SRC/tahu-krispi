@@ -55,27 +55,6 @@ export default function FinancePaymentsPage() {
 
   const pendingRow = (row: AdminPaymentRow) => row.status === "pending"
 
-  const bulkApprove = useCallback(async () => {
-    const targets = bulk.resolve(rows).filter(pendingRow)
-    if (targets.length === 0) {
-      bulk.clear()
-      return
-    }
-    setBulkApproving(true)
-    try {
-      for (const row of targets) {
-        await apiPost(`/admin/payments/${row.id}/approve`)
-      }
-      toast.success(`Approved ${targets.length} pending payment${targets.length === 1 ? "" : "s"}`)
-      bulk.clear()
-      await loadList()
-    } catch (cause) {
-      toast.error(cause instanceof ApiError ? cause.message : "Failed to approve payments")
-    } finally {
-      setBulkApproving(false)
-    }
-  }, [bulk, rows, loadList])
-
   const loadList = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -96,6 +75,27 @@ export default function FinancePaymentsPage() {
       setLoading(false)
     }
   }, [page, status, appliedSearch])
+
+  const bulkApprove = useCallback(async () => {
+    const targets = bulk.resolve(rows).filter(pendingRow)
+    if (targets.length === 0) {
+      bulk.clear()
+      return
+    }
+    setBulkApproving(true)
+    try {
+      for (const row of targets) {
+        await apiPost(`/admin/payments/${row.id}/approve`)
+      }
+      toast.success(`Approved ${targets.length} pending payment${targets.length === 1 ? "" : "s"}`)
+      bulk.clear()
+      await loadList()
+    } catch (cause) {
+      toast.error(cause instanceof ApiError ? cause.message : "Failed to approve payments")
+    } finally {
+      setBulkApproving(false)
+    }
+  }, [bulk, rows, loadList])
 
   useEffect(() => {
     let cancelled = false
