@@ -153,6 +153,7 @@ func NewServer(cfg *config.Config, log *logger.Logger, db *pgxpool.Pool, rdb *go
 		AllowCredentials: true,
 		MaxAge:           86400,
 	}))
+	app.Use(s.csrfMiddleware)
 	app.Use(s.resolveAudience)
 	app.Use(s.enforceAudienceScope)
 	app.Use(func(c fiber.Ctx) error {

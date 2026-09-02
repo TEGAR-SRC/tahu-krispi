@@ -59,8 +59,6 @@ func wantsSecure(c fiber.Ctx) bool {
 func (s *Server) setSessionCookie(c fiber.Ctx, sessionID uuid.UUID) {
 	name := sessionCookieName(c)
 	secure := wantsSecure(c)
-	// When using __Host- the name implies Secure; do not set if not HTTPS —
-	// use legacy name instead (already selected above).
 	ck := &fiber.Cookie{
 		Name:     name,
 		Value:    sessionID.String(),
@@ -70,10 +68,7 @@ func (s *Server) setSessionCookie(c fiber.Ctx, sessionID uuid.UUID) {
 		Secure:   secure,
 		SameSite: "Lax",
 	}
-	// __Host- must not have Domain — ensure empty.
 	c.Cookie(ck)
-	// Also set CSRF double-submit cookie so the SPA can read it and send
-	// X-CSRF-Token on state-changing requests.
 	setCSRFCookie(c, secure)
 }
 
