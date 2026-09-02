@@ -1,15 +1,15 @@
-// Post-sign-in handoff. The auth console resolves the caller's role and then
-// bounces them to their console, passing the session through the URL fragment
-// in the exact shape each console's /oauth/callback already parses:
-//   #access_token=...&refresh_token=...
+// Post-sign-in handoff. Creates a short-lived single-use code on the
+// auth API host and redirects to the target console with ?code=.
+// The target console exchanges the code for a session cookie — no token in URL.
 import { useEffect, useRef, useState } from "react"
 import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { consoleUrlFor, useAuth } from "@/lib/auth"
+import { apiPost } from "@/lib/api"
 
 export default function HandoffPage() {
-  const { token, role, loading } = useAuth()
+  const { role, loading } = useAuth()
   const [error, setError] = useState<string | null>(null)
   const fired = useRef(false)
 
@@ -17,7 +17,7 @@ export default function HandoffPage() {
     if (fired.current) return
     if (loading) return
 
-    if (!token || !role) {
+    if (!role) {
       setError("You are not signed in.")
       return
     }
@@ -29,16 +29,16 @@ export default function HandoffPage() {
     }
 
     fired.current = true
-    let fragment = `access_token=${encodeURIComponent(token)}`
-    try {
-      const refreshToken = localStorage.getItem("kc_refresh_token")
-      if (refreshToken) fragment += `&refresh_token=${encodeURIComponent(refreshToken)}`
-    } catch {
-      // ignore storage errors
-    }
-
-    window.location.assign(`${origin}/oauth/callback#${fragment}`)
-  }, [token, role, loading])
+    ;(async () => {
+      try {
+        const { data } = await apiPost<{ code: string }>("/auth/handoff", {})
+        const code = (data as { code: string }).code
+        window.location.assign(`${origin}/oauth/callback?code=${encodeURIComponent(code)}`)
+      } catch {
+        setError("Failed to create handoff. Please try logging in again.")
+      }
+    })()
+  }, [role, loading])
 
   if (error) {
     return (

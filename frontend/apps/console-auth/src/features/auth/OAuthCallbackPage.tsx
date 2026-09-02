@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -7,44 +7,40 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
 import { ErrorBanner } from "@/components/shared/ErrorBanner"
-import { setToken } from "@/lib/api"
+import { apiPost } from "@/lib/api"
 import { homePathFor, useAuth } from "@/lib/auth"
-
-// Tokens arrive in the URL fragment (#...) so they never hit server logs.
-function hashParams(): URLSearchParams {
-  const h = window.location.hash.replace(/^#/, "")
-  return new URLSearchParams(h)
-}
 
 export default function OAuthCallbackPage() {
   const navigate = useNavigate()
   const { loginMFA } = useAuth()
-
-  const params = hashParams()
-  const accessToken = params.get("access_token")
-  const refreshToken = params.get("refresh_token")
-  const mfaRequired = params.get("mfa_required") === "1"
-  const preauthToken = params.get("preauth_token")
-  const error = params.get("error")
+  const [searchParams] = useSearchParams()
+  const code = searchParams.get("code")
+  const mfaRequired = searchParams.get("mfa_required") === "1"
+  const preauthToken = searchParams.get("preauth_token")
+  const error = searchParams.get("error")
 
   const [mfaCode, setMfaCode] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [localError, setLocalError] = useState<unknown>(null)
   const [done, setDone] = useState(false)
 
-  // Auto-store tokens when present (no MFA path).
+  // Code handoff (OAuth success): exchange code -> session cookie, then handoff
   useEffect(() => {
     if (error) return
     if (mfaRequired) return
-    if (accessToken && refreshToken && !done) {
-      setToken(accessToken)
-      localStorage.setItem("kc_refresh_token", refreshToken)
-      setDone(true)
-      // Full reload so AuthProvider re-initialises with the new token and
-      // resolves the role before /handoff bounces the user to their console.
-      window.location.href = "/handoff"
-    }
-  }, [accessToken, refreshToken, mfaRequired, error, done])
+    if (!code || done) return
+    setDone(true)
+    ;(async () => {
+      try {
+        await apiPost("/auth/handoff/exchange", { code })
+        // Clean URL
+        window.history.replaceState({}, "", window.location.pathname)
+        window.location.href = "/handoff"
+      } catch {
+        toast.error("Login failed — code expired or invalid")
+      }
+    })()
+  }, [code, mfaRequired, error, done])
 
   const handleMFA = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -54,6 +50,7 @@ export default function OAuthCallbackPage() {
     try {
       const role = await loginMFA(preauthToken, mfaCode)
       toast.success("MFA verified")
+      window.history.replaceState({}, "", window.location.pathname)
       navigate(homePathFor(role), { replace: true })
     } catch (cause) {
       setLocalError(cause)
@@ -135,7 +132,6 @@ export default function OAuthCallbackPage() {
     )
   }
 
-  // Waiting for tokens or redirecting.
   return (
     <div className="flex min-h-svh items-center justify-center p-4">
       <Card className="w-full max-w-sm">

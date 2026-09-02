@@ -1,6 +1,11 @@
 /* eslint-disable react-refresh/only-export-components */
-// Client-side authentication: JWT storage, capability-based role detection
-// and the AuthProvider context consumed by pages via useAuth().
+// Standalone auth console (auth.kilat-cloud.com).
+//
+// This app only handles identity flows: login, signup, MFA, passkey, OAuth,
+// password reset and email verification. It talks to the all-audience API
+// (api.kilat-cloud.com) so it can resolve the caller's console role, then hands
+// the session off to the correct console via a URL-fragment token handoff that
+// reuses each console's existing /oauth/callback page.
 //
 // The backend access token carries only sub/sid/scopes — no role claims — so
 // the effective console role is detected by probing staff-only endpoints
@@ -15,11 +20,11 @@ import {
   useState,
   type ReactNode,
 } from "react"
-import { apiGet, apiPost, getToken, setToken } from "./api"
+import { apiGet, apiPost, API_BASE } from "./api"
 
 export const API_ORIGIN = "" // same origin; Vite proxies /api -> backend in dev
 
-export type AppRole = "customer"
+export type AppRole = "admin" | "noc" | "finance" | "customer"
 
 // LoginResult discriminates the two outcomes of a password login: either the
 // session is ready (role resolved) or a second factor is required and a
@@ -78,38 +83,53 @@ export interface AuthContextValue extends SessionState {
   logout: () => void
 }
 
-/** Decodes the base64url JWT payload without verifying the signature. */
-export function decodeJwtPayload(token: string): AuthClaims | null {
-  try {
-    const segment = token.split(".")[1]
-    if (!segment) return null
-    const base64 = segment.replace(/-/g, "+").replace(/_/g, "/")
-    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=")
-    const bytes = Uint8Array.from(atob(padded), (char) => char.charCodeAt(0))
-    return JSON.parse(new TextDecoder().decode(bytes)) as AuthClaims
-  } catch {
-    return null
-  }
+export function decodeJwtPayload(_token: string): AuthClaims | null {
+  return null
 }
 
-/** Where a user with this role should land after login. */
-export function homePathFor(role: AppRole | null): string {
+/** Console origin for a given role (drives the post-auth handoff). */
+export function consoleUrlFor(role: AppRole | null): string {
   switch (role) {
+    case "admin":
+    case "noc":
+    case "finance":
+      return import.meta.env.VITE_ADMIN_CONSOLE_URL || "https://admin.kilat-cloud.com"
     case "customer":
-      return "/app"
+      return import.meta.env.VITE_CUSTOMER_CONSOLE_URL || "https://console.kilat-cloud.com"
     default:
       return "/login"
   }
 }
 
 /**
- * Detects the effective console role. The user console is customer-only, so
- * every authenticated user resolves to "customer".
+ * After sign-in, the auth console always bounces to /handoff (same origin),
+ * which then redirects cross-origin to the right console with the token in the
+ * URL fragment. `/handoff` is the only in-app landing target.
  */
-export async function resolveRole(_token: string): Promise<AppRole> {
-  // User console is customer-only — no admin probe needed. Probing /admin/* from
-  // api-user.kilat-cloud.com is blocked by audience scoping (403) and only
-  // pollutes the console with expected failures.
+export function homePathFor(_role: AppRole | null): string {
+  return "/handoff"
+}
+
+async function probe(path: string): Promise<number> {
+  const response = await fetch(`${API_ORIGIN}${API_BASE}${path}`, {
+    credentials: "include",
+  })
+  return response.status
+}
+
+export async function resolveRole(): Promise<AppRole> {
+  const attempts: Array<{ path: string; role: AppRole }> = [
+    { path: "/admin/audit-logs?limit=1", role: "admin" },
+    { path: "/admin/finance/summary?days=1", role: "finance" },
+    { path: "/admin/providers", role: "noc" },
+  ]
+  let sawAuthError = false
+  for (const attempt of attempts) {
+    const status = await probe(attempt.path)
+    if (status >= 200 && status < 300) return attempt.role
+    if (status === 401) sawAuthError = true
+  }
+  if (sawAuthError) throw new Error("Session expired")
   return "customer"
 }
 
@@ -118,7 +138,9 @@ const PROFILE_KEY = "kilat_profile"
 
 function readCachedRole(): AppRole | null {
   const stored = localStorage.getItem(ROLE_KEY)
-  return stored === "customer" ? stored : null
+  return stored === "admin" || stored === "noc" || stored === "finance" || stored === "customer"
+    ? stored
+    : null
 }
 
 function readCachedProfile(): MeProfile | null {
@@ -142,25 +164,8 @@ function clearPersistedSession(): void {
   localStorage.removeItem(PROFILE_KEY)
 }
 
-/**
- * Reads the persisted session synchronously; a corrupted token is dropped so
- * callers start unauthenticated rather than crashing on decode.
- */
 function readSession(): SessionState {
-  const stored = getToken()
-  if (!stored) return { token: null, claims: null, role: null, profile: null }
-  const decoded = decodeJwtPayload(stored)
-  if (!decoded) {
-    setToken(null)
-    clearPersistedSession()
-    return { token: null, claims: null, role: null, profile: null }
-  }
-  return {
-    token: stored,
-    claims: decoded,
-    role: readCachedRole(),
-    profile: readCachedProfile(),
-  }
+  return { token: null, claims: null, role: readCachedRole(), profile: readCachedProfile() }
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
@@ -181,44 +186,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // in-flight login/register is resolving the role.
   const [loading, setLoading] = useState(() => Boolean(initialSession.token))
 
-  const adoptSession = useCallback(async (accessToken: string): Promise<AppRole> => {
-    const decoded = decodeJwtPayload(accessToken)
-    if (!decoded) throw new Error("Login response contained an unreadable token")
-    setToken(accessToken)
-    setTokenState(accessToken)
-    setClaims(decoded)
-    const resolved = await resolveRole(accessToken)
+  const adoptSession = useCallback(async (): Promise<AppRole> => {
+    const resolved = await resolveRole()
     const me = await apiGet<MeProfile>("/me")
       .then((envelope) => envelope.data)
       .catch(() => null)
+    setTokenState("cookie")
+    setClaims({})
     setRole(resolved)
     setProfile(me)
-    persistSession({ token: accessToken, claims: decoded, role: resolved, profile: me })
+    persistSession({ token: "cookie", claims: {}, role: resolved, profile: me })
     return resolved
   }, [])
 
-  // Re-validate any persisted session once on mount (handles revoked or
-  // expired tokens from a previous tab session).
+  // If any role/profile cached, re-validate via cookie session on mount.
   useEffect(() => {
-    // Capture into a local const so TypeScript keeps the token narrowed as a
-    // string for every later use inside the effect.
-    const storedToken = initialSession.token
-    if (!storedToken) return
     let cancelled = false
     ;(async () => {
       try {
-        const resolved = await resolveRole(storedToken)
+        const fetched = await apiGet<MeProfile>("/me").then((e) => e.data).catch(() => null)
         if (cancelled) return
+        if (!fetched) {
+          clearPersistedSession()
+          setRole(null)
+          setProfile(null)
+          setLoading(false)
+          return
+        }
+        const resolved = await resolveRole()
+        if (cancelled) return
+        setTokenState("cookie")
+        setClaims({})
         setRole(resolved)
-        const me = await apiGet<MeProfile>("/me")
-          .then((envelope) => envelope.data)
-          .catch(() => null)
-        if (cancelled) return
-        setProfile(me)
-        persistSession({ ...initialSession, role: resolved, profile: me })
+        setProfile(fetched)
+        persistSession({ token: "cookie", claims: {}, role: resolved, profile: fetched })
       } catch {
         if (!cancelled) {
-          setToken(null)
           setTokenState(null)
           setClaims(null)
           setRole(null)
@@ -243,7 +246,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (data.mfa_required && data.preauth_token) {
           return { mfaRequired: true, preauthToken: data.preauth_token, role: null }
         }
-        const role = await adoptSession(data.access_token)
+        const role = await adoptSession()
         return { mfaRequired: false, role }
       } finally {
         setLoading(false)
@@ -256,11 +259,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (preauthToken: string, code: string): Promise<AppRole> => {
       setLoading(true)
       try {
-        const { data } = await apiPost<LoginResponse>("/auth/login/mfa", {
+        await apiPost<LoginResponse>("/auth/login/mfa", {
           preauth_token: preauthToken,
           code,
         })
-        return await adoptSession(data.access_token)
+        return await adoptSession()
       } finally {
         setLoading(false)
       }
@@ -282,7 +285,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   const logout = useCallback(() => {
-    setToken(null)
+    // best-effort server revoke; cookie cleared server-side
+    apiPost("/auth/logout").catch(() => {})
     setTokenState(null)
     setClaims(null)
     setRole(null)

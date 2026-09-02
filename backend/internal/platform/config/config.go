@@ -80,6 +80,13 @@ type Config struct {
 	RateLimitRegisterPerHour int
 	CORSAllowedOrigins       string // comma-separated list; defaults to known Kilat Cloud domains
 
+	// SessionCookieDomain controls the Domain attribute of the session cookie.
+	// Empty = host-only (__Host- prefix valid). Set to e.g. ".kilat-cloud.com"
+	// only if cross-subdomain cookie sharing is desired (then __Host- must not
+	// be used). Default empty for strictest isolation; cross-console handoff
+	// uses a single-use code instead of shared cookie.
+	SessionCookieDomain string
+
 	OTPDebugEcho bool // development-only: return OTP in API response (no SMS/WhatsApp gateway configured yet)
 	// AutoVerifyEmail activates accounts immediately after registration. Intended for
 	// development/staging where SMTP is not configured; keep false in production.
@@ -140,6 +147,7 @@ func Load() (*Config, error) {
 		RateLimitLoginPerMinute:  getEnvInt("RATE_LIMIT_LOGIN_PER_MINUTE", 10),
 		RateLimitRegisterPerHour: getEnvInt("RATE_LIMIT_REGISTER_PER_HOUR", 20),
 		CORSAllowedOrigins:       getEnv("CORS_ALLOWED_ORIGINS", ""),
+		SessionCookieDomain:      getEnv("SESSION_COOKIE_DOMAIN", ""),
 		OTPDebugEcho:             getEnv("OTP_DEBUG_ECHO", "false") == "true",
 		AutoVerifyEmail:          getEnv("AUTO_VERIFY_EMAIL", "false") == "true",
 		SubscriptionGraceDays:    getEnvInt("SUBSCRIPTION_GRACE_DAYS", 3),

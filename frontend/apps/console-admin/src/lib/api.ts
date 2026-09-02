@@ -8,8 +8,6 @@ export const API_BASE = import.meta.env.DEV
   ? "/api/v1"
   : `${import.meta.env.VITE_API_BASE_URL ? import.meta.env.VITE_API_BASE_URL.replace(/\/+$/, "") : ""}/v1`
 
-const TOKEN_KEY = "kilat_token"
-
 export class ApiError extends Error {
   code: string
   status: number
@@ -24,25 +22,12 @@ export class ApiError extends Error {
   }
 }
 
+// Deprecated stubs kept for compat — no longer store tokens in localStorage.
+// Tokens are HttpOnly cookies; JS must not touch them.
 export function getToken(): string | null {
-  try {
-    return localStorage.getItem(TOKEN_KEY)
-  } catch {
-    return null
-  }
+  return null
 }
-
-export function setToken(token: string | null): void {
-  try {
-    if (token) {
-      localStorage.setItem(TOKEN_KEY, token)
-    } else {
-      localStorage.removeItem(TOKEN_KEY)
-    }
-  } catch {
-    // Storage unavailable (private mode etc.); token stays in memory only.
-  }
-}
+export function setToken(_token: string | null): void { void _token }
 
 /**
  * Paths that legitimately answer 401 on bad credentials / expired links and
@@ -50,18 +35,13 @@ export function setToken(token: string | null): void {
  */
 const AUTH_ONLY_PATHS = ["/auth/", "/contact-change/confirm"]
 
-/**
- * Clears the persisted session and bounces the user to the login page. Called
- * on any 401 from a request that carried a token (i.e. the session expired).
- */
 function handleSessionExpired(): void {
   try {
-    localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem("kilat_role")
     localStorage.removeItem("kilat_profile")
     localStorage.removeItem("kilat_org_id")
   } catch {
-    // ignore storage errors
+    // ignore
   }
   if (window.location.pathname !== "/login") {
     const target = `${window.location.pathname}${window.location.search}`
@@ -69,10 +49,13 @@ function handleSessionExpired(): void {
   }
 }
 
-/** Headers carrying the bearer token when one is stored. */
 export function authHeaders(): Record<string, string> {
-  const token = getToken()
-  return token ? { Authorization: `Bearer ${token}` } : {}
+  return {}
+}
+
+function csrfToken(): string | null {
+  const m = document.cookie.match(/(?:^|;\s*)kc_csrf=([^;]+)/)
+  return m ? decodeURIComponent(m[1]) : null
 }
 
 type QueryValue = string | number | boolean | null | undefined
@@ -124,19 +107,18 @@ async function request<T>(
   opts?: ApiOptions,
 ): Promise<ApiEnvelope<T>> {
   const url = buildUrl(path, opts?.query)
-  const hadToken = Boolean(getToken())
   const headers: Record<string, string> = {
     Accept: "application/json",
     ...authHeaders(),
     ...opts?.headers,
   }
-  const isFormData = typeof FormData !== "undefined" && body instanceof FormData
-  if (body !== undefined && !isFormData) {
+  if (body !== undefined) {
     headers["Content-Type"] = "application/json"
   }
-  // FormData: never set Content-Type manually — the browser adds the boundary.
-  if (isFormData) {
-    delete headers["Content-Type"]
+  // CSRF double-submit
+  if (method !== "GET" && method !== "HEAD" && method !== "OPTIONS") {
+    const csrf = csrfToken()
+    if (csrf) headers["X-CSRF-Token"] = csrf
   }
 
   let response: Response
@@ -144,12 +126,8 @@ async function request<T>(
     response = await fetch(url, {
       method,
       headers,
-      body:
-        body === undefined
-          ? undefined
-          : isFormData
-            ? (body as FormData)
-            : JSON.stringify(body),
+      credentials: "include",
+      body: body === undefined ? undefined : JSON.stringify(body),
     })
   } catch (cause) {
     throw new ApiError("network_error", "Network request failed", 0, cause)
@@ -166,9 +144,7 @@ async function request<T>(
   }
 
   if (!response.ok) {
-    // A 401 on a token-bearing request means the session expired — clear it
-    // and bounce to /login (unless it's an auth-only path, e.g. bad login).
-    if (response.status === 401 && hadToken && !AUTH_ONLY_PATHS.some((p) => path.startsWith(p))) {
+    if (response.status === 401 && !AUTH_ONLY_PATHS.some((p) => path.startsWith(p))) {
       handleSessionExpired()
     }
     const err =

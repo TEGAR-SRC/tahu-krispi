@@ -20,7 +20,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { ErrorBanner } from "@/components/shared/ErrorBanner"
 import { Spinner } from "@/components/ui/spinner"
-import { ApiError, apiPost, setToken } from "@/lib/api"
+import { ApiError, apiPost } from "@/lib/api"
 import { homePathFor, useAuth } from "@/lib/auth"
 
 // ---- WebAuthn helpers --------------------------------------------------------
@@ -181,14 +181,7 @@ export default function LoginPage() {
         toast.info("Passkey OK — masukkan kode TOTP")
         return
       }
-      const { access_token, refresh_token } = result as {
-        access_token: string
-        refresh_token: string
-      }
-      // Use the same storage keys as the rest of the app so AuthProvider
-      // can pick up the session on page reload.
-      setToken(access_token)
-      localStorage.setItem("kc_refresh_token", refresh_token)
+      // Cookie session already set by POST /auth/passkey/login
       // Full reload so AuthProvider re-initialises with the new token.
       window.location.href = "/app"
     } catch (cause) {

@@ -13,31 +13,61 @@ import (
 	mw "kilat.cloud/backend/pkg/middleware"
 )
 
-// jwtAuth verifies a Bearer token and materializes request locals BEFORE the
-// handler chain runs (RequireAuth advances the chain itself, so it cannot be wrapped).
+// jwtAuth verifies a Bearer token or session cookie and materializes request
+// locals BEFORE the handler chain runs.
 func (s *Server) jwtAuth(c fiber.Ctx) bool {
-	header := c.Get("Authorization")
-	if !strings.HasPrefix(header, "Bearer ") {
-		mw.WriteError(c, apperrors.New(apperrors.CodeUnauthorized, "authentication required"))
-		return false
+	// 1) Authorization: Bearer <JWT>
+	if header := c.Get("Authorization"); strings.HasPrefix(header, "Bearer ") {
+		token := strings.TrimPrefix(header, "Bearer ")
+		if token == "" || strings.Contains(token, " ") || strings.Contains(token, "\n") {
+			mw.WriteError(c, apperrors.New(apperrors.CodeUnauthorized, "authentication required"))
+			return false
+		}
+		claims, err := s.authSvc.VerifyAccessToken(strings.TrimSpace(token))
+		if err != nil {
+			mw.WriteError(c, apperrors.New(apperrors.CodeUnauthorized, "authentication required"))
+			return false
+		}
+		if claims.SessionID == "" || claims.UserID == "" {
+			mw.WriteError(c, apperrors.New(apperrors.CodeUnauthorized, "authentication required"))
+			return false
+		}
+		c.Locals(auth.LocalsUserID, claims.UserID)
+		c.Locals(auth.LocalsSessionID, claims.SessionID)
+		c.Locals(auth.LocalsScopes, claims.Scopes)
+		c.Locals(auth.LocalsOrganizationID, claims.OrganizationID)
+		c.Locals("auth_type", "jwt")
+		if id, perr := uuid.Parse(claims.UserID); perr == nil {
+			c.Locals("user_id_uuid", id)
+		}
+		if claims.OrganizationID != "" {
+			c.Locals("org_id", claims.OrganizationID)
+		}
+		return true
 	}
-	claims, err := s.authSvc.VerifyAccessToken(strings.TrimPrefix(header, "Bearer "))
-	if err != nil {
-		mw.WriteError(c, apperrors.New(apperrors.CodeUnauthorized, "authentication required"))
-		return false
+	// 2) Session cookie (BFF): __Host-kc_session / kc_session -> issue ephemeral JWT in-memory
+	if sid, ok := sessionIDFromCookie(c); ok {
+		claims, err := s.authSvc.VerifySessionCookie(c.Context(), sid)
+		if err != nil {
+			clearSessionCookie(c)
+			mw.WriteError(c, apperrors.New(apperrors.CodeUnauthorized, "authentication required"))
+			return false
+		}
+		c.Locals(auth.LocalsUserID, claims.UserID)
+		c.Locals(auth.LocalsSessionID, claims.SessionID)
+		c.Locals(auth.LocalsScopes, claims.Scopes)
+		c.Locals(auth.LocalsOrganizationID, claims.OrganizationID)
+		c.Locals("auth_type", "jwt")
+		if id, perr := uuid.Parse(claims.UserID); perr == nil {
+			c.Locals("user_id_uuid", id)
+		}
+		if claims.OrganizationID != "" {
+			c.Locals("org_id", claims.OrganizationID)
+		}
+		return true
 	}
-	c.Locals(auth.LocalsUserID, claims.UserID)
-	c.Locals(auth.LocalsSessionID, claims.SessionID)
-	c.Locals(auth.LocalsScopes, claims.Scopes)
-	c.Locals(auth.LocalsOrganizationID, claims.OrganizationID)
-	c.Locals("auth_type", "jwt")
-	if id, perr := uuid.Parse(claims.UserID); perr == nil {
-		c.Locals("user_id_uuid", id)
-	}
-	if claims.OrganizationID != "" {
-		c.Locals("org_id", claims.OrganizationID)
-	}
-	return true
+	mw.WriteError(c, apperrors.New(apperrors.CodeUnauthorized, "authentication required"))
+	return false
 }
 
 // authJWT requires a Bearer JWT.

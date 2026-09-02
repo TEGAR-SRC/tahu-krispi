@@ -57,6 +57,13 @@ func (s *Server) handleLogin(c fiber.Ctx) error {
 	if err != nil {
 		return mw.WriteError(c, err)
 	}
+	// BFF: set session cookie so browser never needs to handle JWT.
+	if !out.MFARequired && out.SessionID != uuid.Nil {
+		s.setSessionCookie(c, out.SessionID)
+		// Return minimal body — tokens remain server-side. Keep compat field
+		// access_token for older SPAs, but caller should rely on cookie.
+		return mw.JSON(c, 200, fiber.Map{"user_id": out.UserID, "session_id": out.SessionID, "must_change_password": out.MustChangePassword}, nil)
+	}
 	return mw.JSON(c, 200, out, nil)
 }
 
@@ -77,6 +84,10 @@ func (s *Server) handleLoginMFA(c fiber.Ctx) error {
 	if err != nil {
 		return mw.WriteError(c, err)
 	}
+	if out.SessionID != uuid.Nil {
+		s.setSessionCookie(c, out.SessionID)
+		return mw.JSON(c, 200, fiber.Map{"user_id": out.UserID, "session_id": out.SessionID, "must_change_password": out.MustChangePassword}, nil)
+	}
 	return mw.JSON(c, 200, out, nil)
 }
 
@@ -85,6 +96,23 @@ type refreshInput struct {
 }
 
 func (s *Server) handleRefresh(c fiber.Ctx) error {
+	// Prefer cookie session refresh (no body needed).
+	if sid, ok := sessionIDFromCookie(c); ok {
+		// Rotate via session ID lookup
+		userID, ok := s.authSvc.SessionByID(c.Context(), sid)
+		if !ok {
+			clearSessionCookie(c)
+			return mw.WriteError(c, apperrors.New(apperrors.CodeUnauthorized, "session expired"))
+		}
+		// Refresh extends expiry
+		_, err := s.authSvc.RefreshSession(c.Context(), sid)
+		if err != nil {
+			clearSessionCookie(c)
+			return mw.WriteError(c, err)
+		}
+		s.setSessionCookie(c, sid)
+		return mw.JSON(c, 200, fiber.Map{"user_id": userID, "session_id": sid}, nil)
+	}
 	var in refreshInput
 	if err := c.Bind().Body(&in); err != nil || in.RefreshToken == "" {
 		return mw.WriteError(c, errValidation("refresh_token required"))
@@ -103,9 +131,16 @@ func (s *Server) handleRefresh(c fiber.Ctx) error {
 func (s *Server) handleLogout(c fiber.Ctx) error {
 	sessionStr, _ := c.Locals("auth_session_id").(string)
 	sessionID, _ := uuid.Parse(sessionStr)
-	if err := s.authSvc.RevokeSession(c.Context(), sessionID, "logout"); err != nil {
-		return mw.WriteError(c, err)
+	// also try cookie if locals empty (e.g. cookie-only request)
+	if sessionID == uuid.Nil {
+		if sid, ok := sessionIDFromCookie(c); ok {
+			sessionID = sid
+		}
 	}
+	if sessionID != uuid.Nil {
+		_ = s.authSvc.RevokeSession(c.Context(), sessionID, "logout")
+	}
+	clearSessionCookie(c)
 	return mw.JSON(c, 200, fiber.Map{"status": "logged_out"}, nil)
 }
 
@@ -115,7 +150,59 @@ func (s *Server) handleLogoutAll(c fiber.Ctx) error {
 	if err := s.authSvc.RevokeAllSessions(c.Context(), userID, "logout_all"); err != nil {
 		return mw.WriteError(c, err)
 	}
+	clearSessionCookie(c)
 	return mw.JSON(c, 200, fiber.Map{"status": "all_sessions_revoked"}, nil)
+}
+
+// handleSession returns current session info for cookie-auth SPAs.
+func (s *Server) handleSession(c fiber.Ctx) error {
+	userStr, _ := c.Locals(auth.LocalsUserID).(string)
+	sessionStr, _ := c.Locals(auth.LocalsSessionID).(string)
+	userID, _ := uuid.Parse(userStr)
+	sessionID, _ := uuid.Parse(sessionStr)
+	p, _ := s.userRepo.GetProfile(c.Context(), userID)
+	return mw.JSON(c, 200, fiber.Map{"user_id": userID, "session_id": sessionID, "profile": p}, nil)
+}
+
+// handleHandoffExchange exchanges a single-use handoff code for a session cookie.
+func (s *Server) handleHandoffExchange(c fiber.Ctx) error {
+	var in struct {
+		Code string `json:"code"`
+	}
+	if err := c.Bind().Body(&in); err != nil || in.Code == "" {
+		in.Code = c.Query("code")
+	}
+	if in.Code == "" {
+		return mw.WriteError(c, apperrors.New(apperrors.CodeValidation, "code required"))
+	}
+	sid, err := s.consumeHandoffCode(c, in.Code)
+	if err != nil {
+		return mw.WriteError(c, apperrors.New(apperrors.CodeUnauthorized, "invalid or expired code"))
+	}
+	if _, ok := s.authSvc.SessionByID(c.Context(), sid); !ok {
+		return mw.WriteError(c, apperrors.New(apperrors.CodeUnauthorized, "session expired"))
+	}
+	s.setSessionCookie(c, sid)
+	return mw.JSON(c, 200, fiber.Map{"session_id": sid}, nil)
+}
+
+// handleHandoffCreate creates a single-use handoff code for the current session.
+func (s *Server) handleHandoffCreate(c fiber.Ctx) error {
+	sessionStr, _ := c.Locals(auth.LocalsSessionID).(string)
+	sid, _ := uuid.Parse(sessionStr)
+	if sid == uuid.Nil {
+		if ck, ok := sessionIDFromCookie(c); ok {
+			sid = ck
+		}
+	}
+	if sid == uuid.Nil {
+		return mw.WriteError(c, apperrors.New(apperrors.CodeUnauthorized, "not authenticated"))
+	}
+	code, err := s.newHandoffCode(c, sid)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, fiber.Map{"code": code}, nil)
 }
 
 func (s *Server) handleMe(c fiber.Ctx) error {

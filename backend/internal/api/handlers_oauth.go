@@ -170,7 +170,6 @@ func (s *Server) handleOAuthCallback(c fiber.Ctx) error {
 		if err != nil {
 			return c.Redirect().To(s.oauthConsoleURL("/login?error=oauth_preauth_failed"))
 		}
-		// Audit: oauth succeeded but MFA required.
 		uid := userID
 		s.auditSvc.Log(ctx, audit.Entry{
 			ActorUserID: &uid, Action: "auth.oauth_mfa_required", ResourceType: "user",
@@ -180,18 +179,15 @@ func (s *Server) handleOAuthCallback(c fiber.Ctx) error {
 		q := url.Values{}
 		q.Set("mfa_required", "1")
 		q.Set("preauth_token", preauth)
-		return c.Redirect().To(s.oauthConsoleURL("/oauth/callback#" + q.Encode()))
+		// Query param, not fragment — preauth_token is short-lived and not a bearer token
+		return c.Redirect().To(s.oauthConsoleURL("/oauth/callback?" + q.Encode()))
 	}
 
-	// Normal path: issue a full session and redirect with tokens to the
-	// console's oauth callback page, which will persist them via setToken().
-	sessionID, rawRefresh, err := s.authSvc.CreateSession(ctx, userID, "oauth:"+provider, c.IP(), c.Get("User-Agent"))
+	// Normal path: issue session, set cookie, redirect via single-use code
+	// (no token in URL). Query param code is short-lived and single-use.
+	sessionID, _, err := s.authSvc.CreateSession(ctx, userID, "oauth:"+provider, c.IP(), c.Get("User-Agent"))
 	if err != nil {
 		return c.Redirect().To(s.oauthConsoleURL("/login?error=oauth_session_failed"))
-	}
-	at, err := s.authSvc.IssueAccessToken(userID, uuid.Nil, sessionID, 0, []string{"profile.read"})
-	if err != nil {
-		return c.Redirect().To(s.oauthConsoleURL("/login?error=oauth_token_failed"))
 	}
 	// Audit success.
 	uid2 := userID
@@ -200,13 +196,18 @@ func (s *Server) handleOAuthCallback(c fiber.Ctx) error {
 		ResourceID: &uid2, IP: c.IP(), UserAgent: c.Get("User-Agent"),
 		RequestID: auditRequestID(c),
 	})
-
-	// Tokens are delivered in the URL fragment (#...) so they never appear in
-	// proxy/CDN/server access logs and don't persist in browser history.
-	frag := url.Values{}
-	frag.Set("access_token", at)
-	frag.Set("refresh_token", rawRefresh)
-	return c.Redirect().To(s.oauthConsoleURL("/oauth/callback#" + frag.Encode()))
+	// Establish session cookie on api-auth host as well, and issue handoff code
+	// for the console host (different host, cannot share cookie). Code is
+	// exchanged via POST /v1/auth/handoff/exchange on the console's API host.
+	s.setSessionCookie(c, sessionID)
+	code, nerr := s.newHandoffCode(c, sessionID)
+	if nerr != nil {
+		err = nerr
+	}
+	if err != nil {
+		return c.Redirect().To(s.oauthConsoleURL("/oauth/callback?error=oauth_session_failed"))
+	}
+	return c.Redirect().To(s.oauthConsoleURL("/oauth/callback?code=" + url.QueryEscape(code)))
 }
 
 type oauthProfile struct {

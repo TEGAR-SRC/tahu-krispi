@@ -123,6 +123,49 @@ func (s *Service) VerifyAccessToken(token string) (*Claims, error) {
 	return &c, nil
 }
 
+// VerifySessionCookie validates a session cookie's session ID against DB+Redis.
+func (s *Service) VerifySessionCookie(ctx context.Context, sessionID uuid.UUID) (*Claims, error) {
+	if s.db == nil {
+		return nil, ErrInvalidToken
+	}
+	var userID uuid.UUID
+	var pwv int
+	err := s.db.QueryRow(ctx, `SELECT user_id, (SELECT password_version FROM users WHERE id=user_sessions.user_id AND deleted_at IS NULL) FROM user_sessions WHERE id=$1 AND revoked_at IS NULL AND expires_at > now()`, sessionID).Scan(&userID, &pwv)
+	if err != nil {
+		return nil, ErrInvalidToken
+	}
+	// Redis revoke check
+	if s.rdb != nil {
+		rctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+		defer cancel()
+		if v, _ := s.rdb.Get(rctx, fmt.Sprintf("kc:session:revoked:%s", sessionID.String())).Result(); v == "1" {
+			return nil, ErrInvalidToken
+		}
+	}
+	now := time.Now()
+	return &Claims{
+		UserID: userID.String(), SessionID: sessionID.String(),
+		Type: string(TokenAccess), PasswordVersion: pwv,
+		Scopes: []string{"profile.read", "instances.read", "instances.create"},
+		IssuedAt: now.Unix(), ExpiresAt: now.Add(s.accessTTL).Unix(),
+	}, nil
+}
+
+// SessionByID returns session metadata for handoff/exchange.
+func (s *Service) SessionByID(ctx context.Context, sessionID uuid.UUID) (userID uuid.UUID, ok bool) {
+	err := s.db.QueryRow(ctx, `SELECT user_id FROM user_sessions WHERE id=$1 AND revoked_at IS NULL AND expires_at > now()`, sessionID).Scan(&userID)
+	if err != nil {
+		return uuid.Nil, false
+	}
+	// also check revoke set
+	if s.rdb != nil {
+		if v, _ := s.rdb.Get(ctx, fmt.Sprintf("kc:session:revoked:%s", sessionID.String())).Result(); v == "1" {
+			return uuid.Nil, false
+		}
+	}
+	return userID, true
+}
+
 // CreateSession persists a durable refresh-token record in Postgres and hot state in Redis.
 func (s *Service) CreateSession(ctx context.Context, userID uuid.UUID, deviceName, ip, userAgent string) (sessionID uuid.UUID, refreshToken string, err error) {
 	sessionID = uuid.New()
@@ -211,6 +254,15 @@ RETURNING id`, userID, reason)
 		}
 	}
 	return rows.Err()
+}
+
+// RefreshSession extends expiry of a session (cookie refresh).
+func (s *Service) RefreshSession(ctx context.Context, sessionID uuid.UUID) (uuid.UUID, error) {
+	_, err := s.db.Exec(ctx, `UPDATE user_sessions SET expires_at = $2, last_seen_at=now() WHERE id=$1 AND revoked_at IS NULL AND expires_at > now()`, sessionID, time.Now().Add(s.refreshTTL))
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return sessionID, nil
 }
 
 func randomHex(n int) (string, error) {

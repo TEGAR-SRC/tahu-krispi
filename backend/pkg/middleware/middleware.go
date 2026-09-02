@@ -45,9 +45,21 @@ func SecurityHeaders() fiber.Handler {
 		c.Set("X-Content-Type-Options", "nosniff")
 		c.Set("X-Frame-Options", "DENY")
 		c.Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
-		c.Set("Referrer-Policy", "no-referrer")
+		c.Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		c.Set("Content-Security-Policy", "default-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'")
+		c.Set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+		// Never cache auth/session pages
+		path := c.Path()
+		if path == "/oauth/callback" || path == "/handoff" || isAuthPath(path) {
+			c.Set("Cache-Control", "no-store, private, max-age=0")
+			c.Set("Pragma", "no-cache")
+		}
 		return c.Next()
 	}
+}
+
+func isAuthPath(p string) bool {
+	return len(p) >= 5 && p[:5] == "/v1/a" && (p == "/v1/auth/register" || p == "/v1/auth/login" || p == "/v1/auth/login/mfa" || p == "/v1/auth/refresh" || p == "/v1/auth/session" || p == "/v1/auth/handoff/exchange" || p == "/v1/auth/logout" || p == "/v1/auth/logout-all" || p[:5] == "/v1/m" /* /v1/me */)
 }
 
 // RateLimit implements a sliding-window limiter backed by Redis (or in-memory fallback).

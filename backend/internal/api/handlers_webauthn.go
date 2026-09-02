@@ -144,9 +144,8 @@ func (s *Server) handlePasskeyLogin(c fiber.Ctx) error {
 		IP:         c.IP(), UserAgent: c.Get("User-Agent"),
 		RequestID: auditRequestID(c),
 	})
-
-	return mw.JSON(c, 200, fiber.Map{
-		"access_token":  at,
-		"refresh_token": rawRefresh,
-	}, nil)
+	s.setSessionCookie(c, sessionID)
+	_ = rawRefresh
+	_ = at
+	return mw.JSON(c, 200, fiber.Map{"user_id": userID, "session_id": sessionID}, nil)
 }

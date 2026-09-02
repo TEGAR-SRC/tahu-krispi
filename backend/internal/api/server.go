@@ -149,7 +149,7 @@ func NewServer(cfg *config.Config, log *logger.Logger, db *pgxpool.Pool, rdb *go
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     strings.Split(s.cfg.CORSOrigins(), ","),
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
-		AllowHeaders:     []string{"Content-Type", "Authorization", "X-Request-ID", "X-Organization-ID"},
+		AllowHeaders:     []string{"Content-Type", "Authorization", "X-Request-ID", "X-Organization-ID", "X-CSRF-Token", "X-CSRFToken"},
 		AllowCredentials: true,
 		MaxAge:           86400,
 	}))
@@ -202,6 +202,7 @@ func (s *Server) registerRoutes() {
 	authLimiter := mw.RateLimit(s.rdb, "login", s.cfg.RateLimitLoginPerMinute, time.Minute)
 	regLimiter := mw.RateLimit(s.rdb, "register", s.cfg.RateLimitRegisterPerHour, time.Hour)
 	verifyLimiter := mw.RateLimit(s.rdb, "verify", s.cfg.RateLimitLoginPerMinute, time.Minute)
+	oauthLimiter := mw.RateLimit(s.rdb, "oauth", 20, time.Minute)
 	idem := s.idempotency()
 
 	// ---- Auth & identity ----
@@ -210,9 +211,12 @@ func (s *Server) registerRoutes() {
 	v1.Post("/auth/login/mfa", authLimiter, s.handleLoginMFA)
 	v1.Post("/auth/passkey/begin-login", authLimiter, s.handleBeginPasskeyLogin)
 	v1.Post("/auth/passkey/login", authLimiter, s.handlePasskeyLogin)
-	v1.Get("/auth/oauth/:provider", s.handleOAuthLogin)
-	v1.Get("/auth/oauth/:provider/callback", s.handleOAuthCallback)
+	v1.Get("/auth/oauth/:provider", oauthLimiter, s.handleOAuthLogin)
+	v1.Get("/auth/oauth/:provider/callback", oauthLimiter, s.handleOAuthCallback)
 	v1.Post("/auth/refresh", authLimiter, s.handleRefresh)
+	v1.Get("/auth/session", s.authAny(), s.handleSession)
+	v1.Post("/auth/handoff", s.authAny(), s.handleHandoffCreate)
+	v1.Post("/auth/handoff/exchange", s.handleHandoffExchange)
 	v1.Post("/auth/logout", s.authAny(), s.handleLogout)
 	v1.Post("/auth/logout-all", s.authAny(), s.handleLogoutAll)
 	v1.Post("/auth/password/forgot", authLimiter, s.handleForgotPassword)
