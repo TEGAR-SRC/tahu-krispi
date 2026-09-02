@@ -121,12 +121,23 @@ func audienceAllowedPath(aud, path string) bool {
 		// Customer console: everything except the staff /admin surface.
 		return !strings.HasPrefix(path, "/v1/admin")
 	case audienceAuth:
-		// Standalone auth console: identity flows only. It must reach
-		// auth, /me and contact-change endpoints but nothing else.
-		return strings.HasPrefix(path, "/v1/auth/") ||
+		// Standalone auth console: identity flows plus a read-only probe so
+		// resolveRole() can detect the effective role (admin/finance/noc) without
+		// switching to the generic api.kilat-cloud.com domain. Keep it minimal —
+		// only the probes used by resolveRole() are allowed, not the full
+		// /v1/admin/* surface.
+		if strings.HasPrefix(path, "/v1/auth/") ||
 			strings.HasPrefix(path, "/v1/me") ||
 			strings.HasPrefix(path, "/v1/contact-change") ||
-			isBaseRoute(path)
+			isBaseRoute(path) {
+			return true
+		}
+		return path == "/v1/admin/audit-logs" ||
+			strings.HasPrefix(path, "/v1/admin/audit-logs?") ||
+			path == "/v1/admin/finance/summary" ||
+			strings.HasPrefix(path, "/v1/admin/finance/summary?") ||
+			path == "/v1/admin/providers" ||
+			strings.HasPrefix(path, "/v1/admin/providers?")
 	case audienceLanding:
 		// Marketing site: public content only.
 		return publicLandingPrefix(path)
