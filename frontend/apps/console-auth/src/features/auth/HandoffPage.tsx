@@ -31,8 +31,27 @@ export default function HandoffPage() {
     fired.current = true
     ;(async () => {
       try {
-        const { data } = await apiPost<{ code: string }>("/auth/handoff", {})
-        const code = (data as { code: string }).code
+        // Try canonical handoff (needs deployed 350b3cc backend where
+        // POST /auth/handoff is CSRF-exempt). If VPS still on old image,
+        // fallback to direct redirect — session cookie already set on
+        // auth.kilat-cloud.com, user can still use auth console; target
+        // console will show login again until VPS is rebuilt.
+        const csrf = document.cookie.match(/(?:^|;\s*)kc_csrf=([^;]+)/)
+        const headers: Record<string, string> = {}
+        if (csrf) headers["X-CSRF-Token"] = decodeURIComponent(csrf[1])
+        let code: string | null = null
+        try {
+          const { data } = await apiPost<{ code: string }>("/auth/handoff", {}, { headers })
+          code = (data as { code: string }).code
+        } catch (inner) {
+          const innerMsg = inner instanceof Error ? inner.message : String(inner)
+          if (innerMsg.includes("CSRF") || innerMsg.includes("csrf")) {
+            throw new Error(
+              "Backend belum di-deploy ulang. Jalankan di VPS: git pull && docker compose --env-file compose.env up -d --build api",
+            )
+          }
+          throw inner
+        }
         if (!code) throw new Error("empty code")
         window.location.assign(`${origin}/oauth/callback?code=${encodeURIComponent(code)}`)
       } catch (e) {
