@@ -129,10 +129,21 @@ func setCSRFCookie(c fiber.Ctx, secure bool) {
 // csrfMiddleware enforces double-submit: cookie kc_csrf must equal header
 // X-CSRF-Token on state-changing methods (POST/PUT/PATCH/DELETE). Safe
 // methods (GET/HEAD/OPTIONS) are allowed through. Also validates Origin when
-// present against CORS allowlist.
+// present against CORS allowlist. Auth/handoff endpoints are exempted so
+// initial session bootstrap doesn't chicken-egg on CSRF.
 func (s *Server) csrfMiddleware(c fiber.Ctx) error {
 	method := c.Method()
 	if method == http.MethodGet || method == http.MethodHead || method == http.MethodOptions {
+		return c.Next()
+	}
+	// Exempt: session bootstrap / handoff are cookie-auth but must work without
+	// prior CSRF header (code is single-use 60s, not a state-changing action
+	// that benefits from CSRF protection — it's session-binding).
+	path := c.Path()
+	if path == "/v1/auth/handoff" || path == "/v1/auth/handoff/exchange" || path == "/v1/auth/login" || path == "/v1/auth/login/mfa" || path == "/v1/auth/refresh" || path == "/v1/auth/logout" || path == "/v1/auth/logout-all" {
+		return c.Next()
+	}
+	if path == "/v1/auth/passkey/begin-login" || path == "/v1/auth/passkey/login" {
 		return c.Next()
 	}
 	// Only enforce CSRF for cookie-auth requests (session cookie present).

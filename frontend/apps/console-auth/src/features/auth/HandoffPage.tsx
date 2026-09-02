@@ -33,9 +33,11 @@ export default function HandoffPage() {
       try {
         const { data } = await apiPost<{ code: string }>("/auth/handoff", {})
         const code = (data as { code: string }).code
+        if (!code) throw new Error("empty code")
         window.location.assign(`${origin}/oauth/callback?code=${encodeURIComponent(code)}`)
-      } catch {
-        setError("Failed to create handoff. Please try logging in again.")
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e)
+        setError(`Failed to create handoff: ${msg}. Please try logging in again.`)
       }
     })()
   }, [role, loading])
