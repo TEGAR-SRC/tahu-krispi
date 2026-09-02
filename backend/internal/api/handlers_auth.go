@@ -43,7 +43,11 @@ func (s *Server) handleRegister(c fiber.Ctx) error {
 	if err != nil {
 		return mw.WriteError(c, err)
 	}
-	return mw.JSON(c, 201, out, nil)
+	if !out.MFARequired && out.SessionID != uuid.Nil {
+		s.setSessionCookie(c, out.SessionID)
+		return mw.JSON(c, 201, fiber.Map{"user_id": out.UserID, "session_id": out.SessionID}, nil)
+	}
+	return mw.JSON(c, 201, fiber.Map{"user_id": out.UserID, "mfa_required": out.MFARequired, "preauth_token": out.PreauthToken}, nil)
 }
 
 func (s *Server) handleLogin(c fiber.Ctx) error {
@@ -170,9 +174,6 @@ func (s *Server) handleHandoffExchange(c fiber.Ctx) error {
 		Code string `json:"code"`
 	}
 	if err := c.Bind().Body(&in); err != nil || in.Code == "" {
-		in.Code = c.Query("code")
-	}
-	if in.Code == "" {
 		return mw.WriteError(c, apperrors.New(apperrors.CodeValidation, "code required"))
 	}
 	sid, err := s.consumeHandoffCode(c, in.Code)
