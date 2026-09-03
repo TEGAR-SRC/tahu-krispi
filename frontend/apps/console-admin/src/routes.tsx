@@ -115,6 +115,8 @@ const ProxmoxQemuHibernatePage = lazy(() => import("@/features/proxmox/ProxmoxQe
 const ProxmoxQemuMigratePage = lazy(() => import("@/features/proxmox/ProxmoxQemuMigratePage"))
 const ProxmoxQemuFirewallPage = lazy(() => import("@/features/proxmox/ProxmoxQemuFirewallPage"))
 const ProxmoxQemuAgentPage = lazy(() => import("@/features/proxmox/ProxmoxQemuAgentPage"))
+const ProxmoxReplicationPage = lazy(() => import("@/features/proxmox/ProxmoxReplicationPage"))
+const ProxmoxDisksPage = lazy(() => import("@/features/proxmox/ProxmoxDisksPage"))
 const OnidelCatalog = lazy(() =>
   import("@/features/admin/pages/providers/OnidelCatalog"),
 )
@@ -138,6 +140,7 @@ const VmwareHostsPage = lazy(() => import("@/features/vmware/VmwareHostsPage"))
 const VmwareHostDetailPage = lazy(() => import("@/features/vmware/VmwareHostDetailPage"))
 const VmwarePerfPage = lazy(() => import("@/features/vmware/VmwarePerfPage"))
 const VmwarePerfDetailPage = lazy(() => import("@/features/vmware/VmwarePerfDetailPage"))
+const VmwareSnapshotPage = lazy(() => import("@/features/vmware/VmwareSnapshotPage"))
 const VmwareSnapshotRevertPage = lazy(() => import("@/features/vmware/VmwareSnapshotRevertPage"))
 const OnidelCreateChoices = lazy(() => import("@/features/onidel/OnidelCreateChoicesPage"))
 const OnidelJobs = lazy(() =>
@@ -166,6 +169,7 @@ const DokployEntity = lazy(() =>
   import("@/features/admin/pages/dokploy/DokployEntity"),
 )
 const DokployLogsPage = lazy(() => import("@/features/dokploy/DokployLogsPage"))
+const DokployLogsRealtimePage = lazy(() => import("@/features/dokploy/DokployLogsRealtimePage"))
 
 const BillingFinanceSummary = lazy(() =>
   import("@/features/admin/billing/pages/FinanceSummary"),
@@ -661,6 +665,7 @@ export default function AppRoutes() {
           <Route path="proxmox/:providerId/nodes/:node/certs" element={<ProxmoxCertsUploadPage />} />
           <Route path="proxmox/:providerId/nodes/:node/prune" element={<ProxmoxPrunePage />} />
           <Route path="proxmox/:providerId/nodes/:node/qemu" element={<ProxmoxQemuPerNodePage />} />
+          <Route path="proxmox/:providerId/nodes/:node/disks" element={<ProxmoxDisksPage />} />
           <Route path="proxmox/:providerId/storages" element={<ProviderStorages />} />
           <Route path="proxmox/:providerId/backup-jobs" element={<ProviderBackupJobs />} />
           <Route path="proxmox/:providerId/ha" element={<ProviderHa />} />
@@ -694,6 +699,7 @@ export default function AppRoutes() {
           <Route path="proxmox/:providerId/nodes/:node/qemu/:vmid/firewall" element={<ProxmoxQemuFirewallPage />} />
           <Route path="proxmox/:providerId/nodes/:node/qemu/:vmid/agent" element={<ProxmoxQemuAgentPage />} />
           <Route path="proxmox/:providerId/nodes/:node/qemu/:vmid/agent/*" element={<ProxmoxQemuAgentPage />} />
+          <Route path="proxmox/:providerId/replication" element={<ProxmoxReplicationPage />} />
           <Route path="proxmox/:providerId/fw-aliases" element={<ProxmoxFwAliasesPage />} />
 
           <Route path="onidel/:providerId/onidel" element={<OnidelCatalog />} />
@@ -714,6 +720,7 @@ export default function AppRoutes() {
           <Route path="vmware/:providerId/hosts/:host" element={<VmwareHostDetailPage />} />
           <Route path="vmware/:providerId/perf" element={<VmwarePerfPage />} />
           <Route path="vmware/:providerId/perf/:vmid" element={<VmwarePerfDetailPage />} />
+          <Route path="vmware/:providerId/snapshots" element={<VmwareSnapshotPage />} />
           <Route path="vmware/:providerId/snapshots/revert" element={<VmwareSnapshotRevertPage />} />
           <Route path="vmware/:providerId/snapshots/:snap/revert" element={<VmwareSnapshotRevertPage />} />
           <Route path="vmware/:providerId/migrate" element={<VmwareMigratePage />} />
@@ -729,6 +736,7 @@ export default function AppRoutes() {
           />
           <Route path="dokploy" element={<DokployHub />} />
           <Route path="dokploy/logs" element={<DokployLogsPage />} />
+          <Route path="dokploy/logs-realtime" element={<DokployLogsRealtimePage />} />
           <Route path="dokploy/:entity" element={<DokployEntity />} />
 
           <Route path="dokploy/app" element={<DokployHome />} />

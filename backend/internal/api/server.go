@@ -524,6 +524,7 @@ func (s *Server) registerRoutes() {
 	proxmoxAdmin.Put("/backup-jobs/:job_id", s.requireStaff(""), s.adminUpdateBackupJob)
 	proxmoxAdmin.Delete("/backup-jobs/:job_id", s.requireStaff(""), s.adminDeleteBackupJob)
 	proxmoxAdmin.Post("/backup-jobs/:job_id/run", s.requireStaff(""), s.adminBackupJobRunNow)
+	proxmoxAdmin.Get("/replication", s.requireStaff("infra"), s.adminListReplicationJobs)
 	proxmoxAdmin.Get("/ha-resources", s.requireStaff("infra"), s.adminListHAResources)
 	proxmoxAdmin.Post("/ha-resources", s.requireStaff(""), s.adminCreateHAResource)
 	proxmoxAdmin.Delete("/ha-resources", s.requireStaff(""), s.adminDeleteHAResource)

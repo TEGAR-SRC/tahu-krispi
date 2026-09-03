@@ -123,6 +123,13 @@ const SECTIONS: SectionLink[] = [
     kinds: ["proxmox"],
   },
   {
+    to: "replication",
+    title: "Replication",
+    description: "Storage replication jobs (pvesr) — GET /admin/proxmox/:id/replication polls every 5s.",
+    icon: DatabaseBackupIcon,
+    kinds: ["proxmox"],
+  },
+  {
     to: "hosts",
     title: "ESXi hosts",
     description: "ESXi hosts with thread count, memory and power state — GET /admin/vmware/:id/hosts (polls every 5s).",
@@ -141,6 +148,13 @@ const SECTIONS: SectionLink[] = [
     title: "vSphere inventory",
     description: "Hosts, datastores, clusters and resource pools (vmware only).",
     icon: DatabaseIcon,
+    kinds: ["vmware"],
+  },
+  {
+    to: "snapshots",
+    title: "Snapshots",
+    description: "vSphere snapshots — create and list (POST /admin/vmware/:id/snapshots {vm, name}); GET polls every 5s.",
+    icon: DatabaseBackupIcon,
     kinds: ["vmware"],
   },
   {

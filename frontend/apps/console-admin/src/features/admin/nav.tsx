@@ -97,6 +97,7 @@ export const adminNav: ConsoleNavSection[] = [
       { title: "Hosts", url: "/admin/providers?kind=vmware&section=hosts", icon: CpuIcon },
       { title: "Datastores", url: "/admin/providers?kind=vmware&section=datastores", icon: HardDriveIcon },
       { title: "Inventory", url: "/admin/providers?kind=vmware&section=inventory", icon: HardDriveIcon },
+      { title: "Snapshots", url: "/admin/providers?kind=vmware&section=snapshots", icon: DatabaseBackupIcon },
       { title: "Snapshot revert", url: "/admin/providers?kind=vmware&section=snapshots-revert", icon: DatabaseBackupIcon },
       { title: "Migrate (vMotion)", url: "/admin/providers?kind=vmware&section=migrate", icon: ContainerIcon },
       { title: "Performance", url: "/admin/providers?kind=vmware&section=perf", icon: GaugeIcon },

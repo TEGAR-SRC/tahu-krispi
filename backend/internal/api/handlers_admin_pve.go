@@ -392,6 +392,23 @@ func (s *Server) adminDeleteBackupJob(c fiber.Ctx) error {
 	return mw.JSON(c, 200, fiber.Map{"status": "deleted"}, nil)
 }
 
+// ---- Replication jobs ----
+
+func (s *Server) adminListReplicationJobs(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	jobs, err := ad.Client().ReplicationJobsList(c.Context())
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	if jobs == nil {
+		jobs = []*goproxmox.ReplicationJob{}
+	}
+	return mw.JSON(c, 200, jobs, nil)
+}
+
 // ---- HA resources ----
 
 func (s *Server) adminListHAResources(c fiber.Ctx) error {

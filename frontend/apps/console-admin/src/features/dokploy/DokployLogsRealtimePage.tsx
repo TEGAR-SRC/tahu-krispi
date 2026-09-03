@@ -41,7 +41,7 @@ const KINDS: Array<{ value: LogKind; label: string; idParam: string; op: string 
   { value: "libsql", label: "LibSQL", idParam: "libsqlId", op: "libsql.readLogs" },
 ]
 
-export default function DokployLogsPage() {
+export default function DokployLogsRealtimePage() {
   const [kind, setKind] = useState<LogKind>("application")
   const [resourceId, setResourceId] = useState("")
   const [containerId, setContainerId] = useState("")
