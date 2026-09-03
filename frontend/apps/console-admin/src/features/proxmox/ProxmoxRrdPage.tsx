@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import { useParams } from "react-router-dom"
+import { useParams, Link } from "react-router-dom"
 import { CartesianGrid, Legend, Line, LineChart, XAxis, YAxis } from "recharts"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,7 +10,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } f
 import { ErrorBanner } from "@/components/shared/ErrorBanner"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
 import { ProviderShell } from "@/features/admin/pages/providers/shared"
-import { useInfraGet } from "@/features/admin/pages/providers/infra"
+import { formatBytes, useInfraGet } from "@/features/admin/pages/providers/infra"
 
 type RrdPoint = Record<string, unknown>
 
@@ -20,12 +20,12 @@ const CFS = ["AVERAGE", "MAX"] as const
 function toRows(points: RrdPoint[]) {
   return points.map((p) => ({
     label: typeof p.Time === "number" ? new Date(Number(p.Time) * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : String(p.Time ?? ""),
-    cpu: typeof p.CPU === "number" ? Math.round(p.CPU * 1000) / 10 : 0,
-    mem: typeof p.Mem === "number" ? p.Mem : 0,
-    net_in: typeof p.NetIn === "number" ? p.NetIn : 0,
-    net_out: typeof p.NetOut === "number" ? p.NetOut : 0,
-    disk_read: typeof p.DiskRead === "number" ? p.DiskRead : 0,
-    disk_write: typeof p.DiskWrite === "number" ? p.DiskWrite : 0,
+    cpu: typeof p.CPU === "number" ? Math.round(Number(p.CPU) * 1000) / 10 : 0,
+    mem: typeof p.Mem === "number" ? Number(p.Mem) : 0,
+    net_in: typeof p.NetIn === "number" ? Number(p.NetIn) : 0,
+    net_out: typeof p.NetOut === "number" ? Number(p.NetOut) : 0,
+    disk_read: typeof p.DiskRead === "number" ? Number(p.DiskRead) : 0,
+    disk_write: typeof p.DiskWrite === "number" ? Number(p.DiskWrite) : 0,
   }))
 }
 
@@ -55,10 +55,14 @@ export default function ProxmoxRrdPage() {
       ? `/admin/proxmox/${providerId}/nodes/${encodeURIComponent(node)}/qemu/${encodeURIComponent(vmidTrim)}/rrd`
       : null
   const qemuRrd = useInfraGet<RrdPoint[]>(qemuPath, nodeQuery, { intervalMs: 5000 })
+  const perVmHref =
+    vmidTrim && Number.isFinite(vmidNum) && vmidNum > 0
+      ? `/admin/proxmox/${providerId}/nodes/${encodeURIComponent(node)}/qemu/${encodeURIComponent(vmidTrim)}/rrd`
+      : null
 
   if (!providerId || !node) {
     return (
-      <ProviderShell providerId={providerId} title="RRD" description="Node + QEMU RRD charts (polled every 5s).">
+      <ProviderShell providerId={providerId} title="RRD" description="Node + per-VM QEMU RRD charts (polled every 5s via useInfraGet).">
         <p className="text-sm text-destructive">Missing providerId or node in route.</p>
       </ProviderShell>
     )
@@ -71,7 +75,7 @@ export default function ProxmoxRrdPage() {
     <ProviderShell
       providerId={providerId}
       title={`RRD — ${node}`}
-      description="Proxmox RRD: GET /admin/proxmox/:id/nodes/:node/rrd + GET :node/qemu/:vmid/rrd. Polled every 5s via useInfraGet. Node chart always on; QEMU chart needs a VMID."
+      description="Proxmox RRD: GET /admin/proxmox/:id/nodes/:node/rrd (node) + GET :node/qemu/:vmid/rrd (per-VM, dedicated page). Polled every 5s via useInfraGet · requireStaff infra (NOC + platform_admin) · proxmox murni (proxmoxAdapterFor, non-proxmox → 501 expect proxmox)."
       actions={<Button variant="outline" size="sm" onClick={() => { nodeRrd.reload(); qemuRrd.reload() }} disabled={nodeRrd.loading && qemuRrd.loading}>Refresh</Button>}
     >
       <div className="flex flex-wrap items-end gap-3">
@@ -93,14 +97,19 @@ export default function ProxmoxRrdPage() {
           <Label htmlFor="rrd-vmid">QEMU VMID (optional)</Label>
           <Input id="rrd-vmid" value={vmid} onChange={(e) => setVmid(e.target.value)} placeholder="101" className="w-32 font-mono" />
         </div>
-        <span className="pb-2 text-xs text-muted-foreground">?timeframe=&amp;cf= forwarded to PVE; defaults hour/AVERAGE.</span>
+        {perVmHref ? (
+          <Button asChild variant="secondary" size="sm">
+            <Link to={perVmHref}>Open per-VM RRD →</Link>
+          </Button>
+        ) : null}
+        <span className="pb-2 text-xs text-muted-foreground">?timeframe=&amp;cf= forwarded to PVE; defaults hour/AVERAGE. Per-VM chart also has a dedicated page at /nodes/:node/qemu/:vmid/rrd.</span>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Node {node} — RRD</CardTitle>
-            <CardDescription>GET /admin/proxmox/:id/nodes/:node/rrd · {nodeRows.length} samples · polled 5s</CardDescription>
+            <CardDescription>GET /admin/proxmox/:id/nodes/:node/rrd · {nodeRows.length} samples · polled 5s · requireStaff infra</CardDescription>
           </CardHeader>
           <CardContent>
             {nodeRrd.error ? <ErrorBanner error={nodeRrd.error} /> : null}
@@ -124,8 +133,8 @@ export default function ProxmoxRrdPage() {
               columns={[
                 { key: "time", header: "Time", render: (r) => typeof r.Time === "number" ? new Date(Number(r.Time) * 1000).toLocaleString() : String(r.Time ?? "—") },
                 { key: "cpu", header: "CPU", render: (r) => typeof r.CPU === "number" ? `${(Number(r.CPU) * 100).toFixed(1)}%` : "—" },
-                { key: "mem", header: "Mem", render: (r) => String(r.Mem ?? "—") },
-                { key: "net", header: "Net In/Out", render: (r) => `${String(r.NetIn ?? "—")} / ${String(r.NetOut ?? "—")}` },
+                { key: "mem", header: "Mem", render: (r) => typeof r.Mem === "number" ? formatBytes(Number(r.Mem)) : String(r.Mem ?? "—") },
+                { key: "net", header: "Net In/Out", render: (r) => `${typeof r.NetIn === "number" ? formatBytes(Number(r.NetIn)) : String(r.NetIn ?? "—")} / ${typeof r.NetOut === "number" ? formatBytes(Number(r.NetOut)) : String(r.NetOut ?? "—")}` },
               ]}
               rows={(nodeRrd.data as RrdPoint[]) ?? []}
               loading={nodeRrd.loading}
@@ -134,17 +143,17 @@ export default function ProxmoxRrdPage() {
               getRowKey={(_, i) => String(i)}
               skeletonRows={3}
             />
-            <p className="mt-2 text-xs text-muted-foreground">Endpoint: <span className="font-mono">GET /admin/proxmox/:id/nodes/:node/rrd?timeframe=&amp;cf=</span></p>
+            <p className="mt-2 text-xs text-muted-foreground">Endpoint: <span className="font-mono">GET /admin/proxmox/:id/nodes/:node/rrd?timeframe=&amp;cf=</span> · requireStaff infra · proxmox murni (proxmoxAdapterFor)</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">QEMU {vmidTrim || "—"} — RRD</CardTitle>
-            <CardDescription>GET /admin/proxmox/:id/nodes/:node/qemu/:vmid/rrd · {qemuRows.length} samples · polled 5s when VMID set</CardDescription>
+            <CardTitle className="text-base">QEMU {vmidTrim || "—"} — RRD (inline)</CardTitle>
+            <CardDescription>GET /admin/proxmox/:id/nodes/:node/qemu/:vmid/rrd · {qemuRows.length} samples · polled 5s when VMID set · also at /nodes/:node/qemu/:vmid/rrd</CardDescription>
           </CardHeader>
           <CardContent>
-            {!qemuPath ? <p className="text-sm text-muted-foreground">Enter a VMID to load QEMU RRD.</p> : qemuRrd.error ? <ErrorBanner error={qemuRrd.error} /> : qemuRrd.loading && qemuRows.length === 0 ? <p className="text-sm text-muted-foreground">Loading QEMU RRD…</p> : qemuRows.length === 0 ? <p className="text-sm text-muted-foreground">No QEMU RRD samples.</p> : (
+            {!qemuPath ? <p className="text-sm text-muted-foreground">Enter a VMID to load QEMU RRD inline, or open the dedicated per-VM page after entering a VMID.</p> : qemuRrd.error ? <ErrorBanner error={qemuRrd.error} /> : qemuRrd.loading && qemuRows.length === 0 ? <p className="text-sm text-muted-foreground">Loading QEMU RRD…</p> : qemuRows.length === 0 ? <p className="text-sm text-muted-foreground">No QEMU RRD samples.</p> : (
               <ChartContainer config={chartConfig} className="h-64 w-full">
                 <LineChart data={qemuRows} margin={{ left: -8, right: 8 }}>
                   <CartesianGrid vertical={false} strokeDasharray="3 3" />
@@ -165,8 +174,8 @@ export default function ProxmoxRrdPage() {
                   columns={[
                     { key: "time", header: "Time", render: (r) => typeof r.Time === "number" ? new Date(Number(r.Time) * 1000).toLocaleString() : String(r.Time ?? "—") },
                     { key: "cpu", header: "CPU", render: (r) => typeof r.CPU === "number" ? `${(Number(r.CPU) * 100).toFixed(1)}%` : "—" },
-                    { key: "mem", header: "Mem", render: (r) => String(r.Mem ?? "—") },
-                    { key: "net", header: "Net In/Out", render: (r) => `${String(r.NetIn ?? "—")} / ${String(r.NetOut ?? "—")}` },
+                    { key: "mem", header: "Mem", render: (r) => typeof r.Mem === "number" ? formatBytes(Number(r.Mem)) : String(r.Mem ?? "—") },
+                    { key: "net", header: "Net In/Out", render: (r) => `${typeof r.NetIn === "number" ? formatBytes(Number(r.NetIn)) : String(r.NetIn ?? "—")} / ${typeof r.NetOut === "number" ? formatBytes(Number(r.NetOut)) : String(r.NetOut ?? "—")}` },
                   ]}
                   rows={(qemuRrd.data as RrdPoint[]) ?? []}
                   loading={!!qemuPath && qemuRrd.loading}
@@ -175,7 +184,7 @@ export default function ProxmoxRrdPage() {
                   getRowKey={(_, i) => String(i)}
                   skeletonRows={3}
                 />
-                <p className="mt-2 text-xs text-muted-foreground">Endpoint: <span className="font-mono">GET /admin/proxmox/:id/nodes/:node/qemu/:vmid/rrd?timeframe=&amp;cf=</span></p>
+                <p className="mt-2 text-xs text-muted-foreground">Endpoint: <span className="font-mono">GET /admin/proxmox/:id/nodes/:node/qemu/:vmid/rrd?timeframe=&amp;cf=</span> · <Link to={String(perVmHref)} className="underline">Open dedicated per-VM page →</Link></p>
               </>
             ) : null}
           </CardContent>

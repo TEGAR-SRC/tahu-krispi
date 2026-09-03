@@ -2,10 +2,12 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"strings"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 
 	"kilat.cloud/backend/internal/platform/crypto"
 	"kilat.cloud/backend/internal/storage"
@@ -58,6 +60,108 @@ FROM object_storage_backends ORDER BY code`)
 		return mw.WriteError(c, err)
 	}
 	return mw.JSON(c, 200, out, nil)
+}
+
+func (s *Server) handleGetStorageBackend(c fiber.Ctx) error {
+	code := strings.ToLower(strings.TrimSpace(c.Params("code")))
+	validCodes := map[string]bool{"avatar": true, "document": true, "iso": true, "ticket": true, "invoice": true}
+	if !validCodes[code] {
+		return mw.WriteError(c, vErrField("code", "must be one of avatar, document, iso, ticket, invoice"))
+	}
+	var b storageBackendOut
+	var createdAt, updatedAt string
+	err := s.db.QueryRow(c.Context(), `
+SELECT id::text, code::text, name, driver::text,
+       COALESCE(endpoint,''), COALESCE(region,''), bucket_name,
+       credentials_ciphertext IS NOT NULL, enabled,
+       created_at::text, updated_at::text
+FROM object_storage_backends WHERE code=$1`, code).
+		Scan(&b.ID, &b.Code, &b.Name, &b.Driver, &b.Endpoint, &b.Region, &b.BucketName, &b.HasCredentials, &b.Enabled, &createdAt, &updatedAt)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return mw.WriteError(c, apperrors.New(apperrors.CodeNotFound, "backend not found"))
+		}
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, fiber.Map{
+		"backend":    b,
+		"created_at": createdAt,
+		"updated_at": updatedAt,
+	}, nil)
+}
+
+type storageBucketRow struct {
+	ID        string `json:"id"`
+	ObjectKey string `json:"object_key"`
+	Purpose   string `json:"purpose"`
+	MimeType  string `json:"mime_type"`
+	SizeBytes int64  `json:"size_bytes"`
+	CreatedAt string `json:"created_at"`
+}
+
+func (s *Server) handleListStorageBackendBuckets(c fiber.Ctx) error {
+	code := strings.ToLower(strings.TrimSpace(c.Params("code")))
+	validCodes := map[string]bool{"avatar": true, "document": true, "iso": true, "ticket": true, "invoice": true}
+	if !validCodes[code] {
+		return mw.WriteError(c, vErrField("code", "must be one of avatar, document, iso, ticket, invoice"))
+	}
+	var backendID uuid.UUID
+	err := s.db.QueryRow(c.Context(), `SELECT id FROM object_storage_backends WHERE code=$1`, code).Scan(&backendID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return mw.WriteError(c, apperrors.New(apperrors.CodeNotFound, "backend not found"))
+		}
+		return mw.WriteError(c, err)
+	}
+	limit := 50
+	if n, perr := parsePositiveInt(c.Query("limit"), 0); perr == nil && n > 0 {
+		if n > 200 {
+			n = 200
+		}
+		limit = n
+	}
+	offset := 0
+	if n, perr := parsePositiveInt(c.Query("offset"), 0); perr == nil && n >= 0 {
+		offset = n
+	}
+	rows, err := s.db.Query(c.Context(), `
+SELECT id::text, object_key, purpose, COALESCE(mime_type,''), COALESCE(size_bytes,0), created_at::text
+FROM stored_objects WHERE storage_backend_id=$1 AND deleted_at IS NULL
+ORDER BY created_at DESC LIMIT $2 OFFSET $3`, backendID, limit, offset)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	defer rows.Close()
+	out := []storageBucketRow{}
+	for rows.Next() {
+		var r storageBucketRow
+		if err := rows.Scan(&r.ID, &r.ObjectKey, &r.Purpose, &r.MimeType, &r.SizeBytes, &r.CreatedAt); err != nil {
+			return mw.WriteError(c, err)
+		}
+		out = append(out, r)
+	}
+	if err := rows.Err(); err != nil {
+		return mw.WriteError(c, err)
+	}
+	var total int
+	if err := s.db.QueryRow(c.Context(), `SELECT COUNT(*) FROM stored_objects WHERE storage_backend_id=$1 AND deleted_at IS NULL`, backendID).Scan(&total); err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, out, fiber.Map{"total": total, "limit": limit, "offset": offset})
+}
+
+func parsePositiveInt(s string, def int) (int, error) {
+	if s == "" {
+		return def, errors.New("empty")
+	}
+	n := 0
+	for _, ch := range s {
+		if ch < '0' || ch > '9' {
+			return 0, errors.New("not a number")
+		}
+		n = n*10 + int(ch-'0')
+	}
+	return n, nil
 }
 
 type storageBackendInput struct {

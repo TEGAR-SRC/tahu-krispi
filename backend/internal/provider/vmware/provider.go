@@ -49,6 +49,7 @@ import (
 	"github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/performance"
+	"github.com/vmware/govmomi/property"
 	"github.com/vmware/govmomi/units"
 	"github.com/vmware/govmomi/vapi/rest"
 	"github.com/vmware/govmomi/vapi/tags"
@@ -1819,6 +1820,20 @@ type DatastoreInventory struct {
 	FreeBytes int64  `json:"free_bytes"`
 }
 
+// NetworkInventory is one vSphere network/portgroup/opaque network as seen by
+// vCenter. Type is the MoRef type (Network, DistributedVirtualPortgroup,
+// OpaqueNetwork) and Accessible mirrors summary.accessible when available.
+type NetworkInventory struct {
+	Name              string `json:"name"`
+	Type              string `json:"type"`
+	Accessible        bool   `json:"accessible"`
+	HostCount         int    `json:"host_count"`
+	VMCount           int    `json:"vm_count"`
+	InventoryPath     string `json:"inventory_path,omitempty"`
+	OpaqueNetworkID   string `json:"opaque_network_id,omitempty"`
+	OpaqueNetworkType string `json:"opaque_network_type,omitempty"`
+}
+
 // DatastoreBrowseFile is one filesystem entry inside a vSphere datastore
 // (VMFS/vSAN/NFS) as returned by HostDatastoreBrowser.SearchDatastore.
 type DatastoreBrowseFile struct {
@@ -1910,6 +1925,110 @@ func (a *Adapter) Inventory(ctx context.Context) (*InventoryReport, error) {
 			"vmware: inventory: %v", err)
 	}
 	return rep, nil
+}
+
+// Networks enumerates vSphere networks/portgroups/opaque networks via the
+// govmomi Finder. It is the vSphere analogue of proxmox SDN inventory for
+// the NOC: every network visible under the default datacenter's network
+// folder is returned with MoRef type, summary accessibility and host/VM
+// attachment counts. Accessible is false when the backing summary is absent
+// or explicitly not accessible; VMCount is N/A until a dedicated
+// vm-network index exists. Used only by GET /admin/vmware/:id/networks.
+func (a *Adapter) Networks(ctx context.Context) ([]NetworkInventory, error) {
+	nets, err := vimCall(ctx, a.c, func(v *vim25.Client) ([]NetworkInventory, error) {
+		f := finder(ctx, v)
+		refs, herr := f.NetworkList(ctx, "*")
+		if herr != nil {
+			return nil, herr
+		}
+		out := make([]NetworkInventory, 0, len(refs))
+		for _, nr := range refs {
+			ref := nr.Reference()
+			var inv NetworkInventory
+			inv.Name = nr.GetInventoryPath()
+			if inv.Name == "" {
+				inv.Name = ref.Value
+			} else if idx := strings.LastIndex(inv.Name, "/"); idx >= 0 && idx < len(inv.Name)-1 {
+				inv.Name = inv.Name[idx+1:]
+			}
+			inv.Type = ref.Type
+			inv.InventoryPath = nr.GetInventoryPath()
+			switch ref.Type {
+			case "Network":
+				var m mo.Network
+				if perr := nr.(*object.Network).Properties(ctx, ref, []string{"name", "summary", "host", "vm"}, &m); perr == nil {
+					if m.Name != "" {
+						inv.Name = m.Name
+					}
+					inv.HostCount = len(m.Host)
+					inv.VMCount = len(m.Vm)
+					if m.Summary != nil {
+						switch s := m.Summary.(type) {
+						case *types.NetworkSummary:
+							inv.Accessible = s.Accessible
+						case *types.OpaqueNetworkSummary:
+							inv.Accessible = s.Accessible
+						}
+					}
+				}
+			case "DistributedVirtualPortgroup":
+				var m mo.DistributedVirtualPortgroup
+				if perr := nr.(*object.DistributedVirtualPortgroup).Properties(ctx, ref, []string{"name", "config", "host", "vm"}, &m); perr == nil {
+					if m.Name != "" {
+						inv.Name = m.Name
+					}
+					inv.HostCount = len(m.Host)
+					inv.VMCount = len(m.Vm)
+					if m.Config.DistributedVirtualSwitch != nil {
+						inv.Accessible = true
+					}
+				}
+			case "OpaqueNetwork":
+				var m mo.OpaqueNetwork
+				if perr := nr.(*object.OpaqueNetwork).Properties(ctx, ref, []string{"name", "summary", "host", "vm"}, &m); perr == nil {
+					if m.Name != "" {
+						inv.Name = m.Name
+					}
+					inv.HostCount = len(m.Host)
+					inv.VMCount = len(m.Vm)
+					if m.Summary != nil {
+						if s, ok := m.Summary.(*types.OpaqueNetworkSummary); ok {
+							inv.Accessible = s.Accessible
+							inv.OpaqueNetworkID = s.OpaqueNetworkId
+							inv.OpaqueNetworkType = s.OpaqueNetworkType
+						}
+					}
+				}
+			default:
+				var m mo.Network
+				if perr := vim25Properties(ctx, v, ref, []string{"name", "summary", "host", "vm"}, &m); perr == nil {
+					if m.Name != "" {
+						inv.Name = m.Name
+					}
+					inv.HostCount = len(m.Host)
+					inv.VMCount = len(m.Vm)
+				}
+			}
+			out = append(out, inv)
+		}
+		sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
+		return out, nil
+	})
+	if err != nil {
+		return nil, apperrors.Newf(apperrors.CodeProviderUnavailable,
+			"vmware: networks: %v", err)
+	}
+	if nets == nil {
+		nets = []NetworkInventory{}
+	}
+	return nets, nil
+}
+
+// vim25Properties is a thin helper for networks whose MoRef type was not
+// one of the three explicit cases above (e.g. future govmomi additions).
+func vim25Properties(ctx context.Context, v *vim25.Client, ref types.ManagedObjectReference, ps []string, dst any) error {
+	pc := property.DefaultCollector(v)
+	return pc.RetrieveOne(ctx, ref, ps, dst)
 }
 
 // DatastoreBrowse lists filesystem entries inside one vSphere datastore at the

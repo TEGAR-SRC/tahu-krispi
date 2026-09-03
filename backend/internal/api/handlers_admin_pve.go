@@ -911,6 +911,51 @@ func (s *Server) adminSDNVNets(c fiber.Ctx) error {
 	return mw.JSON(c, 200, vnets, nil)
 }
 
+// adminCephPoolDetail returns status for one Ceph pool. GET infra-readable (NOC + platform_admin),
+// proxmox murni via proxmoxAdapterFor guard (non-proxmox -> 501 expect proxmox). PVE address is
+// node-scoped (/nodes/{node}/ceph/pool/{pool}/status): the handler accepts ?node= and ?verbose=1.
+// When ?node= is omitted the first online node answers (like adminProviderCPUModels), so the
+// route stays node-free: GET /admin/proxmox/:id/ceph/pools/:pool.
+func (s *Server) adminCephPoolDetail(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	pool := strings.TrimSpace(c.Params("pool"))
+	if pool == "" {
+		return mw.WriteError(c, vErrField("pool", "pool name is required"))
+	}
+	node := strings.TrimSpace(c.Query("node"))
+	if node == "" {
+		nodes, nerr := ad.Nodes(c.Context())
+		if nerr != nil {
+			return mw.WriteError(c, nerr)
+		}
+		for _, n := range nodes {
+			if n.Status == "online" && strings.TrimSpace(n.Node) != "" {
+				node = strings.TrimSpace(n.Node)
+				break
+			}
+		}
+		if node == "" && len(nodes) > 0 {
+			candidate := strings.TrimSpace(nodes[0].Node)
+			if candidate == "" {
+				candidate = strings.TrimSpace(nodes[0].Name)
+			}
+			node = candidate
+		}
+		if node == "" {
+			return mw.WriteError(c, apperrors.New(apperrors.CodeNotFound, "cluster reports no nodes for ceph pool lookup"))
+		}
+	}
+	verbose := strings.TrimSpace(c.Query("verbose")) == "1" || strings.EqualFold(strings.TrimSpace(c.Query("verbose")), "true")
+	status, err := ad.Client().CephPoolStatus(c.Context(), node, pool, verbose)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, fiber.Map{"node": node, "pool": pool, "status": status}, nil)
+}
+
 // ---- Backup job run-now / HA watchdog / pool members / file-restore ----
 
 // adminBackupJobRunNow triggers one immediate run of a scheduled backup job.
@@ -2107,6 +2152,24 @@ func (s *Server) adminAccessRolesList(c fiber.Ctx) error {
 		roles = goproxmox.Roles{}
 	}
 	return mw.JSON(c, 200, roles, nil)
+}
+
+// adminAccessACLList lists PVE ACL entries (GET /access/acl).
+// GET /admin/proxmox/:id/access/acl — infra-readable (NOC + platform_admin),
+// proxmox murni via proxmoxAdapterFor guard — non-proxmox answers 501 expect proxmox.
+func (s *Server) adminAccessACLList(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	acls, err := ad.Client().AccessACL(c.Context())
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	if acls == nil {
+		acls = goproxmox.ACLs{}
+	}
+	return mw.JSON(c, 200, acls, nil)
 }
 
 // ---- QEMU config (GET infra, PUT platform_admin) ----

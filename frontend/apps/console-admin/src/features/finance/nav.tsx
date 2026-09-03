@@ -26,6 +26,7 @@ export const financeNav: ConsoleNavSection[] = [
       { title: "Coupons", url: "/finance/coupons", icon: TagIcon },
       { title: "Products plans", url: "/finance/catalog", icon: PackageIcon },
       { title: "Custom rates", url: "/finance/rates", icon: CoinsIcon },
+      { title: "Custom rates history", url: "/finance/rates/history", icon: CoinsIcon },
       { title: "Regions", url: "/finance/regions", icon: GlobeIcon },
     ],
   },

@@ -87,6 +87,8 @@ export const adminNav: ConsoleNavSection[] = [
       { title: "Health", url: "/admin/providers?kind=onidel&section=health", icon: HeartPulseIcon },
       { title: "Health detail", url: "/admin/providers?kind=onidel&section=health-detail", icon: HeartPulseIcon },
       { title: "Instances (realtime)", url: "/admin/providers?kind=onidel&section=instances", icon: ContainerIcon },
+      { title: "Orders history", url: "/admin/providers?kind=onidel&section=orders", icon: ContainerIcon },
+      { title: "Invoices", url: "/admin/providers?kind=onidel&section=invoices", icon: ReceiptTextIcon },
       { title: "Billing sync", url: "/admin/providers?kind=onidel&section=billing-sync", icon: CreditCardIcon },
     ],
   },

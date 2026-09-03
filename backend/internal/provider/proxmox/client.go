@@ -1414,6 +1414,26 @@ func (c *Client) CephStatus(ctx context.Context) (*goproxmox.ClusterCephStatus, 
 	return st, wrapErr("ceph status", err)
 }
 
+// CephPoolStatus returns the current configuration and optionally utilization
+// for one Ceph pool on the given node. Set verbose=true to include the
+// Statistics map (bytes_used, percent_used, pg_num history). Endpoint:
+// GET /nodes/{node}/ceph/pool/{pool}/status — proxmox murni, node is required
+// by PVE; callers that expose a node-free route should resolve the node first.
+func (c *Client) CephPoolStatus(ctx context.Context, node, pool string, verbose bool) (*goproxmox.CephPoolStatus, error) {
+	if strings.TrimSpace(node) == "" {
+		return nil, apperrors.New(apperrors.CodeValidation, "proxmox: node is required for ceph pool status")
+	}
+	if strings.TrimSpace(pool) == "" {
+		return nil, apperrors.New(apperrors.CodeValidation, "proxmox: ceph pool name is required")
+	}
+	n, err := c.sdk.Node(ctx, strings.TrimSpace(node))
+	if err != nil {
+		return nil, wrapErr("node "+node, err)
+	}
+	status, err := n.CephPool(strings.TrimSpace(pool)).Status(ctx, verbose)
+	return status, wrapErr("ceph pool status", err)
+}
+
 func (c *Client) SDNZones(ctx context.Context) ([]*goproxmox.SDNZone, error) {
 	cl, err := c.sdk.Cluster(ctx)
 	if err != nil {
@@ -1983,4 +2003,9 @@ func (c *Client) AccessGroups(ctx context.Context) (goproxmox.Groups, error) {
 func (c *Client) AccessRoles(ctx context.Context) (goproxmox.Roles, error) {
 	roles, err := c.sdk.Roles(ctx)
 	return roles, wrapErr("access roles", err)
+}
+
+func (c *Client) AccessACL(ctx context.Context) (goproxmox.ACLs, error) {
+	acls, err := c.sdk.ACL(ctx)
+	return acls, wrapErr("access acl", err)
 }

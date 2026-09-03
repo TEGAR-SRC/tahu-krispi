@@ -181,6 +181,30 @@ func (s *Server) adminVMwareDatastores(c fiber.Ctx) error {
 	}, nil)
 }
 
+// GET /v1/admin/vmware/:id/networks — vSphere networks (portgroups /
+// standard / opaque/NSX-T) via adapter.Networks. Guard kind==vmware via
+// vmwareAdapterFor; RBAC infra (NOC readable, finance 403). Polling via
+// useInfraGet every 5s. Surgical minimal — same contract as /hosts and
+// /datastores, response envelope { provider_id, code, networks }.
+func (s *Server) adminVMwareNetworks(c fiber.Ctx) error {
+	providerID, code, ad, err := s.vmwareAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	nets, err := ad.Networks(c.Context())
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	if nets == nil {
+		nets = []vmware.NetworkInventory{}
+	}
+	return mw.JSON(c, 200, fiber.Map{
+		"provider_id": providerID,
+		"code":        code,
+		"networks":    nets,
+	}, nil)
+}
+
 // ---- Snapshots (vmware murni) ----
 
 // GET /v1/admin/vmware/:id/snapshots — list every snapshot across all

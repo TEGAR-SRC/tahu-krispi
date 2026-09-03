@@ -199,6 +199,13 @@ const SECTIONS: SectionLink[] = [
     icon: ClipboardListIcon,
     kinds: ["onidel"],
   },
+  {
+    to: "orders",
+    title: "Orders history",
+    description: "Orders whose line items target this Onidel provider — GET /admin/onidel/:id/orders (infra, polls every 5s).",
+    icon: ClipboardListIcon,
+    kinds: ["onidel"],
+  },
 ]
 
 export default function ProviderDetailPage() {

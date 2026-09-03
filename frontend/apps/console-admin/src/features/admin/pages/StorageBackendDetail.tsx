@@ -1,12 +1,13 @@
-// Storage backend detail. The API has no GET-by-code route, so the row is
-// resolved from the list endpoint; editing rides PUT :code (upsert) and
-// "disable" rides DELETE :code which only flips enabled=false.
-import { useEffect, useState } from "react"
+// Storage backend detail — per-code S3/R2/MinIO bucket config plus live
+// object inventory polled every 5s. GET /admin/storage-backends/:code and
+// GET /admin/storage-backends/:code/buckets via useInfraGet (infra-readable).
+import { useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { toast } from "sonner"
-import { apiDelete, apiGet, apiPut, ApiError } from "@/lib/api"
+import { apiDelete, apiPut, ApiError } from "@/lib/api"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ErrorBanner } from "@/components/shared/ErrorBanner"
+import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -44,6 +45,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { StatusBadge } from "./shared"
 import { ConfirmDialog } from "./providers/shared"
+import { formatBytes, useInfraGet } from "./providers/infra"
 
 interface StorageBackendRow {
   id: string
@@ -57,47 +59,45 @@ interface StorageBackendRow {
   enabled: boolean
 }
 
+interface BackendDetailRes {
+  backend: StorageBackendRow
+  created_at: string
+  updated_at: string
+}
+
+interface BucketObjectRow {
+  id: string
+  object_key: string
+  purpose: string
+  mime_type: string
+  size_bytes: number
+  created_at: string
+}
+
 const DRIVERS = ["s3", "r2", "minio"]
 
 export default function StorageBackendDetailPage() {
   const params = useParams()
   const code = params.code ?? ""
 
-  const [rows, setRows] = useState<StorageBackendRow[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<unknown>(null)
-  const [reloadTick, setReloadTick] = useState(0)
+  const backendPath = code ? `/admin/storage-backends/${encodeURIComponent(code)}` : null
+  const bucketsPath = code ? `/admin/storage-backends/${encodeURIComponent(code)}/buckets` : null
+
+  const backendState = useInfraGet<BackendDetailRes>(backendPath, undefined, { intervalMs: 5000 })
+  const bucketsState = useInfraGet<BucketObjectRow[]>(bucketsPath, { limit: 50 }, { intervalMs: 5000 })
+
+  const backend = backendState.data?.backend ?? null
 
   const [editOpen, setEditOpen] = useState(false)
   const [disableOpen, setDisableOpen] = useState(false)
   const [busy, setBusy] = useState(false)
 
-  useEffect(() => {
-    if (!code) return
-    let cancelled = false
-    apiGet<StorageBackendRow[]>("/admin/storage-backends")
-      .then(({ data }) => {
-        if (!cancelled) {
-          setRows(data)
-          setError(null)
-        }
-      })
-      .catch((cause) => {
-        if (!cancelled) setError(cause)
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [code, reloadTick])
-
   if (!code) {
     return <EmptyState message="Backend code missing." />
   }
 
-  const backend = rows?.find((row) => row.code === code) ?? null
+  const bucketRows = Array.isArray(bucketsState.data) ? bucketsState.data : []
+  const bucketTotal = (bucketsState.meta?.total as number | undefined) ?? bucketRows.length
 
   return (
     <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
@@ -119,47 +119,40 @@ export default function StorageBackendDetailPage() {
         <div className="min-w-0 space-y-1">
           <h1 className="flex min-w-0 items-center gap-2 text-xl font-semibold tracking-tight sm:text-2xl">
             {backend?.name ?? code}
-            {backend ? (
-              backend.enabled ? (
-                <StatusBadge status="active" />
-              ) : (
-                <StatusBadge status="disabled" />
-              )
-            ) : null}
+            {backend ? backend.enabled ? <StatusBadge status="active" /> : <StatusBadge status="disabled" /> : null}
           </h1>
           <p className="font-mono text-sm text-muted-foreground">{code}</p>
+          {backendState.data ? (
+            <p className="text-xs text-muted-foreground">
+              Updated {backendState.data.updated_at.slice(0, 19).replace("T", " ")} · Created {backendState.data.created_at.slice(0, 19).replace("T", " ")} · polled 5s via useInfraGet
+            </p>
+          ) : null}
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => backendState.reload()} disabled={backendState.loading}>
+            Refresh
+          </Button>
           <Button size="sm" disabled={!backend || busy} onClick={() => setEditOpen(true)}>
             Edit…
           </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            disabled={!backend?.enabled || busy}
-            onClick={() => setDisableOpen(true)}
-          >
+          <Button variant="destructive" size="sm" disabled={!backend?.enabled || busy} onClick={() => setDisableOpen(true)}>
             Disable…
           </Button>
         </div>
       </div>
 
-      {loading && !rows ? (
+      {backendState.loading && !backendState.data ? (
         <Skeleton className="h-48 w-full" />
-      ) : error ? (
-        <ErrorBanner error={error} />
+      ) : backendState.error ? (
+        <ErrorBanner error={backendState.error} />
       ) : !backend ? (
-        <EmptyState
-          message="Backend not found."
-          description="Codes are limited to avatar, document, iso, ticket and invoice."
-        />
+        <EmptyState message="Backend not found." description="Codes are limited to avatar, document, iso, ticket and invoice." />
       ) : (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Connection</CardTitle>
             <CardDescription>
-              Object storage used for this category of uploads. Credentials are write-only and
-              never returned.
+              <span className="font-mono">GET /admin/storage-backends/:code</span> · Object storage used for this category of uploads. Credentials are write-only and never returned. Polled every 5s.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -174,20 +167,50 @@ export default function StorageBackendDetailPage() {
                 <span className="font-mono text-xs">{backend.endpoint || "AWS default"}</span>
               </Field>
               <Field label="Region">{backend.region || "—"}</Field>
-              <Field label="Credentials">
-                {backend.has_credentials ? "configured" : "not set"}
-              </Field>
-              <Field label="State">
-                {backend.enabled ? (
-                  <StatusBadge status="active" />
-                ) : (
-                  <StatusBadge status="disabled" />
-                )}
-              </Field>
+              <Field label="Credentials">{backend.has_credentials ? "configured" : "not set"}</Field>
+              <Field label="State">{backend.enabled ? <StatusBadge status="active" /> : <StatusBadge status="disabled" />}</Field>
             </dl>
           </CardContent>
         </Card>
       )}
+
+      <Card>
+        <CardHeader>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <CardTitle className="text-base">Objects</CardTitle>
+              <CardDescription>
+                <span className="font-mono">GET /admin/storage-backends/:code/buckets</span> · stored_objects on this backend · {bucketTotal} total · polled 5s via useInfraGet
+              </CardDescription>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => bucketsState.reload()} disabled={bucketsState.loading}>
+              Refresh
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0 sm:p-6">
+          {bucketsState.error ? <div className="px-6 pb-4"><ErrorBanner error={bucketsState.error} /></div> : null}
+          <SimpleDataTable<BucketObjectRow>
+            columns={[
+              { key: "object_key", header: "Object key", render: (r) => <span className="font-mono text-xs break-all">{r.object_key}</span> },
+              { key: "purpose", header: "Purpose", render: (r) => r.purpose || "—" },
+              { key: "mime_type", header: "MIME", className: "hidden md:table-cell", render: (r) => r.mime_type || "—" },
+              { key: "size_bytes", header: "Size", render: (r) => formatBytes(r.size_bytes) },
+              { key: "created_at", header: "Created", className: "hidden lg:table-cell font-mono text-xs", render: (r) => r.created_at.slice(0, 19).replace("T", " ") },
+            ]}
+            rows={bucketRows}
+            loading={bucketsState.loading}
+            error={undefined}
+            getRowKey={(r) => r.id}
+            emptyMessage={backend ? `No objects stored on backend ${code} yet.` : "Backend not found — cannot list objects."}
+            skeletonRows={5}
+          />
+        </CardContent>
+      </Card>
+
+      <p className="text-xs text-muted-foreground">
+        Endpoints: <span className="font-mono">GET /admin/storage-backends/:code</span> · <span className="font-mono">GET /admin/storage-backends/:code/buckets</span> · requireStaff infra · 5s poll via useInfraGet · SimpleDataTable
+      </p>
 
       {backend ? (
         <EditDialog
@@ -198,7 +221,7 @@ export default function StorageBackendDetailPage() {
           onSaved={(message) => {
             setEditOpen(false)
             toast.success(message)
-            setReloadTick((tick) => tick + 1)
+            backendState.reload()
           }}
         />
       ) : null}
@@ -217,7 +240,7 @@ export default function StorageBackendDetailPage() {
             try {
               await apiDelete(`/admin/storage-backends/${encodeURIComponent(code)}`)
               toast.success(`Backend ${code} disabled`)
-              setReloadTick((tick) => tick + 1)
+              backendState.reload()
             } catch (cause) {
               toast.error(cause instanceof ApiError ? cause.message : "Failed to disable")
             } finally {
@@ -298,10 +321,7 @@ function EditDialog({
           <DialogTitle>
             Edit backend <span className="font-mono">{backend.code}</span>
           </DialogTitle>
-          <DialogDescription>
-            Credentials are encrypted at rest and never returned — leave both key fields blank to
-            keep the stored pair.
-          </DialogDescription>
+          <DialogDescription>Credentials are encrypted at rest and never returned — leave both key fields blank to keep the stored pair.</DialogDescription>
         </DialogHeader>
         <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
@@ -325,21 +345,11 @@ function EditDialog({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="sb-endpoint">Endpoint</Label>
-            <Input
-              id="sb-endpoint"
-              value={endpoint}
-              placeholder="https://s3… (blank = AWS)"
-              onChange={(event) => setEndpoint(event.target.value)}
-            />
+            <Input id="sb-endpoint" value={endpoint} placeholder="https://s3… (blank = AWS)" onChange={(event) => setEndpoint(event.target.value)} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="sb-region">Region</Label>
-            <Input
-              id="sb-region"
-              value={region}
-              placeholder="ap-southeast-1"
-              onChange={(event) => setRegion(event.target.value)}
-            />
+            <Input id="sb-region" value={region} placeholder="ap-southeast-1" onChange={(event) => setRegion(event.target.value)} />
           </div>
           <div className="space-y-1.5 sm:col-span-2">
             <Label htmlFor="sb-bucket">Bucket name *</Label>
@@ -347,33 +357,14 @@ function EditDialog({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="sb-access-key">Access key</Label>
-            <Input
-              id="sb-access-key"
-              type="password"
-              autoComplete="new-password"
-              value={accessKey}
-              placeholder={backend.has_credentials ? "keep current" : "required"}
-              onChange={(event) => setAccessKey(event.target.value)}
-            />
+            <Input id="sb-access-key" type="password" autoComplete="new-password" value={accessKey} placeholder={backend.has_credentials ? "keep current" : "required"} onChange={(event) => setAccessKey(event.target.value)} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="sb-secret-key">Secret key</Label>
-            <Input
-              id="sb-secret-key"
-              type="password"
-              autoComplete="new-password"
-              value={secretKey}
-              placeholder={backend.has_credentials ? "keep current" : "required"}
-              onChange={(event) => setSecretKey(event.target.value)}
-            />
+            <Input id="sb-secret-key" type="password" autoComplete="new-password" value={secretKey} placeholder={backend.has_credentials ? "keep current" : "required"} onChange={(event) => setSecretKey(event.target.value)} />
           </div>
           <label className="flex min-w-0 items-center gap-2 text-sm sm:col-span-2">
-            <input
-              type="checkbox"
-              className="size-4 accent-primary"
-              checked={enabled}
-              onChange={(event) => setEnabled(event.target.checked)}
-            />
+            <input type="checkbox" className="size-4 accent-primary" checked={enabled} onChange={(event) => setEnabled(event.target.checked)} />
             Enabled
           </label>
         </div>
@@ -381,10 +372,7 @@ function EditDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button
-            disabled={busy || saving}
-            onClick={() => void submit()}
-          >
+          <Button disabled={busy || saving} onClick={() => void submit()}>
             {saving ? "Saving…" : "Save backend"}
           </Button>
         </DialogFooter>

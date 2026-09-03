@@ -812,3 +812,47 @@ func (s *Server) adminDokployDBDelete(c fiber.Ctx) error {
 	})
 	return c.SendStatus(204)
 }
+
+// adminDokployProjectDetail returns one mirrored project row by id or remote_id.
+// GET /admin/dokploy/projects/:id — single instance, no provider :id segment.
+// RBAC: infra readable (NOC + platform_admin) via requireStaff infra; local
+// mirror only — no upstream proxy.
+func (s *Server) adminDokployProjectDetail(c fiber.Ctx) error {
+	id := strings.TrimSpace(c.Params("id"))
+	if id == "" {
+		return mw.WriteError(c, errValidation("project id is required"))
+	}
+	ctx := c.Context()
+	var (
+		pk          string
+		remoteID    string
+		orgID       *string
+		name        string
+		description *string
+		dataRaw     string
+		createdAt   string
+		updatedAt   string
+	)
+	err := s.db.QueryRow(ctx, `
+SELECT id::text, remote_id::text, org_id::text, name::text, description::text, data::text, created_at::text, updated_at::text
+FROM dokploy_projects WHERE remote_id=$1 OR id::text=$1 LIMIT 1`, id).Scan(
+		&pk, &remoteID, &orgID, &name, &description, &dataRaw, &createdAt, &updatedAt,
+	)
+	if err != nil {
+		return mw.WriteError(c, apperrors.Newf(apperrors.CodeNotFound, "dokploy project %q not found", id))
+	}
+	var data any
+	_ = json.Unmarshal([]byte(dataRaw), &data)
+	row := fiber.Map{
+		"id":          pk,
+		"remote_id":   remoteID,
+		"org_id":      orgID,
+		"name":        name,
+		"description": description,
+		"data":        data,
+		"created_at":  createdAt,
+		"updated_at":  updatedAt,
+	}
+	s.admAuditMeta(c, "admin.dokploy.project_detail", "provider", nil, map[string]any{"project_id": id, "remote_id": remoteID})
+	return mw.JSON(c, 200, row, nil)
+}

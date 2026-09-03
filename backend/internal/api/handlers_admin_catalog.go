@@ -443,12 +443,27 @@ func (s *Server) adminListCustomRates(c fiber.Ctx) error {
 	ctx := c.Context()
 	page, perPage, offset := admPage(c)
 
+	providerParam := lower(strings.TrimSpace(c.Query("provider")))
+	where := ""
+	args := []any{}
+	if providerParam != "" {
+		if pid, err := uuid.Parse(providerParam); err == nil {
+			args = append(args, pid)
+			where = " WHERE r.provider_id=" + admPlaceholder(len(args))
+		} else {
+			args = append(args, providerParam, providerParam)
+			where = " WHERE EXISTS (SELECT 1 FROM providers p WHERE p.id=r.provider_id AND (lower(p.kind)=" + admPlaceholder(len(args)-1) + " OR lower(p.code::text)=" + admPlaceholder(len(args)) + "))"
+		}
+	}
+
 	var total int
-	if err := s.db.QueryRow(ctx, `SELECT count(*) FROM custom_resource_rates`).Scan(&total); err != nil {
+	countSQL := `SELECT count(*) FROM custom_resource_rates r` + where
+	if err := s.db.QueryRow(ctx, countSQL, args...).Scan(&total); err != nil {
 		return mw.WriteError(c, err)
 	}
-	rows, err := s.db.Query(ctx, admCustomRateSelect+`
-ORDER BY r.active_from DESC LIMIT $1 OFFSET $2`, perPage, offset)
+	args = append(args, perPage, offset)
+	rows, err := s.db.Query(ctx, admCustomRateSelect+where+`
+ORDER BY r.active_from DESC LIMIT `+admPlaceholder(len(args)-1)+` OFFSET `+admPlaceholder(len(args)), args...)
 	if err != nil {
 		return mw.WriteError(c, err)
 	}

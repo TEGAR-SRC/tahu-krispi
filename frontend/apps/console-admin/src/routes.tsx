@@ -96,6 +96,7 @@ const ProxmoxCertsUploadPage = lazy(() => import("@/features/proxmox/ProxmoxCert
 const ProxmoxPoolsPage = lazy(() => import("@/features/proxmox/ProxmoxPoolsPage"))
 const ProxmoxQemuPerNodePage = lazy(() => import("@/features/proxmox/ProxmoxQemuPerNodePage"))
 const ProxmoxRrdPage = lazy(() => import("@/features/proxmox/ProxmoxRrdPage"))
+const ProxmoxRrdPerVmPage = lazy(() => import("@/features/proxmox/ProxmoxRrdPerVmPage"))
 const ProxmoxCloudInitPage = lazy(() => import("@/features/proxmox/ProxmoxCloudInitPage"))
 const ProxmoxDiagnosticsPage = lazy(() => import("@/features/proxmox/ProxmoxDiagnosticsPage"))
 const ProxmoxAccessPage = lazy(() => import("@/features/proxmox/ProxmoxAccessPage"))
@@ -117,6 +118,8 @@ const ProxmoxQemuFirewallPage = lazy(() => import("@/features/proxmox/ProxmoxQem
 const ProxmoxQemuAgentPage = lazy(() => import("@/features/proxmox/ProxmoxQemuAgentPage"))
 const ProxmoxReplicationPage = lazy(() => import("@/features/proxmox/ProxmoxReplicationPage"))
 const ProxmoxDisksPage = lazy(() => import("@/features/proxmox/ProxmoxDisksPage"))
+const ProxmoxAclPage = lazy(() => import("@/features/proxmox/ProxmoxAclPage"))
+const ProxmoxCephPoolDetailPage = lazy(() => import("@/features/proxmox/ProxmoxCephPoolDetailPage"))
 const OnidelCatalog = lazy(() =>
   import("@/features/admin/pages/providers/OnidelCatalog"),
 )
@@ -142,6 +145,7 @@ const VmwarePerfPage = lazy(() => import("@/features/vmware/VmwarePerfPage"))
 const VmwarePerfDetailPage = lazy(() => import("@/features/vmware/VmwarePerfDetailPage"))
 const VmwareSnapshotPage = lazy(() => import("@/features/vmware/VmwareSnapshotPage"))
 const VmwareSnapshotRevertPage = lazy(() => import("@/features/vmware/VmwareSnapshotRevertPage"))
+const VmwareNetworksPage = lazy(() => import("@/features/vmware/VmwareNetworksPage"))
 const OnidelCreateChoices = lazy(() => import("@/features/onidel/OnidelCreateChoicesPage"))
 const OnidelJobs = lazy(() =>
   import("@/features/onidel/OnidelJobsPage"),
@@ -157,6 +161,8 @@ const OnidelInstances = lazy(() => import("@/features/onidel/OnidelInstancesPage
 const OnidelInstanceDetail = lazy(() => import("@/features/onidel/OnidelInstanceDetailPage")
 )
 const OnidelBillingSync = lazy(() => import("@/features/onidel/OnidelBillingSyncPage"))
+const OnidelOrders = lazy(() => import("@/features/onidel/OnidelOrdersPage"))
+const OnidelInvoices = lazy(() => import("@/features/onidel/OnidelInvoicesPage"))
 const RegionsPools = lazy(() => import("@/features/admin/pages/RegionsPools"))
 const StorageBackends = lazy(() =>
   import("@/features/admin/pages/StorageBackends"),
@@ -170,6 +176,7 @@ const DokployEntity = lazy(() =>
 )
 const DokployLogsPage = lazy(() => import("@/features/dokploy/DokployLogsPage"))
 const DokployLogsRealtimePage = lazy(() => import("@/features/dokploy/DokployLogsRealtimePage"))
+const DokployProjectDetailPage = lazy(() => import("@/features/dokploy/DokployProjectDetailPage"))
 
 const BillingFinanceSummary = lazy(() =>
   import("@/features/admin/billing/pages/FinanceSummary"),
@@ -283,6 +290,7 @@ const FinanceCouponDetail = lazy(() =>
 )
 const FinanceCatalog = lazy(() => import("@/features/finance/pages/Catalog"))
 const FinanceRates = lazy(() => import("@/features/finance/pages/Rates"))
+const FinanceCustomRatesHistory = lazy(() => import("@/features/finance/pages/FinanceCustomRatesHistoryPage"))
 const FinanceRegions = lazy(() => import("@/features/finance/pages/Regions"))
 const FinanceAffiliate = lazy(() =>
   import("@/features/finance/pages/Affiliate"),
@@ -679,6 +687,7 @@ export default function AppRoutes() {
           <Route path="proxmox/:providerId/pools/:pool" element={<ProxmoxPoolsPage />} />
           <Route path="proxmox/:providerId/perf" element={<GuestPerf />} />
           <Route path="proxmox/:providerId/nodes/:node/rrd" element={<ProxmoxRrdPage />} />
+          <Route path="proxmox/:providerId/nodes/:node/qemu/:vmid/rrd" element={<ProxmoxRrdPerVmPage />} />
           <Route path="proxmox/:providerId/clone" element={<ProxmoxClonePage />} />
           <Route path="proxmox/:providerId/nodes/:node/qemu/:vmid/cloud-init" element={<ProxmoxCloudInitPage />} />
           <Route path="proxmox/:providerId/diagnostics" element={<ProxmoxDiagnosticsPage />} />
@@ -701,6 +710,8 @@ export default function AppRoutes() {
           <Route path="proxmox/:providerId/nodes/:node/qemu/:vmid/agent/*" element={<ProxmoxQemuAgentPage />} />
           <Route path="proxmox/:providerId/replication" element={<ProxmoxReplicationPage />} />
           <Route path="proxmox/:providerId/fw-aliases" element={<ProxmoxFwAliasesPage />} />
+          <Route path="proxmox/:providerId/access/acl" element={<ProxmoxAclPage />} />
+          <Route path="proxmox/:providerId/ceph/pools/:pool" element={<ProxmoxCephPoolDetailPage />} />
 
           <Route path="onidel/:providerId/onidel" element={<OnidelCatalog />} />
           <Route path="onidel/:providerId/jobs" element={<OnidelJobs />} />
@@ -710,6 +721,8 @@ export default function AppRoutes() {
           <Route path="onidel/:providerId/health/detail" element={<OnidelHealthDetail />} />
           <Route path="onidel/:providerId/instances" element={<OnidelInstances />} />
           <Route path="onidel/:providerId/instances/:instanceId" element={<OnidelInstanceDetail />} />
+          <Route path="onidel/:providerId/orders" element={<OnidelOrders />} />
+          <Route path="onidel/:providerId/invoices" element={<OnidelInvoices />} />
           <Route path="onidel/:providerId/regions/sync" element={<OnidelBillingSync />} />
 
           <Route path="vmware/:providerId/inventory" element={<VmwareInventory />} />
@@ -724,6 +737,7 @@ export default function AppRoutes() {
           <Route path="vmware/:providerId/snapshots/revert" element={<VmwareSnapshotRevertPage />} />
           <Route path="vmware/:providerId/snapshots/:snap/revert" element={<VmwareSnapshotRevertPage />} />
           <Route path="vmware/:providerId/migrate" element={<VmwareMigratePage />} />
+          <Route path="vmware/:providerId/networks" element={<VmwareNetworksPage />} />
           <Route path="vmware/:providerId/create" element={<CreateVmwarePage />} />
 
           {/* Dokploy is its own tree: /admin/dokploy/* (kept below) */}
@@ -737,6 +751,7 @@ export default function AppRoutes() {
           <Route path="dokploy" element={<DokployHub />} />
           <Route path="dokploy/logs" element={<DokployLogsPage />} />
           <Route path="dokploy/logs-realtime" element={<DokployLogsRealtimePage />} />
+          <Route path="dokploy/projects/:id" element={<DokployProjectDetailPage />} />
           <Route path="dokploy/:entity" element={<DokployEntity />} />
 
           <Route path="dokploy/app" element={<DokployHome />} />
@@ -1042,6 +1057,7 @@ export default function AppRoutes() {
           <Route path="coupons/:couponId" element={<FinanceCouponDetail />} />
           <Route path="catalog" element={<FinanceCatalog />} />
           <Route path="rates" element={<FinanceRates />} />
+          <Route path="rates/history" element={<FinanceCustomRatesHistory />} />
           <Route path="regions" element={<FinanceRegions />} />
           <Route path="affiliate" element={<FinanceAffiliate />} />
           <Route

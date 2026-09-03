@@ -5,6 +5,8 @@
 // GET  /v1/admin/onidel/:id/health/detail           -> health_status + last_check (DB) + live probe, provider.Lookup-guarded
 // GET  /v1/admin/onidel/:id/instances               -> live instances filtered by provider_id==:id (DB, infra, polling 5s)
 // GET  /v1/admin/onidel/:id/instances/:instance_id  -> instance detail (provider-scoped, infra readable, polling 5s)
+// GET  /v1/admin/onidel/:id/orders                  -> orders history filtered by order_items.provider_id==:id (DB, infra, polling 5s)
+// GET  /v1/admin/onidel/:id/invoices                -> invoices history filtered by order_items.provider_id==:id via order_id (DB, infra, polling 5s)
 // POST /v1/admin/onidel/:id/instances/:instance_id/suspend   -> suspend (platform_admin, 202)
 // POST /v1/admin/onidel/:id/instances/:instance_id/terminate -> terminate (platform_admin, 202)
 // POST /v1/admin/onidel/:id/regions/sync            -> enqueue provider_sync (catalog sync) for this onidel provider, onidelAdapterFor-guarded
@@ -613,6 +615,114 @@ func (s *Server) assertOnidelInstance(ctx context.Context, providerID, instanceI
 		return apperrors.New(apperrors.CodeNotFound, "instance not found for this provider")
 	}
 	return nil
+}
+
+// GET /v1/admin/onidel/:id/orders — orders history for this onidel provider (infra-readable, polling 5s).
+// Returns orders whose order_items.provider_id == :id, paginated, with optional status
+// and organization_id (uuid/public_id/slug) filters. Guarded via onidelAdapterFor
+// so non-onidel kinds answer 501 expect onidel, 503 when credentials not set.
+func (s *Server) adminOnidelOrders(c fiber.Ctx) error {
+	providerID, _, _, err := s.onidelAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	ctx := c.Context()
+	page, perPage, offset := admPage(c)
+	status := lower(strings.TrimSpace(c.Query("status")))
+	if status != "" && !admOrderStatuses[status] {
+		return mw.WriteError(c, vErrField("status", "invalid order status"))
+	}
+	whereRest := ""
+	args := []any{providerID}
+	if status != "" {
+		args = append(args, status)
+		whereRest += " AND o.status=" + admPlaceholder(len(args))
+	}
+	orgFilter, args, ferr := admOrgFilter("o.organization_id", c.Query("organization_id"), args)
+	if ferr != nil {
+		return mw.WriteError(c, ferr)
+	}
+	whereRest += orgFilter
+	existsClause := " WHERE EXISTS (SELECT 1 FROM order_items oi WHERE oi.order_id=o.id AND oi.provider_id=" + admPlaceholder(1) + ")"
+	var total int
+	if err := s.db.QueryRow(ctx,
+		`SELECT count(*) FROM orders o`+existsClause+whereRest, args...).Scan(&total); err != nil {
+		return mw.WriteError(c, err)
+	}
+	args = append(args, perPage, offset)
+	rows, err := s.db.Query(ctx, admOrderSelect+existsClause+whereRest+
+		` ORDER BY o.created_at DESC LIMIT `+admPlaceholder(len(args)-1)+` OFFSET `+admPlaceholder(len(args)), args...)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	defer rows.Close()
+	orders := []admOrderRow{}
+	for rows.Next() {
+		o, rerr := scanAdmOrder(rows)
+		if rerr != nil {
+			return mw.WriteError(c, rerr)
+		}
+		orders = append(orders, *o)
+	}
+	if err := rows.Err(); err != nil {
+		return mw.WriteError(c, err)
+	}
+	return httputil.OK(c, 200, orders, &httputil.Meta{Page: page, PerPage: perPage, Total: total})
+}
+
+// GET /v1/admin/onidel/:id/invoices — invoices history for this onidel provider (infra-readable, polling 5s).
+// Returns invoices whose order_items.provider_id == :id via the linked order,
+// paginated with optional status and organization_id filters. Guarded via
+// onidelAdapterFor so non-onidel kinds answer 501 expect onidel, 503 when
+// credentials not set. SimpleDataTable + ProviderShell on the frontend poll
+// every 5000ms via useInfraGet.
+func (s *Server) adminOnidelInvoices(c fiber.Ctx) error {
+	providerID, _, _, err := s.onidelAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	ctx := c.Context()
+	page, perPage, offset := admPage(c)
+	status := lower(strings.TrimSpace(c.Query("status")))
+	if status != "" && !admInvoiceStatuses[status] {
+		return mw.WriteError(c, vErrField("status", "invalid invoice status"))
+	}
+	whereRest := ""
+	args := []any{providerID}
+	if status != "" {
+		args = append(args, status)
+		whereRest += " AND i.status=" + admPlaceholder(len(args))
+	}
+	orgFilter, args, ferr := admOrgFilter("i.organization_id", c.Query("organization_id"), args)
+	if ferr != nil {
+		return mw.WriteError(c, ferr)
+	}
+	whereRest += orgFilter
+	existsClause := " WHERE EXISTS (SELECT 1 FROM order_items oi WHERE oi.order_id=i.order_id AND oi.provider_id=" + admPlaceholder(1) + ")"
+	var total int
+	if err := s.db.QueryRow(ctx,
+		`SELECT count(*) FROM invoices i`+existsClause+whereRest, args...).Scan(&total); err != nil {
+		return mw.WriteError(c, err)
+	}
+	args = append(args, perPage, offset)
+	rows, err := s.db.Query(ctx, admInvoiceSelect+existsClause+whereRest+
+		` ORDER BY i.created_at DESC LIMIT `+admPlaceholder(len(args)-1)+` OFFSET `+admPlaceholder(len(args)), args...)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	defer rows.Close()
+	invoices := []admInvoiceRow{}
+	for rows.Next() {
+		inv, rerr := scanAdmInvoice(rows)
+		if rerr != nil {
+			return mw.WriteError(c, rerr)
+		}
+		invoices = append(invoices, *inv)
+	}
+	if err := rows.Err(); err != nil {
+		return mw.WriteError(c, err)
+	}
+	return httputil.OK(c, 200, invoices, &httputil.Meta{Page: page, PerPage: perPage, Total: total})
 }
 
 // POST /v1/admin/onidel/:id/regions/sync — enqueue provider catalog sync for this onidel provider.
