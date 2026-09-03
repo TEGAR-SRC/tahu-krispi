@@ -85,7 +85,7 @@ export default function CreateVmPage() {
   useEffect(() => {
     if (!providerId) return
     let cancelled = false
-    setLoading(true)
+    queueMicrotask(() => setLoading(true))
     Promise.all([
       apiGet<OrgRow[]>("/admin/organizations", { query: { per_page: 100 } }).then((r) => r.data).catch(() => [] as OrgRow[]),
       apiGet<RegionRow[]>("/admin/regions", { query: { per_page: 100 } }).then((r) => r.data).catch(() => [] as RegionRow[]),
@@ -119,7 +119,7 @@ export default function CreateVmPage() {
 
   useEffect(() => {
     if (!orgId) {
-      setIsos([])
+      queueMicrotask(() => setIsos([]))
       return
     }
     let cancelled = false

@@ -144,14 +144,17 @@ export default function ProxmoxHaPage() {
     }
   }, [base, providerId])
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     void loadResources()
   }, [loadResources, tick])
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     void loadGroups()
   }, [loadGroups, tick])
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     void loadRules()
   }, [loadRules, tick])
