@@ -95,7 +95,7 @@ OTP_DEBUG_ECHO=false
 SUBSCRIPTION_GRACE_DAYS=3
 
 # CORS
-CORS_ALLOWED_ORIGINS=https://admin.kilat-cloud.com,https://console.kilat-cloud.com,https://auth.kilat-cloud.com,https://kilat-cloud.com,https://landing.kilat-cloud.com,https://docs.kilat-cloud.com
+CORS_ALLOWED_ORIGINS=https://admin.kilat-cloud.com,https://console.kilat-cloud.com,https://auth.kilat-cloud.com,https://kilat-cloud.com,https://www.kilat-cloud.com,https://landing.kilat-cloud.com,https://docs.kilat-cloud.com
 EOF
 
 chmod 600 .env

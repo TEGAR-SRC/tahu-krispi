@@ -195,7 +195,7 @@ func (c *Config) CORSOrigins() string {
 	add(c.AuthConsoleBaseURL)
 	// AppDomain is bare (kilat-cloud.com); prefix with https:// for valid origin.
 	if c.AppDomain != "" {
-		origins = append(origins, "https://"+c.AppDomain)
+		origins = append(origins, "https://"+c.AppDomain, "https://www."+c.AppDomain)
 	}
 	// Localhost origins are useful for local development only; never expose
 	// them as allowed origins in production.
