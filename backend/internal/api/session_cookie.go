@@ -108,12 +108,10 @@ func clearSessionCookie(c fiber.Ctx) {
 			SameSite: "Lax",
 		})
 	}
-	// also clear CSRF (match Secure + Domain so HTTPS cookie is actually deleted)
-	domain := ""
-	if strings.HasSuffix(c.Hostname(), "kilat-cloud.com") {
-		domain = ".kilat-cloud.com"
+	// also clear CSRF — delete both host-only and Domain variants
+	for _, d := range []string{"", ".kilat-cloud.com"} {
+		c.Cookie(&fiber.Cookie{Name: CookieCSRF, Value: "", Path: "/", Domain: d, MaxAge: -1, Secure: wantsSecure(c), SameSite: "Lax"})
 	}
-	c.Cookie(&fiber.Cookie{Name: CookieCSRF, Value: "", Path: "/", Domain: domain, MaxAge: -1, Secure: wantsSecure(c), SameSite: "Lax"})
 }
 
 // sessionIDFromCookie returns the session ID from the cookie, if present.
@@ -196,6 +194,29 @@ func (s *Server) csrfMiddleware(c fiber.Ctx) error {
 	headerVal := c.Get("X-CSRF-Token")
 	if headerVal == "" {
 		headerVal = c.Get("X-CSRFToken")
+	}
+	// Cross-subdomain fix: JS on admin.kilat-cloud.com cannot read host-only
+	// kc_csrf set by api-admin.kilat-cloud.com. If cookie present but header
+	// missing and Origin is allowlisted, re-issue kc_csrf with Domain and allow
+	// this one request (next request will have header). This heals the old
+	// host-only cookie without requiring manual clear.
+	if headerVal == "" && cookieVal != "" {
+		if origin := c.Get("Origin"); origin != "" && s.isAllowedOrigin(origin) {
+			// Re-issue with correct Domain so future reads work
+			if strings.HasSuffix(c.Hostname(), "kilat-cloud.com") {
+				c.Cookie(&fiber.Cookie{
+					Name:     CookieCSRF,
+					Value:    cookieVal,
+					Path:     "/",
+					Domain:   ".kilat-cloud.com",
+					MaxAge:   int((30 * 24 * time.Hour).Seconds()),
+					HTTPOnly: false,
+					Secure:   wantsSecure(c),
+					SameSite: "Lax",
+				})
+			}
+			return c.Next()
+		}
 	}
 	if cookieVal == "" || headerVal == "" || !hmacEqual(cookieVal, headerVal) {
 		return c.Status(403).JSON(fiber.Map{
