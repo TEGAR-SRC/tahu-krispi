@@ -1,6 +1,8 @@
 // Catalog & pricing: a read-only explorer over regions, plans, instance types
 // and OS templates, plus a live price calculator that quotes a fixed plan or
 // custom resource dimensions through POST /pricing/quote (debounced).
+// Region dipilih user doang — provider otomatis dari region.provider_id
+// di backend (compute/service.go Provision). Tidak ada picker provider di UI user.
 import { useEffect, useRef, useState } from "react"
 import { CalculatorIcon, Loader2Icon } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"

@@ -18,11 +18,19 @@ import (
 
 // proxmoxAdapterFor resolves a providers row to its live *proxmox.Adapter,
 // rejecting everything that cannot serve cluster observability (unknown row,
-// non-proxmox kind, or an adapter without the helper surface).
+// non-proxmox kind, or an adapter without the helper surface). This is the
+// per-provider guard for the proxmox murni surface — every proxmox-only
+// handler (cluster/nodes/disks/certs/command/backup/storages/backup-jobs/
+// ha/fw/pools/sdn/ceph/containers + instance clone/template/move) routes
+// through here so non-proxmox kind answers 501 expect proxmox.
 func (s *Server) proxmoxAdapterFor(c fiber.Ctx) (uuid.UUID, string, *proxmox.Adapter, error) {
-	providerID, err := admParseUUIDParam(c, "provider_id", "provider_id")
+	raw := c.Params("id")
+	if raw == "" {
+		raw = c.Params("provider_id")
+	}
+	providerID, err := uuid.Parse(raw)
 	if err != nil {
-		return uuid.Nil, "", nil, err
+		return uuid.Nil, "", nil, vErrField("id", "must be a valid uuid")
 	}
 	var code, kind string
 	err = s.db.QueryRow(c.Context(),
@@ -32,7 +40,7 @@ func (s *Server) proxmoxAdapterFor(c fiber.Ctx) (uuid.UUID, string, *proxmox.Ada
 	}
 	if kind != proxmox.ProviderCode {
 		return uuid.Nil, "", nil, apperrors.Newf(apperrors.CodeUnsupported,
-			"cluster observability is only available for proxmox providers (kind=%q)", kind)
+			"cluster observability is only available for proxmox providers (kind=%q) expect proxmox", kind)
 	}
 	pv, err := provider.Lookup(code)
 	if err != nil {

@@ -1,6 +1,9 @@
 // Full-page provisioning wizard: region → image → size (plan or custom spec)
 // → billing period with a live debounced price quote → review → create.
-// On success the user is taken to the new instance's overview page.
+// User hanya pilih region (tanpa picker provider) — provider di-resolve
+// otomatis dari region.provider_id di backend compute/service.go Provision.
+// POST /instances tidak mengirim provider_id. On success the user is taken
+// to the new instance's overview page.
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import {

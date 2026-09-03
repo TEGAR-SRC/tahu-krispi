@@ -15,7 +15,7 @@ import {
 
 export const financeNav: ConsoleNavSection[] = [
   {
-    title: "Finance",
+    title: "Billing",
     items: [
       { title: "Summary", url: "/finance", icon: PieChartIcon },
       { title: "Reports", url: "/finance/reports", icon: PieChartIcon },
@@ -23,13 +23,8 @@ export const financeNav: ConsoleNavSection[] = [
       { title: "Invoices", url: "/finance/invoices", icon: ReceiptTextIcon },
       { title: "Payments", url: "/finance/payments", icon: CreditCardIcon },
       { title: "Wallets", url: "/finance/wallets", icon: WalletIcon },
-    ],
-  },
-  {
-    title: "Commercial",
-    items: [
       { title: "Coupons", url: "/finance/coupons", icon: TagIcon },
-      { title: "Catalog", url: "/finance/catalog", icon: PackageIcon },
+      { title: "Products plans", url: "/finance/catalog", icon: PackageIcon },
       { title: "Custom rates", url: "/finance/rates", icon: CoinsIcon },
       { title: "Regions", url: "/finance/regions", icon: GlobeIcon },
     ],

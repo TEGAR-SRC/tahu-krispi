@@ -208,8 +208,7 @@ export default function ProviderDetailPage() {
           <section className="space-y-3">
             <h2 className="text-lg font-semibold tracking-tight">Infrastructure sections</h2>
             <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {SECTIONS.map((section) => {
-                const applies = section.kinds.includes(match.kind)
+              {SECTIONS.filter((section) => section.kinds.includes(match.kind)).map((section) => {
                 const Icon = section.icon
                 return (
                   <Link
@@ -217,11 +216,7 @@ export default function ProviderDetailPage() {
                     to={`/admin/providers/${providerId}/${section.to}`}
                     className="group"
                   >
-                    <Card
-                      className={`h-full transition-colors ${
-                        applies ? "group-hover:border-primary/50" : "opacity-70"
-                      }`}
-                    >
+                    <Card className="h-full transition-colors group-hover:border-primary/50">
                       <CardContent className="flex items-start gap-3 px-4">
                         <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground [&_svg]:size-4">
                           <Icon />
@@ -229,11 +224,6 @@ export default function ProviderDetailPage() {
                         <div className="min-w-0 space-y-1">
                           <p className="font-medium leading-tight">{section.title}</p>
                           <p className="text-xs text-muted-foreground">{section.description}</p>
-                          {!applies ? (
-                            <p className="text-[11px] text-amber-600 dark:text-amber-400">
-                              Serves {section.kinds.join("/")} providers — expect 501 here.
-                            </p>
-                          ) : null}
                         </div>
                       </CardContent>
                     </Card>

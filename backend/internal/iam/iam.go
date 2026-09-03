@@ -172,14 +172,35 @@ const (
 
 // staffAreas lists the admin-console areas a staff role may touch:
 //
-//	billing  — orders, invoices, payments, wallets, coupons, products,
-//	           plans/prices/custom-rates, regions, affiliate earnings
-//	infra    — instances, jobs, orphans, security incidents, blocked
-//	           networks, providers (+sync), provider accounts, storage backends
-//	tickets  — staff ticket queue (reply/assign/close/attachments)
-//	users    — customer accounts (suspend/activate/limits)
+//	billing   — orders, invoices, payments, wallets, coupons, products,
+//	            plans/prices/custom-rates, regions, affiliate earnings
+//	infra     — instances, jobs, orphans, security incidents, blocked
+//	            networks, providers (+sync), provider accounts, storage backends.
+//	            Per-provider surface stays provider-prefixed (no universal infra
+//	            code/slug) but still maps to the generic "infra" area so NOC keeps
+//	            provider-scoped reads without leaking to finance:
+//	              infra:proxmox — Proxmox VE clusters/nodes/storages/tasks/perf
+//	              infra:onidel  — Onidel catalog/sync
+//	              infra:vmware  — VMware vSphere inventory/perf
+//	              infra:dokploy — Dokploy PaaS mirror/proxy (admin-only today,
+//	                              tagged per-provider for future NOC reads)
+//	            All four remain provider-coded: kode/id/slug must stay prefixed
+//	            by provider (proxmox-*, onidel-*, vmware-*, dokploy-*).
+//	tickets   — staff ticket queue (reply/assign/close/attachments)
+//	users     — customer accounts (suspend/activate/limits); read is "users.read"
 //	marketing — landing / marketing content (hero, features, pricing, faq, blog)
-//	settings — feature flags, app settings, audit logs, grant-admin
+//	settings  — feature flags, app settings, audit logs, grant-admin (platform_admin only)
+//	affiliate — affiliate settings/earnings; routed as "billing" in staffAreaFor but
+//	            kept as distinct grant so finance nav can gate affiliate separately.
+//
+// Platform matrix (single source of truth — do not drift):
+//   - platform_admin = "*" (all areas, all methods)
+//   - noc            = infra + tickets + users.read + marketing
+//                     (GET infra allowed, POST/DELETE on infra stays platform_admin via staffAreaFor)
+//   - finance        = billing + affiliate + users.read
+//                     (billing read-only view; no infra — never grant infra/infra:* to finance)
+//   - user (org roles owner/admin/billing/operator/developer/viewer) is unchanged;
+//     paket selection stays via region (no provider_id), auto-resolved.
 var staffPermissions = map[StaffRole][]string{
 	StaffPlatformAdmin: {"*"},
 	StaffFinance:       {"billing", "affiliate", "users.read"},
@@ -187,6 +208,18 @@ var staffPermissions = map[StaffRole][]string{
 }
 
 // StaffCan reports whether the staff role grants the admin area.
+//
+// Special mapping kept for backward/future compat without leaking finance:
+//   - grant "infra" covers generic "infra" and any per-provider tag
+//     "infra:<provider>" (proxmox/onidel/vmware/dokploy). This lets NOC keep
+//     provider-scoped GETs while finance — which never holds "infra"/"infra:*"
+//     — cannot read any provider infra. The reverse does not hold: a provider-
+//     specific grant "infra:proxmox" would not grant generic "infra".
+//   - grant "users.read" covers area "users" (admin /users list endpoint uses
+//     "users" while the staff matrix stores the read slice as "users.read").
+//   - grant "billing" also covers area "affiliate" (affiliate routes are
+//     currently gated as "billing"; the distinct "affiliate" grant is kept for
+//     future per-area routing without duplicating finance grants).
 func StaffCan(r StaffRole, area string) bool {
 	grants, ok := staffPermissions[r]
 	if !ok {
@@ -194,6 +227,15 @@ func StaffCan(r StaffRole, area string) bool {
 	}
 	for _, g := range grants {
 		if g == "*" || g == area {
+			return true
+		}
+		if g == "infra" && (area == "infra" || strings.HasPrefix(area, "infra:")) {
+			return true
+		}
+		if g == "users.read" && area == "users" {
+			return true
+		}
+		if g == "billing" && area == "affiliate" {
 			return true
 		}
 	}

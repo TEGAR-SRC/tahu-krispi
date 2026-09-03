@@ -22,6 +22,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Dialog,
   DialogContent,
@@ -61,6 +62,7 @@ export default function AdminProvidersPage() {
   const [rows, setRows] = useState<ProviderRow[]>([])
   const [meta, setMeta] = useState<PagedMeta & Record<string, unknown>>()
   const [page, setPage] = useState(1)
+  const [kindFilter, setKindFilter] = useState<string>("all")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
   const [reloadTick, setReloadTick] = useState(0)
@@ -127,6 +129,8 @@ export default function AdminProvidersPage() {
     }
   }
 
+  const visibleRows = kindFilter === "all" ? rows : rows.filter((row) => row.kind === kindFilter)
+
   return (
     <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
@@ -162,6 +166,17 @@ export default function AdminProvidersPage() {
           },
         ]}
       />
+
+      <Tabs value={kindFilter} onValueChange={setKindFilter}>
+        <TabsList>
+          <TabsTrigger value="all">All</TabsTrigger>
+          {PROVIDER_KINDS.map((kind) => (
+            <TabsTrigger key={kind} value={kind} className="capitalize">
+              {kind}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
       <SimpleDataTable<ProviderRow>
         columns={[
@@ -275,7 +290,7 @@ export default function AdminProvidersPage() {
             ),
           },
         ]}
-        rows={rows}
+        rows={visibleRows}
         loading={loading}
         error={error}
         getRowKey={bulk.getRowKey}

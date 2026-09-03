@@ -130,6 +130,14 @@ func staffAreaFor(method, path string) string {
 		}
 		return ""
 	}
+	// Per-provider infra: /proxmox/:id/*, /onidel/:id/*, /vmware/:id/*
+	// GET = infra (NOC readable), POST/PUT/DELETE = platform_admin only.
+	if strings.HasPrefix(path, "/proxmox/") || strings.HasPrefix(path, "/onidel/") || strings.HasPrefix(path, "/vmware/") {
+		if method == http.MethodGet {
+			return "infra"
+		}
+		return ""
+	}
 	switch {
 	case strings.HasPrefix(path, "/orders"), strings.HasPrefix(path, "/invoices"),
 		strings.HasPrefix(path, "/payments"), strings.HasPrefix(path, "/wallets"),

@@ -5,6 +5,14 @@
 // requireStaff("auto"): /providers reads resolve to the infra area (NOC)
 // while every mutation stays platform_admin-only, and /instances routes
 // belong to infra.
+//
+// PROXMOX-ONLY file: every handler here is proxmox murni (cluster, nodes,
+// disks, certs, command, backup, storages, backup-jobs, ha, fw, pools, sdn,
+// ceph, containers via handlers_admin_proxmox.go). Onidel / VMware / Dokploy
+// live in their own files (handlers_isos.go / handlers_admin_vmware.go /
+// handlers_dokploy.go) — kode, id, slug semua prefix provider. Guard kind
+// check di tiap handler via proxmoxAdapterFor (if kind != proxmox return
+// 501 expect proxmox); instance handlers check kind explicitly.
 package api
 
 import (
@@ -75,7 +83,7 @@ WHERE i.id=$1 AND i.deleted_at IS NULL`, instanceID).Scan(&kind)
 	}
 	if kind != proxmox.ProviderCode {
 		return mw.WriteError(c, apperrors.Newf(apperrors.CodeUnsupported,
-			"clone is only supported for proxmox instances (kind=%q)", kind))
+			"clone is only supported for proxmox instances (kind=%q) expect proxmox", kind))
 	}
 	jobID, err := s.admEnqueueJob(ctx, "provisioning", "clone_instance", "instance", instanceID,
 		map[string]any{"instance_id": instanceID.String(), "name": name})
@@ -89,11 +97,25 @@ WHERE i.id=$1 AND i.deleted_at IS NULL`, instanceID).Scan(&kind)
 }
 
 // adminConvertToTemplate converts a VM into a PVE template synchronously;
-// non-proxmox providers reject with 501 from the interface itself.
+// proxmox murni only — guard kind via instance's provider before touching the
+// adapter so onidel/vmware/dokploy answer 501 expect proxmox.
 func (s *Server) adminConvertToTemplate(c fiber.Ctx) error {
-	instanceID, ext, pv, err := s.admInstanceProvider(c)
+	instanceID, err := admParseUUIDParam(c, "instance_id", "instance_id")
 	if err != nil {
 		return mw.WriteError(c, err)
+	}
+	var kind string
+	if err := s.db.QueryRow(c.Context(),
+		`SELECT p.kind::text FROM instances i JOIN providers p ON p.id=i.provider_id WHERE i.id=$1 AND i.deleted_at IS NULL`, instanceID).Scan(&kind); err != nil {
+		return mw.WriteError(c, apperrors.New(apperrors.CodeNotFound, "instance not found"))
+	}
+	if kind != proxmox.ProviderCode {
+		return mw.WriteError(c, apperrors.Newf(apperrors.CodeUnsupported,
+			"template conversion is only available for proxmox instances (kind=%q) expect proxmox", kind))
+	}
+	_, ext, pv, gerr := s.admInstanceProvider(c)
+	if gerr != nil {
+		return mw.WriteError(c, gerr)
 	}
 	if err := pv.ConvertToTemplate(c.Context(), ext); err != nil {
 		return mw.WriteError(c, err)
@@ -103,10 +125,24 @@ func (s *Server) adminConvertToTemplate(c fiber.Ctx) error {
 }
 
 // adminMoveVolume moves one guest volume to another storage synchronously.
+// proxmox murni only — same kind guard as convert.
 func (s *Server) adminMoveVolume(c fiber.Ctx) error {
-	instanceID, ext, pv, err := s.admInstanceProvider(c)
+	instanceID, err := admParseUUIDParam(c, "instance_id", "instance_id")
 	if err != nil {
 		return mw.WriteError(c, err)
+	}
+	var kind string
+	if err := s.db.QueryRow(c.Context(),
+		`SELECT p.kind::text FROM instances i JOIN providers p ON p.id=i.provider_id WHERE i.id=$1 AND i.deleted_at IS NULL`, instanceID).Scan(&kind); err != nil {
+		return mw.WriteError(c, apperrors.New(apperrors.CodeNotFound, "instance not found"))
+	}
+	if kind != proxmox.ProviderCode {
+		return mw.WriteError(c, apperrors.Newf(apperrors.CodeUnsupported,
+			"move-volume is only available for proxmox instances (kind=%q) expect proxmox", kind))
+	}
+	_, ext, pv, gerr := s.admInstanceProvider(c)
+	if gerr != nil {
+		return mw.WriteError(c, gerr)
 	}
 	var in struct {
 		Volume        string `json:"volume"`

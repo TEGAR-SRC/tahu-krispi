@@ -1,6 +1,7 @@
-import { lazy, Suspense, useEffect } from "react"
+import { lazy, Suspense, useEffect, useState } from "react"
 import type { ReactNode } from "react"
-import { Navigate, Route, Routes, Link } from "react-router-dom"
+import { Navigate, Route, Routes, Link, useLocation, useParams } from "react-router-dom"
+import { apiGet } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { homePathFor, useAuth, type AppRole } from "@/lib/auth"
@@ -448,6 +449,77 @@ function NotFound() {
   )
 }
 
+// ---- Legacy /admin/providers/:id/* -> per-provider redirect ---------------------
+
+type ProviderKind = "proxmox" | "onidel" | "vmware" | "dokploy" | string
+
+const LEGACY_SUFFIX_TO_NEW: Array<{ match: (s: string) => boolean; build: (id: string, suffix: string) => string }> = [
+  { match: (s) => s === "" || s === "/", build: (id) => `/admin/proxmox/${id}` },
+  { match: (s) => s.startsWith("/nodes"), build: (id, s) => `/admin/proxmox/${id}${s}` },
+  { match: (s) => s.startsWith("/storages"), build: (id, s) => `/admin/proxmox/${id}${s}` },
+  { match: (s) => s.startsWith("/backup-jobs"), build: (id, s) => `/admin/proxmox/${id}${s}` },
+  { match: (s) => s === "/ha" || s.startsWith("/ha/"), build: (id, s) => `/admin/proxmox/${id}${s}` },
+  { match: (s) => s.startsWith("/firewall"), build: (id, s) => `/admin/proxmox/${id}${s}` },
+  { match: (s) => s.startsWith("/sdn"), build: (id, s) => `/admin/proxmox/${id}${s}` },
+  { match: (s) => s.startsWith("/ceph"), build: (id, s) => `/admin/proxmox/${id}${s}` },
+  { match: (s) => s.startsWith("/containers"), build: (id, s) => `/admin/proxmox/${id}${s}` },
+  { match: (s) => s.startsWith("/pools"), build: (id, s) => `/admin/proxmox/${id}${s}` },
+  { match: (s) => s.startsWith("/inventory"), build: (id) => `/admin/vmware/${id}/inventory` },
+  { match: (s) => s.startsWith("/onidel"), build: (id) => `/admin/onidel/${id}/onidel` },
+  { match: (s) => s.startsWith("/perf"), build: (id, s) => `/admin/proxmox/${id}${s}` },
+]
+
+function legacyTarget(providerId: string, suffix: string, kind?: ProviderKind): string {
+  if (kind === "onidel") return `/admin/onidel/${providerId}/onidel`
+  if (kind === "vmware") {
+    if (suffix.startsWith("/inventory") || suffix === "" || suffix === "/") return `/admin/vmware/${providerId}/inventory`
+    return `/admin/vmware/${providerId}/inventory`
+  }
+  if (kind === "dokploy") return `/admin/dokploy`
+  for (const rule of LEGACY_SUFFIX_TO_NEW) {
+    if (rule.match(suffix)) return rule.build(providerId, suffix)
+  }
+  return `/admin/proxmox/${providerId}`
+}
+
+function LegacyProviderRedirect() {
+  const { providerId = "" } = useParams<{ providerId: string }>()
+  const location = useLocation()
+  const prefix = `/admin/providers/${providerId}`
+  let suffix = location.pathname.startsWith(prefix) ? location.pathname.slice(prefix.length) : ""
+  if (suffix === "") suffix = "/"
+  const search = location.search ?? ""
+  const [kind, setKind] = useState<ProviderKind | undefined>(undefined)
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    apiGet<Array<{ id: string; kind: string }>>("/admin/providers")
+      .then((env) => {
+        if (cancelled) return
+        const row = Array.isArray(env.data) ? env.data.find((r) => r.id === providerId) : undefined
+        if (row?.kind) setKind(row.kind)
+        setReady(true)
+      })
+      .catch(() => {
+        if (!cancelled) setReady(true)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [providerId])
+
+  if (!ready) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <Spinner className="size-6" />
+      </div>
+    )
+  }
+
+  return <Navigate to={`${legacyTarget(providerId, suffix, kind)}${search}`} replace />
+}
+
 // ---- Route tree ----------------------------------------------------------------
 
 export default function AppRoutes() {
@@ -502,38 +574,29 @@ export default function AppRoutes() {
           <Route path="jobs" element={<AdminJobs />} />
           <Route path="jobs/:jobId" element={<AdminJobDetail />} />
           <Route path="providers" element={<Providers />} />
-          <Route path="providers/:providerId" element={<ProviderDetail />} />
-          <Route path="providers/:providerId/nodes" element={<ProviderNodes />} />
-          <Route
-            path="providers/:providerId/nodes/:node"
-            element={<ProviderNodeDetail />}
-          />
-          <Route
-            path="providers/:providerId/storages"
-            element={<ProviderStorages />}
-          />
-          <Route
-            path="providers/:providerId/backup-jobs"
-            element={<ProviderBackupJobs />}
-          />
-          <Route path="providers/:providerId/ha" element={<ProviderHa />} />
-          <Route
-            path="providers/:providerId/firewall"
-            element={<ProviderFirewall />}
-          />
-          <Route path="providers/:providerId/sdn" element={<ProviderSdn />} />
-          <Route path="providers/:providerId/ceph" element={<ProviderCeph />} />
-          <Route
-            path="providers/:providerId/containers"
-            element={<ProviderContainers />}
-          />
-          <Route path="providers/:providerId/pools" element={<ProviderPools />} />
-          <Route
-            path="providers/:providerId/inventory"
-            element={<VmwareInventory />}
-          />
-          <Route path="providers/:providerId/perf" element={<GuestPerf />} />
-          <Route path="providers/:providerId/onidel" element={<OnidelCatalog />} />
+          {/* Legacy universal /admin/providers/:id/* -> per-provider redirect */}
+          <Route path="providers/:providerId/*" element={<LegacyProviderRedirect />} />
+
+          {/* Per-provider trees: proxmox / onidel / vmware are prefix-isolated */}
+          <Route path="proxmox/:providerId" element={<ProviderDetail />} />
+          <Route path="proxmox/:providerId/nodes" element={<ProviderNodes />} />
+          <Route path="proxmox/:providerId/nodes/:node" element={<ProviderNodeDetail />} />
+          <Route path="proxmox/:providerId/storages" element={<ProviderStorages />} />
+          <Route path="proxmox/:providerId/backup-jobs" element={<ProviderBackupJobs />} />
+          <Route path="proxmox/:providerId/ha" element={<ProviderHa />} />
+          <Route path="proxmox/:providerId/firewall" element={<ProviderFirewall />} />
+          <Route path="proxmox/:providerId/sdn" element={<ProviderSdn />} />
+          <Route path="proxmox/:providerId/ceph" element={<ProviderCeph />} />
+          <Route path="proxmox/:providerId/containers" element={<ProviderContainers />} />
+          <Route path="proxmox/:providerId/pools" element={<ProviderPools />} />
+          <Route path="proxmox/:providerId/perf" element={<GuestPerf />} />
+
+          <Route path="onidel/:providerId/onidel" element={<OnidelCatalog />} />
+
+          <Route path="vmware/:providerId/inventory" element={<VmwareInventory />} />
+
+          {/* Dokploy is its own tree: /admin/dokploy/* (kept below) */}
+
           <Route path="regions-pools" element={<RegionsPools />} />
           <Route path="storage-backends" element={<StorageBackends />} />
           <Route

@@ -54,28 +54,25 @@ export const adminNav: ConsoleNavSection[] = [
     ],
   },
   {
-    title: "Infrastructure",
+    title: "Proxmox",
     items: [
-      { title: "Instances", url: "/admin/instances", icon: ServerIcon },
-      { title: "Jobs", url: "/admin/jobs", icon: WorkflowIcon },
-      { title: "Providers", url: "/admin/providers", icon: CloudCogIcon },
-      { title: "Regions & pools", url: "/admin/regions-pools", icon: GlobeIcon },
-      { title: "Storage backends", url: "/admin/storage-backends", icon: HardDriveIcon },
-      { title: "Dokploy PaaS", url: "/admin/dokploy", icon: DatabaseIcon },
+      { title: "Providers", url: "/admin/providers?kind=proxmox", icon: CloudCogIcon },
+      { title: "Nodes", url: "/admin/providers?kind=proxmox", icon: ServerIcon },
+      { title: "Storages", url: "/admin/providers?kind=proxmox", icon: HardDriveIcon },
     ],
   },
   {
-    title: "Billing",
+    title: "Onidel",
     items: [
-      { title: "Summary", url: "/admin/billing/summary", icon: PieChartIcon },
-      { title: "Reports", url: "/admin/billing/reports", icon: PieChartIcon },
-      { title: "Orders", url: "/admin/billing/orders", icon: ShoppingBagIcon },
-      { title: "Invoices", url: "/admin/billing/invoices", icon: ReceiptTextIcon },
-      { title: "Payments", url: "/admin/billing/payments", icon: CreditCardIcon },
-      { title: "Wallets", url: "/admin/billing/wallets", icon: WalletIcon },
-      { title: "Coupons", url: "/admin/billing/coupons", icon: TagIcon },
-      { title: "Products & plans", url: "/admin/billing/products-plans", icon: PackageIcon },
-      { title: "Custom rates", url: "/admin/billing/custom-rates", icon: CoinsIcon },
+      { title: "Onidel catalog", url: "/admin/providers?kind=onidel", icon: CloudCogIcon },
+      { title: "Instances", url: "/admin/instances", icon: ServerIcon },
+    ],
+  },
+  {
+    title: "VMware",
+    items: [
+      { title: "Inventory", url: "/admin/providers?kind=vmware", icon: BoxesIcon },
+      { title: "Performance", url: "/admin/providers?kind=vmware", icon: PieChartIcon },
     ],
   },
   {
@@ -91,6 +88,20 @@ export const adminNav: ConsoleNavSection[] = [
       { title: "Schedules", url: "/admin/dokploy/app/schedules", icon: WorkflowIcon },
       { title: "Traefik files", url: "/admin/dokploy/app/traefik", icon: ServerIcon },
       { title: "Settings (Dokploy)", url: "/admin/dokploy/app/settings/profile", icon: ShieldCheckIcon },
+    ],
+  },
+  {
+    title: "Billing",
+    items: [
+      { title: "Summary", url: "/admin/billing/summary", icon: PieChartIcon },
+      { title: "Reports", url: "/admin/billing/reports", icon: PieChartIcon },
+      { title: "Orders", url: "/admin/billing/orders", icon: ShoppingBagIcon },
+      { title: "Invoices", url: "/admin/billing/invoices", icon: ReceiptTextIcon },
+      { title: "Payments", url: "/admin/billing/payments", icon: CreditCardIcon },
+      { title: "Wallets", url: "/admin/billing/wallets", icon: WalletIcon },
+      { title: "Coupons", url: "/admin/billing/coupons", icon: TagIcon },
+      { title: "Products & plans", url: "/admin/billing/products-plans", icon: PackageIcon },
+      { title: "Custom rates", url: "/admin/billing/custom-rates", icon: CoinsIcon },
     ],
   },
   {

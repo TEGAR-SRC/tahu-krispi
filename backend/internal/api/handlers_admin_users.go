@@ -557,9 +557,13 @@ RETURNING id, (credentials_ciphertext IS NOT NULL)`,
 // instance_types/etc. cascade on provider deletion, while instances, snapshots
 // and other NOT NULL foreign keys abort it.
 func (s *Server) adminDeleteProvider(c fiber.Ctx) error {
-	providerID, err := admParseUUIDParam(c, "provider_id", "provider_id")
+	raw := c.Params("id")
+	if raw == "" {
+		raw = c.Params("provider_id")
+	}
+	providerID, err := uuid.Parse(raw)
 	if err != nil {
-		return mw.WriteError(c, err)
+		return mw.WriteError(c, vErrField("id", "must be a valid uuid"))
 	}
 	ctx := c.Context()
 	conflict := apperrors.New(apperrors.CodeConflict,
@@ -591,9 +595,13 @@ SELECT EXISTS(SELECT 1 FROM instances WHERE provider_id=$1)
 }
 
 func (s *Server) adminTestProvider(c fiber.Ctx) error {
-	providerID, err := admParseUUIDParam(c, "provider_id", "provider_id")
+	raw := c.Params("id")
+	if raw == "" {
+		raw = c.Params("provider_id")
+	}
+	providerID, err := uuid.Parse(raw)
 	if err != nil {
-		return mw.WriteError(c, err)
+		return mw.WriteError(c, vErrField("id", "must be a valid uuid"))
 	}
 	var code, kind string
 	if err := s.db.QueryRow(c.Context(), `SELECT code, kind FROM providers WHERE id=$1`, providerID).Scan(&code, &kind); err != nil {
@@ -610,9 +618,13 @@ func (s *Server) adminTestProvider(c fiber.Ctx) error {
 }
 
 func (s *Server) adminTriggerProviderSync(c fiber.Ctx) error {
-	providerID, err := admParseUUIDParam(c, "provider_id", "provider_id")
+	raw := c.Params("id")
+	if raw == "" {
+		raw = c.Params("provider_id")
+	}
+	providerID, err := uuid.Parse(raw)
 	if err != nil {
-		return mw.WriteError(c, err)
+		return mw.WriteError(c, vErrField("id", "must be a valid uuid"))
 	}
 	var exists bool
 	if err := s.db.QueryRow(c.Context(),
