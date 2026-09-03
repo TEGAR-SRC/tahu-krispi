@@ -87,6 +87,9 @@ const VmwareInventory = lazy(() =>
 const GuestPerf = lazy(() =>
   import("@/features/admin/pages/providers/GuestPerf"),
 )
+const OnidelCatalog = lazy(() =>
+  import("@/features/admin/pages/providers/OnidelCatalog"),
+)
 const RegionsPools = lazy(() => import("@/features/admin/pages/RegionsPools"))
 const StorageBackends = lazy(() =>
   import("@/features/admin/pages/StorageBackends"),
@@ -530,6 +533,7 @@ export default function AppRoutes() {
             element={<VmwareInventory />}
           />
           <Route path="providers/:providerId/perf" element={<GuestPerf />} />
+          <Route path="providers/:providerId/onidel" element={<OnidelCatalog />} />
           <Route path="regions-pools" element={<RegionsPools />} />
           <Route path="storage-backends" element={<StorageBackends />} />
           <Route

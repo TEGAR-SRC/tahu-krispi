@@ -120,6 +120,13 @@ const SECTIONS: SectionLink[] = [
     icon: GaugeIcon,
     kinds: ["proxmox", "vmware", "onidel", "dokploy"],
   },
+  {
+    to: "onidel",
+    title: "Onidel catalog",
+    description: "Regions, instance types & OS templates synced from api.cloud.onidel.com.",
+    icon: LayersIcon,
+    kinds: ["onidel"],
+  },
 ]
 
 export default function ProviderDetailPage() {
