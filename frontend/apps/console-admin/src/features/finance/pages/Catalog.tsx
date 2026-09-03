@@ -591,6 +591,8 @@ function PlanCreateDialog({
   const [code, setCode] = useState("")
   const [name, setName] = useState("")
   const [priceMode, setPriceMode] = useState<string>("fixed_plan")
+  const [providerId, setProviderId] = useState<string>("__any__")
+  const [providers, setProviders] = useState<Array<{ id: string; code: string; name: string; kind: string }>>([])
   const [vcpu, setVcpu] = useState("1")
   const [ramGb, setRamGb] = useState("1")
   const [diskGb, setDiskGb] = useState("20")
@@ -601,6 +603,14 @@ function PlanCreateDialog({
   const [featured, setFeatured] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (open) {
+      apiGet<Array<{ id: string; code: string; name: string; kind: string }>>("/admin/providers")
+        .then((r) => setProviders(r.data ?? []))
+        .catch(() => {})
+    }
+  }, [open])
 
   const submit = async () => {
     if (!productId) {
@@ -619,6 +629,7 @@ function PlanCreateDialog({
         code: code.trim(),
         name: name.trim(),
         price_mode: priceMode,
+        provider_id: providerId !== "__any__" ? providerId : undefined,
         vcpu: Number(vcpu) || 0,
         ram_mb: Math.round((Number(ramGb) || 0) * 1024),
         disk_gb: Number(diskGb) || 0,
@@ -682,6 +693,18 @@ function PlanCreateDialog({
               <SelectContent>
                 {PRICE_MODES.map((mode) => (
                   <SelectItem key={mode} value={mode}>{mode.replaceAll("_", " ")}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="col-span-2 space-y-1.5">
+            <Label>Provider (optional — kosong = semua region)</Label>
+            <Select value={providerId} onValueChange={setProviderId}>
+              <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__any__">Universal — all providers via region</SelectItem>
+                {providers.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>{p.name} ({p.code} · {p.kind})</SelectItem>
                 ))}
               </SelectContent>
             </Select>
