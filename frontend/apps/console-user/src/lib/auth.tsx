@@ -118,11 +118,8 @@ async function probe(path: string): Promise<{ status: number; body: string }> {
   }
 }
 
-function isAuthFailure(status: number, body: string): boolean {
-  if (status === 401) return true
-  if (status === 0) return true
-  if (status === 403 && body.includes("not available on the")) return true
-  return false
+function isAuthFailure(status: number, _body: string): boolean {
+  return status === 401
 }
 
 export async function resolveRole(): Promise<AppRole> {

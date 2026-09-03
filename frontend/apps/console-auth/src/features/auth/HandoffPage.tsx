@@ -33,6 +33,13 @@ export default function HandoffPage() {
       } catch {
         // if resolveRole throws (session expired) let outer catch handle it
       }
+      // Customer accounts stay on the auth console — no handoff needed.
+      // Previously this redirected to console.kilat-cloud.com which then
+      // probes /admin/* on api-user (always 403) and loops back to auth.
+      if (freshRole === "customer") {
+        window.location.assign("/login?already=customer")
+        return
+      }
       const origin = consoleUrlFor(freshRole)
       if (!origin || origin.startsWith("/")) {
         setError("Could not determine your console.")
