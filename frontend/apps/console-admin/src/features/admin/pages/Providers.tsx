@@ -97,7 +97,7 @@ export default function AdminProvidersPage() {
     setLoading(true)
     apiGet<ProviderRow[]>("/admin/providers", { query: { page, per_page: PER_PAGE } })
       .then((envelope) => {
-        setRows(envelope.data)
+        setRows(Array.isArray(envelope.data) ? envelope.data : [])
         setMeta(envelope.meta as PagedMeta & Record<string, unknown>)
         setError(null)
       })

@@ -51,6 +51,8 @@ export function SimpleDataTable<T>({
   selectedKeys,
   onSelectionChange,
 }: SimpleDataTableProps<T>) {
+  const safeRows = Array.isArray(rows) ? rows : []
+  const safeColumns = Array.isArray(columns) ? columns : []
   if (error) {
     return <ErrorBanner error={error} />
   }
@@ -64,7 +66,7 @@ export function SimpleDataTable<T>({
         </div>
         {Array.from({ length: Math.max(skeletonRows, 1) }).map((_, rowIndex) => (
           <div key={rowIndex} className="flex min-w-0 items-center gap-4">
-            {columns.map((column) => (
+            {safeColumns.map((column) => (
               <Skeleton key={column.key} className={cn("h-6 flex-1", column.className)} />
             ))}
           </div>
@@ -73,7 +75,7 @@ export function SimpleDataTable<T>({
     )
   }
 
-  if (rows.length === 0) {
+  if (safeRows.length === 0) {
     return <EmptyState message={emptyMessage} />
   }
 
@@ -92,12 +94,12 @@ export function SimpleDataTable<T>({
   }
 
   const allSelected =
-    rows.length > 0 && rows.every((row, index) => (selectedKeys ?? new Set()).has(getRowKey ? getRowKey(row, index) : String(index)))
+    safeRows.length > 0 && safeRows.every((row, index) => (selectedKeys ?? new Set()).has(getRowKey ? getRowKey(row, index) : String(index)))
 
   const toggleAll = (checked: boolean) => {
     if (!onSelectionChange) return
     const next = new Set(selectedKeys ?? [])
-    for (const [index, row] of rows.entries()) {
+    for (const [index, row] of safeRows.entries()) {
       const key = getRowKey ? getRowKey(row, index) : String(index)
       if (checked) next.add(key)
       else next.delete(key)
@@ -120,7 +122,7 @@ export function SimpleDataTable<T>({
                 />
               </TableHead>
             ) : null}
-            {columns.map((column) => (
+            {safeColumns.map((column) => (
               <TableHead key={column.key} className={column.className}>
                 {column.header}
               </TableHead>
@@ -128,7 +130,7 @@ export function SimpleDataTable<T>({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {rows.map((row, index) => {
+          {safeRows.map((row, index) => {
             const key = getRowKey ? getRowKey(row, index) : String(index)
             const selected = (selectedKeys ?? new Set()).has(key)
             return (
@@ -142,7 +144,7 @@ export function SimpleDataTable<T>({
                     />
                   </TableCell>
                 ) : null}
-                {columns.map((column) => (
+                {safeColumns.map((column) => (
                   <TableCell key={column.key} className={column.className}>
                     {cellFor(row, column)}
                   </TableCell>
