@@ -207,13 +207,19 @@ export default function ProviderDetailPage() {
 
           <section className="space-y-3">
             <h2 className="text-lg font-semibold tracking-tight">Infrastructure sections</h2>
+            <p className="text-xs text-muted-foreground">Routes now per-provider — no universal: proxmox → /admin/proxmox/:id/…, onidel → /admin/onidel/:id/…, vmware → /admin/vmware/:id/…, dokploy → /admin/dokploy/…</p>
             <div className="grid w-full max-w-full min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {SECTIONS.filter((section) => section.kinds.includes(match.kind)).map((section) => {
                 const Icon = section.icon
+                const prefix =
+                  match.kind === "proxmox" ? `/admin/proxmox/${providerId}` :
+                  match.kind === "onidel" ? `/admin/onidel/${providerId}` :
+                  match.kind === "vmware" ? `/admin/vmware/${providerId}` :
+                  match.kind === "dokploy" ? `/admin/dokploy` : `/admin/providers/${providerId}`
                 return (
                   <Link
                     key={section.to}
-                    to={`/admin/providers/${providerId}/${section.to}`}
+                    to={`${prefix}/${section.to}`}
                     className="group"
                   >
                     <Card className="h-full transition-colors group-hover:border-primary/50">
