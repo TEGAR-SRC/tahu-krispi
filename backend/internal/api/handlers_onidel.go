@@ -1,13 +1,15 @@
-// Admin Onidel plane: provider-prefixed catalog + health, no proxmox share.
+// Admin Onidel plane: provider-prefixed catalog + health + instances, no proxmox share.
 //
-// GET /v1/admin/onidel/:id/catalog  -> regions + instance_types + os_templates (live via Onidel adapter)
-// GET /v1/admin/onidel/:id/health   -> enabled/health_status + live probe latency
-// Both ride requireStaff("auto") which resolves GET to "infra" so NOC can read,
-// while POST/DELETE on /onidel stays platform_admin-only via staffAreaFor.
+// GET /v1/admin/onidel/:id/catalog       -> regions + instance_types + os_templates (live via Onidel adapter)
+// GET /v1/admin/onidel/:id/health        -> enabled/health_status + live probe latency
+// GET /v1/admin/onidel/:id/health/detail -> health_status + last_check (DB) + live probe, provider.Lookup-guarded
+// GET /v1/admin/onidel/:id/instances     -> live instances filtered by provider_id==:id (DB, infra, polling 5s)
+// All ride requireStaff("infra") for GET so NOC can read; POST/DELETE stay platform_admin-only.
 package api
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"strings"
 	"time"
@@ -19,6 +21,7 @@ import (
 	"kilat.cloud/backend/internal/provider"
 	"kilat.cloud/backend/internal/provider/onidel"
 	apperrors "kilat.cloud/backend/pkg/errors"
+	httputil "kilat.cloud/backend/pkg/httputil"
 	mw "kilat.cloud/backend/pkg/middleware"
 )
 
@@ -171,4 +174,166 @@ func (s *Server) adminOnidelHealth(c fiber.Ctx) error {
 		"live":          live,
 		"latency_ms":    latency,
 	}, nil)
+}
+
+// GET /v1/admin/onidel/:id/health/detail
+// Returns health_status + last_check (last_health_check_at) from providers
+// table plus live probe via provider.Lookup. Guarded to onidel kind only.
+func (s *Server) adminOnidelHealthDetail(c fiber.Ctx) error {
+	raw := strings.TrimSpace(c.Params("id"))
+	if raw == "" {
+		raw = strings.TrimSpace(c.Params("provider_id"))
+	}
+	providerID, err := uuid.Parse(raw)
+	if err != nil {
+		return mw.WriteError(c, vErrField("id", "must be a valid uuid"))
+	}
+	var code, kind, healthStatus, apiBaseURL string
+	var enabled bool
+	var lastCheck sql.NullTime
+	if err := s.db.QueryRow(c.Context(),
+		`SELECT code::text, kind, health_status, last_health_check_at, enabled, COALESCE(api_base_url,'') FROM providers WHERE id=$1`, providerID).
+		Scan(&code, &kind, &healthStatus, &lastCheck, &enabled, &apiBaseURL); err != nil {
+		return mw.WriteError(c, apperrors.New(apperrors.CodeNotFound, "provider not found"))
+	}
+	if kind != "onidel" {
+		return mw.WriteError(c, apperrors.Newf(apperrors.CodeUnsupported,
+			"onidel health detail is only available for onidel providers (kind=%q)", kind))
+	}
+	pv, err := provider.Lookup(code)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	ad, ok := pv.(*onidel.Adapter)
+	if !ok {
+		return mw.WriteError(c, apperrors.Newf(apperrors.CodeUnsupported,
+			"registered provider %q does not expose onidel health detail", code))
+	}
+	var lastCheckStr *string
+	if lastCheck.Valid {
+		s := lastCheck.Time.UTC().Format(time.RFC3339Nano)
+		lastCheckStr = &s
+	}
+	if !enabled {
+		return mw.JSON(c, 200, fiber.Map{
+			"provider_id":          providerID,
+			"code":                 code,
+			"enabled":              false,
+			"health_status":        healthStatus,
+			"last_check":           lastCheckStr,
+			"last_health_check_at": lastCheckStr,
+			"api_base_url":         apiBaseURL,
+			"live":                 "disabled",
+		}, nil)
+	}
+	ctx, cancel := context.WithTimeout(c.Context(), 8*time.Second)
+	defer cancel()
+	start := time.Now()
+	_, perr := ad.Client().ListInstanceTypes(ctx)
+	latency := time.Since(start).Milliseconds()
+	live := "ok"
+	liveErr := ""
+	if perr != nil {
+		live = "error"
+		liveErr = perr.Error()
+		if apiErr, ok := perr.(*onidel.APIError); ok {
+			liveErr = apiErr.Error()
+		}
+		return mw.JSON(c, 200, fiber.Map{
+			"provider_id":          providerID,
+			"code":                 code,
+			"enabled":              true,
+			"health_status":        healthStatus,
+			"last_check":           lastCheckStr,
+			"last_health_check_at": lastCheckStr,
+			"api_base_url":         apiBaseURL,
+			"live":                 live,
+			"latency_ms":           latency,
+			"error":                liveErr,
+		}, nil)
+	}
+	return mw.JSON(c, 200, fiber.Map{
+		"provider_id":          providerID,
+		"code":                 code,
+		"enabled":              true,
+		"health_status":        healthStatus,
+		"last_check":           lastCheckStr,
+		"last_health_check_at": lastCheckStr,
+		"api_base_url":         apiBaseURL,
+		"live":                 live,
+		"latency_ms":           latency,
+	}, nil)
+}
+
+// GET /v1/admin/onidel/:id/instances — per-provider instances filtered by provider_id==:id.
+// Thin wrapper over adminListInstances query with provider pinned to :id; guards
+// kind==onidel so proxmox/vmware rows never leak. Paginated (page/per_page +
+// optional status) — polling 5s is frontend contract via useInfraGet intervalMs.
+func (s *Server) adminOnidelInstances(c fiber.Ctx) error {
+	raw := strings.TrimSpace(c.Params("id"))
+	if raw == "" {
+		raw = strings.TrimSpace(c.Params("provider_id"))
+	}
+	providerID, err := uuid.Parse(raw)
+	if err != nil {
+		return mw.WriteError(c, vErrField("id", "must be a valid uuid"))
+	}
+	var kind string
+	err = s.db.QueryRow(c.Context(), `SELECT kind FROM providers WHERE id=$1`, providerID).Scan(&kind)
+	if err != nil {
+		return mw.WriteError(c, apperrors.New(apperrors.CodeNotFound, "provider not found"))
+	}
+	if kind != "onidel" {
+		return mw.WriteError(c, apperrors.Newf(apperrors.CodeUnsupported,
+			"onidel instances is only available for onidel providers (kind=%q)", kind))
+	}
+	ctx := c.Context()
+	page, perPage, offset := admPage(c)
+	status := lower(strings.TrimSpace(c.Query("status")))
+	if status != "" && !admResourceStatuses[status] {
+		return mw.WriteError(c, vErrField("status", "invalid resource status"))
+	}
+	where := " AND i.provider_id=$1"
+	args := []any{providerID}
+	if status != "" {
+		args = append(args, status)
+		where += " AND i.status=" + admPlaceholder(len(args))
+	}
+	orgFilter, args, ferr := admOrgFilter("i.organization_id", c.Query("organization_id"), args)
+	if ferr != nil {
+		return mw.WriteError(c, ferr)
+	}
+	where += orgFilter
+	var total int
+	if err := s.db.QueryRow(ctx,
+		`SELECT count(*) FROM instances i WHERE i.deleted_at IS NULL`+where, args...).Scan(&total); err != nil {
+		return mw.WriteError(c, err)
+	}
+	args = append(args, perPage, offset)
+	rows, qerr := s.db.Query(ctx, `
+SELECT i.id, i.public_id, i.organization_id, org.public_id, org.slug::text,
+       i.name, i.status::text, COALESCE(i.power_status,''), i.vcpu, i.ram_mb, i.disk_gb,
+       COALESCE(i.suspended_at::text,''), COALESCE(i.termination_requested_at::text,''),
+       i.created_at::text
+FROM instances i JOIN organizations org ON org.id=i.organization_id
+WHERE i.deleted_at IS NULL`+where+
+		` ORDER BY i.created_at DESC LIMIT `+admPlaceholder(len(args)-1)+` OFFSET `+admPlaceholder(len(args)), args...)
+	if qerr != nil {
+		return mw.WriteError(c, qerr)
+	}
+	defer rows.Close()
+	instances := []admInstanceRow{}
+	for rows.Next() {
+		var in admInstanceRow
+		if rerr := rows.Scan(&in.ID, &in.PublicID, &in.OrganizationID, &in.OrgPublicID, &in.OrgSlug,
+			&in.Name, &in.Status, &in.PowerStatus, &in.Vcpu, &in.RamMB, &in.DiskGB,
+			&in.SuspendedAt, &in.TerminationRequestedAt, &in.CreatedAt); rerr != nil {
+			return mw.WriteError(c, rerr)
+		}
+		instances = append(instances, in)
+	}
+	if err := rows.Err(); err != nil {
+		return mw.WriteError(c, err)
+	}
+	return httputil.OK(c, 200, instances, &httputil.Meta{Page: page, PerPage: perPage, Total: total})
 }

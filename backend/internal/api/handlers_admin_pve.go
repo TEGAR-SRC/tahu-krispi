@@ -203,6 +203,48 @@ func (s *Server) adminNodeCertificates(c fiber.Ctx) error {
 	return mw.JSON(c, 200, certs, nil)
 }
 
+func (s *Server) adminNodeCertificateUpload(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	var in struct {
+		Certificates string `json:"certificates"`
+		Key          string `json:"key"`
+		Force        bool   `json:"force"`
+		Restart      bool   `json:"restart"`
+	}
+	if err := c.Bind().Body(&in); err != nil {
+		return mw.WriteError(c, errValidation("invalid certificate payload"))
+	}
+	if strings.TrimSpace(in.Certificates) == "" {
+		return mw.WriteError(c, vErrField("certificates", "certificates (PEM chain) is required"))
+	}
+	if strings.TrimSpace(in.Key) == "" {
+		return mw.WriteError(c, vErrField("key", "private key (PEM) is required"))
+	}
+	if err := ad.Client().NodeCertificateUpload(c.Context(), c.Params("node"), &goproxmox.CustomCertificate{
+		Certificates: strings.TrimSpace(in.Certificates),
+		Key:          strings.TrimSpace(in.Key),
+		Force:        in.Force,
+		Restart:      in.Restart,
+	}); err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 201, fiber.Map{"status": "uploaded", "node": c.Params("node")}, nil)
+}
+
+func (s *Server) adminNodeCertificateDelete(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	if err := ad.Client().NodeCertificateDelete(c.Context(), c.Params("node")); err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, fiber.Map{"status": "deleted", "node": c.Params("node")}, nil)
+}
+
 // adminNodeCommand issues reboot/shutdown/wakeonlan against one node; the
 // wrapper re-validates the command vocabulary on its own.
 func (s *Server) adminNodeCommand(c fiber.Ctx) error {
@@ -855,7 +897,11 @@ func (s *Server) adminPoolUpdateMembers(c fiber.Ctx) error {
 	if err := c.Bind().Body(&in); err != nil {
 		return mw.WriteError(c, errValidation("invalid pool payload"))
 	}
-	if err := ad.PoolUpdateMembers(c.Context(), c.Params("pool_id"),
+	poolID := c.Params("pool_id")
+	if poolID == "" {
+		poolID = c.Params("pool")
+	}
+	if err := ad.PoolUpdateMembers(c.Context(), poolID,
 		in.Comment, in.VMs, in.Storages, in.Delete); err != nil {
 		return mw.WriteError(c, err)
 	}
@@ -1041,6 +1087,27 @@ func (s *Server) adminNodeTimeGet(c fiber.Ctx) error {
 	return mw.JSON(c, 200, clock, nil)
 }
 
+func (s *Server) adminNodeTimeSet(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	var in struct {
+		Timezone string `json:"timezone"`
+	}
+	if err := c.Bind().Body(&in); err != nil {
+		return mw.WriteError(c, errValidation("invalid time payload"))
+	}
+	tz := strings.TrimSpace(in.Timezone)
+	if tz == "" {
+		return mw.WriteError(c, vErrField("timezone", "timezone is required"))
+	}
+	if err := ad.NodeTimeSet(c.Context(), c.Params("node"), tz); err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, fiber.Map{"status": "updated"}, nil)
+}
+
 // adminProviderCPUModels lists the QEMU CPU models guests may use. The PVE
 // endpoint is node-scoped, so an optional node query picks one explicitly and
 // otherwise the first node reported by the cluster answers.
@@ -1066,4 +1133,187 @@ func (s *Server) adminProviderCPUModels(c fiber.Ctx) error {
 		return mw.WriteError(c, err)
 	}
 	return mw.JSON(c, 200, fiber.Map{"node": node, "arch": arch, "models": models}, nil)
+}
+
+func (s *Server) adminNodeReport(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	node := strings.TrimSpace(c.Params("node"))
+	if node == "" {
+		return mw.WriteError(c, vErrField("node", "node is required"))
+	}
+	report, err := ad.Client().NodeReport(c.Context(), node)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, fiber.Map{"node": node, "report": report}, nil)
+}
+
+// adminPruneBackupsPreview lists which backups WOULD be removed by the keep policy (dry-run).
+// GET /admin/proxmox/:id/nodes/:node/prune?storage=&prune-backups=&type=&vmid=  -> infra readable.
+func (s *Server) adminPruneBackupsPreview(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	node := strings.TrimSpace(c.Params("node"))
+	if node == "" {
+		return mw.WriteError(c, vErrField("node", "node is required"))
+	}
+	storage := strings.TrimSpace(c.Query("storage"))
+	if storage == "" {
+		return mw.WriteError(c, vErrField("storage", "storage is required"))
+	}
+	pruneBackups := strings.TrimSpace(c.Query("prune-backups", c.Query("prune_backups")))
+	typ := strings.TrimSpace(c.Query("type"))
+	if typ != "" && typ != "qemu" && typ != "lxc" {
+		return mw.WriteError(c, vErrField("type", "must be qemu or lxc"))
+	}
+	vmidStr := strings.TrimSpace(c.Query("vmid"))
+	var vmid uint64
+	if vmidStr != "" {
+		parsed, perr := strconv.ParseUint(vmidStr, 10, 64)
+		if perr != nil {
+			return mw.WriteError(c, vErrField("vmid", "must be a positive integer"))
+		}
+		vmid = parsed
+	}
+	var opts *goproxmox.StoragePruneBackupsOptions
+	if pruneBackups != "" || typ != "" || vmid != 0 {
+		opts = &goproxmox.StoragePruneBackupsOptions{PruneBackups: pruneBackups, Type: typ, VMID: vmid}
+	}
+	items, err := ad.Client().PruneBackupsPreview(c.Context(), node, storage, opts)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, items, nil)
+}
+
+// adminPruneBackups runs the keep-policy prune for real.
+// POST /admin/proxmox/:id/nodes/:node/prune {storage, prune_backups, type, vmid} -> platform_admin only.
+func (s *Server) adminPruneBackups(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	node := strings.TrimSpace(c.Params("node"))
+	if node == "" {
+		return mw.WriteError(c, vErrField("node", "node is required"))
+	}
+	var raw map[string]any
+	if err := c.Bind().Body(&raw); err != nil {
+		return mw.WriteError(c, errValidation("invalid prune payload"))
+	}
+	storage := ""
+	if v, ok := raw["storage"]; ok {
+		if s, ok := v.(string); ok {
+			storage = strings.TrimSpace(s)
+		}
+	}
+	if storage == "" {
+		storage = strings.TrimSpace(c.Query("storage"))
+	}
+	if storage == "" {
+		return mw.WriteError(c, vErrField("storage", "storage is required"))
+	}
+	pruneBackups := ""
+	if v, ok := raw["prune_backups"]; ok {
+		if s, ok := v.(string); ok {
+			pruneBackups = strings.TrimSpace(s)
+		}
+	}
+	if v, ok := raw["prune-backups"]; ok {
+		if s, ok := v.(string); ok && strings.TrimSpace(s) != "" {
+			pruneBackups = strings.TrimSpace(s)
+		}
+	}
+	if pruneBackups == "" {
+		pruneBackups = strings.TrimSpace(c.Query("prune-backups", c.Query("prune_backups")))
+	}
+	typ := ""
+	if v, ok := raw["type"]; ok {
+		if s, ok := v.(string); ok {
+			typ = strings.TrimSpace(s)
+		}
+	}
+	if typ == "" {
+		typ = strings.TrimSpace(c.Query("type"))
+	}
+	if typ != "" && typ != "qemu" && typ != "lxc" {
+		return mw.WriteError(c, vErrField("type", "must be qemu or lxc"))
+	}
+	var vmid uint64
+	if v, ok := raw["vmid"]; ok && v != nil {
+		switch vv := v.(type) {
+		case float64:
+			vmid = uint64(vv)
+		case string:
+			if strings.TrimSpace(vv) != "" {
+				parsed, perr := strconv.ParseUint(strings.TrimSpace(vv), 10, 64)
+				if perr != nil {
+					return mw.WriteError(c, vErrField("vmid", "must be a positive integer"))
+				}
+				vmid = parsed
+			}
+		case int:
+			if vv > 0 {
+				vmid = uint64(vv)
+			}
+		case int64:
+			if vv > 0 {
+				vmid = uint64(vv)
+			}
+		}
+	}
+	if vmid == 0 {
+		if q := strings.TrimSpace(c.Query("vmid")); q != "" {
+			parsed, perr := strconv.ParseUint(q, 10, 64)
+			if perr != nil {
+				return mw.WriteError(c, vErrField("vmid", "must be a positive integer"))
+			}
+			vmid = parsed
+		}
+	}
+	var opts *goproxmox.StoragePruneBackupsOptions
+	if pruneBackups != "" || typ != "" || vmid != 0 {
+		opts = &goproxmox.StoragePruneBackupsOptions{PruneBackups: pruneBackups, Type: typ, VMID: vmid}
+	}
+	task, err := ad.Client().PruneBackups(c.Context(), node, storage, opts)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 202, fiber.Map{"node": node, "storage": storage, "task": task}, nil)
+}
+
+// adminProxmoxQemuPerNode returns QEMU guests on one node via
+// ClusterResources filtered to type=vm per node. GET is infra-readable.
+func (s *Server) adminProxmoxQemuPerNode(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	node := strings.TrimSpace(c.Params("node"))
+	if node == "" {
+		return mw.WriteError(c, vErrField("node", "node is required"))
+	}
+	resources, err := ad.Client().ClusterResources(c.Context(), "vm")
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	filtered := make([]any, 0)
+	for _, r := range resources {
+		if r == nil {
+			continue
+		}
+		if r.Node != node {
+			continue
+		}
+		if r.Type != "qemu" {
+			continue
+		}
+		filtered = append(filtered, r)
+	}
+	return mw.JSON(c, 200, filtered, nil)
 }

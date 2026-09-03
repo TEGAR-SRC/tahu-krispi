@@ -146,7 +146,7 @@ func (s *Service) VerifySessionCookie(ctx context.Context, sessionID uuid.UUID) 
 	return &Claims{
 		UserID: userID.String(), SessionID: sessionID.String(),
 		Type: string(TokenAccess), PasswordVersion: pwv,
-		Scopes: []string{"profile.read", "instances.read", "instances.create"},
+		Scopes:   []string{"profile.read", "instances.read", "instances.create"},
 		IssuedAt: now.Unix(), ExpiresAt: now.Add(s.accessTTL).Unix(),
 	}, nil
 }

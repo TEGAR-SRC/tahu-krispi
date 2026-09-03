@@ -82,6 +82,8 @@ export const adminNav: ConsoleNavSection[] = [
       { title: "Providers", url: "/admin/providers?kind=onidel", icon: ServerIcon },
       { title: "Catalog", url: "/admin/providers?kind=onidel&section=catalog", icon: LayersIcon },
       { title: "Health", url: "/admin/providers?kind=onidel&section=health", icon: HeartPulseIcon },
+      { title: "Health detail", url: "/admin/providers?kind=onidel&section=health-detail", icon: HeartPulseIcon },
+      { title: "Instances (realtime)", url: "/admin/providers?kind=onidel&section=instances", icon: ContainerIcon },
     ],
   },
   {
@@ -89,6 +91,8 @@ export const adminNav: ConsoleNavSection[] = [
     items: [
       { title: "Providers", url: "/admin/providers?kind=vmware", icon: ServerIcon },
       { title: "Inventory", url: "/admin/providers?kind=vmware&section=inventory", icon: HardDriveIcon },
+      { title: "Datastores", url: "/admin/providers?kind=vmware&section=datastores", icon: HardDriveIcon },
+      { title: "Migrate (vMotion)", url: "/admin/providers?kind=vmware&section=migrate", icon: ContainerIcon },
       { title: "Performance", url: "/admin/providers?kind=vmware&section=perf", icon: GaugeIcon },
     ],
   },
@@ -96,6 +100,7 @@ export const adminNav: ConsoleNavSection[] = [
     title: "Dokploy",
     items: [
       { title: "Dokploy hub", url: "/admin/dokploy", icon: DatabaseIcon },
+      { title: "Logs (realtime)", url: "/admin/dokploy/logs", icon: ScrollTextIcon },
       { title: "Projects", url: "/admin/dokploy/app/projects", icon: BoxesIcon },
       { title: "Overview", url: "/admin/dokploy/app/overview", icon: GlobeIcon },
       { title: "Docker", url: "/admin/dokploy/app/docker", icon: HardDriveIcon },

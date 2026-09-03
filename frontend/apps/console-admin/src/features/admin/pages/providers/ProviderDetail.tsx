@@ -123,6 +123,13 @@ const SECTIONS: SectionLink[] = [
     kinds: ["vmware"],
   },
   {
+    to: "migrate",
+    title: "Migrate (vMotion)",
+    description: "vMotion a VM to another ESXi host — POST /admin/vmware/:id/migrate.",
+    icon: ContainerIcon,
+    kinds: ["vmware"],
+  },
+  {
     to: "perf",
     title: "Guest performance",
     description: "Metric charts for one guest; works across kinds.",

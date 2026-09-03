@@ -20,8 +20,8 @@ export default function ProviderSdnPage() {
   const providerId = params.providerId ?? ""
   const base = providerId ? `/admin/providers/${providerId}` : null
 
-  const zones = useInfraGet<SdnZone[]>(base ? `${base}/sdn/zones` : null)
-  const vnets = useInfraGet<SdnVnet[]>(base ? `${base}/sdn/vnets` : null)
+  const zones = useInfraGet<SdnZone[]>(base ? `${base}/sdn/zones` : null, undefined, { intervalMs: 5000 })
+  const vnets = useInfraGet<SdnVnet[]>(base ? `${base}/sdn/vnets` : null, undefined, { intervalMs: 5000 })
 
   return (
     <ProviderShell

@@ -89,6 +89,12 @@ const GuestPerf = lazy(() =>
   import("@/features/admin/pages/providers/GuestPerf"),
 )
 const ProxmoxClonePage = lazy(() => import("@/features/proxmox/ProxmoxClonePage"))
+const ProxmoxNodeReportPage = lazy(() => import("@/features/proxmox/ProxmoxNodeReportPage"))
+const ProxmoxNodeTimePage = lazy(() => import("@/features/proxmox/ProxmoxNodeTimePage"))
+const ProxmoxPrunePage = lazy(() => import("@/features/proxmox/ProxmoxPrunePage"))
+const ProxmoxCertsUploadPage = lazy(() => import("@/features/proxmox/ProxmoxCertsUploadPage"))
+const ProxmoxPoolsPage = lazy(() => import("@/features/proxmox/ProxmoxPoolsPage"))
+const ProxmoxQemuPerNodePage = lazy(() => import("@/features/proxmox/ProxmoxQemuPerNodePage"))
 const OnidelCatalog = lazy(() =>
   import("@/features/admin/pages/providers/OnidelCatalog"),
 )
@@ -104,11 +110,19 @@ const CreateOnidelVmPage = lazy(() =>
 const CreateVmwarePage = lazy(() =>
   import("@/features/admin/pages/providers/CreateVmwarePage"),
 )
+const VmwareMigratePage = lazy(() => import("@/features/vmware/VmwareMigratePage"))
+const VmwareDatastoresPage = lazy(() => import("@/features/vmware/VmwareDatastoresPage"))
+const OnidelCreateChoices = lazy(() => import("@/features/onidel/OnidelCreateChoicesPage"))
 const OnidelJobs = lazy(() =>
   import("@/features/onidel/OnidelJobsPage"),
 )
 const OnidelWallet = lazy(() =>
   import("@/features/onidel/OnidelWalletPage"),
+)
+const OnidelHealthDetail = lazy(() =>
+  import("@/features/onidel/OnidelHealthDetailPage"),
+)
+const OnidelInstances = lazy(() => import("@/features/onidel/OnidelInstancesPage")
 )
 const RegionsPools = lazy(() => import("@/features/admin/pages/RegionsPools"))
 const StorageBackends = lazy(() =>
@@ -121,6 +135,7 @@ const DokployHub = lazy(() => import("@/features/admin/pages/DokployHub"))
 const DokployEntity = lazy(() =>
   import("@/features/admin/pages/dokploy/DokployEntity"),
 )
+const DokployLogsPage = lazy(() => import("@/features/dokploy/DokployLogsPage"))
 
 const BillingFinanceSummary = lazy(() =>
   import("@/features/admin/billing/pages/FinanceSummary"),
@@ -489,12 +504,22 @@ const LEGACY_SUFFIX_TO_NEW: Array<{ match: (s: string) => boolean; build: (id: s
 ]
 
 function legacyTarget(providerId: string, suffix: string, kind?: ProviderKind): string {
-  if (kind === "onidel") return `/admin/onidel/${providerId}/onidel`
-  if (kind === "vmware") {
-    if (suffix.startsWith("/inventory") || suffix === "" || suffix === "/") return `/admin/vmware/${providerId}/inventory`
-    return `/admin/vmware/${providerId}/inventory`
+  if (kind === "onidel") {
+    if (suffix === "" || suffix === "/") return `/admin/onidel/${providerId}/onidel`
+    return `/admin/onidel/${providerId}${suffix}`
   }
-  if (kind === "dokploy") return `/admin/dokploy`
+  if (kind === "vmware") {
+    if (suffix === "" || suffix === "/") return `/admin/vmware/${providerId}/inventory`
+    return `/admin/vmware/${providerId}${suffix}`
+  }
+  if (kind === "dokploy") {
+    if (suffix === "" || suffix === "/") return `/admin/dokploy`
+    return `/admin/dokploy${suffix}`
+  }
+  if (kind === "proxmox") {
+    if (suffix === "" || suffix === "/") return `/admin/proxmox/${providerId}`
+    return `/admin/proxmox/${providerId}${suffix}`
+  }
   for (const rule of LEGACY_SUFFIX_TO_NEW) {
     if (rule.match(suffix)) return rule.build(providerId, suffix)
   }
@@ -600,6 +625,11 @@ export default function AppRoutes() {
           <Route path="proxmox/:providerId" element={<ProviderDetail />} />
           <Route path="proxmox/:providerId/nodes" element={<ProviderNodes />} />
           <Route path="proxmox/:providerId/nodes/:node" element={<ProviderNodeDetail />} />
+          <Route path="proxmox/:providerId/nodes/:node/report" element={<ProxmoxNodeReportPage />} />
+          <Route path="proxmox/:providerId/nodes/:node/time" element={<ProxmoxNodeTimePage />} />
+          <Route path="proxmox/:providerId/nodes/:node/certs" element={<ProxmoxCertsUploadPage />} />
+          <Route path="proxmox/:providerId/nodes/:node/prune" element={<ProxmoxPrunePage />} />
+          <Route path="proxmox/:providerId/nodes/:node/qemu" element={<ProxmoxQemuPerNodePage />} />
           <Route path="proxmox/:providerId/storages" element={<ProviderStorages />} />
           <Route path="proxmox/:providerId/backup-jobs" element={<ProviderBackupJobs />} />
           <Route path="proxmox/:providerId/ha" element={<ProviderHa />} />
@@ -610,6 +640,7 @@ export default function AppRoutes() {
           <Route path="proxmox/:providerId/containers/new" element={<CreateLxcPage />} />
           <Route path="proxmox/:providerId/vms/new" element={<CreateVmPage />} />
           <Route path="proxmox/:providerId/pools" element={<ProviderPools />} />
+          <Route path="proxmox/:providerId/pools/:pool" element={<ProxmoxPoolsPage />} />
           <Route path="proxmox/:providerId/perf" element={<GuestPerf />} />
           <Route path="proxmox/:providerId/clone" element={<ProxmoxClonePage />} />
 
@@ -617,8 +648,13 @@ export default function AppRoutes() {
           <Route path="onidel/:providerId/jobs" element={<OnidelJobs />} />
           <Route path="onidel/:providerId/wallets" element={<OnidelWallet />} />
           <Route path="onidel/:providerId/create" element={<CreateOnidelVmPage />} />
+          <Route path="onidel/:providerId/create-choices" element={<OnidelCreateChoices />} />
+          <Route path="onidel/:providerId/health/detail" element={<OnidelHealthDetail />} />
+          <Route path="onidel/:providerId/instances" element={<OnidelInstances />} />
 
           <Route path="vmware/:providerId/inventory" element={<VmwareInventory />} />
+          <Route path="vmware/:providerId/datastores" element={<VmwareDatastoresPage />} />
+          <Route path="vmware/:providerId/migrate" element={<VmwareMigratePage />} />
           <Route path="vmware/:providerId/create" element={<CreateVmwarePage />} />
 
           {/* Dokploy is its own tree: /admin/dokploy/* (kept below) */}
@@ -630,6 +666,7 @@ export default function AppRoutes() {
             element={<StorageBackendDetail />}
           />
           <Route path="dokploy" element={<DokployHub />} />
+          <Route path="dokploy/logs" element={<DokployLogsPage />} />
           <Route path="dokploy/:entity" element={<DokployEntity />} />
 
           <Route path="dokploy/app" element={<DokployHome />} />

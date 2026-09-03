@@ -8,6 +8,7 @@ export interface FetchState<T> {
   data: T | null
   loading: boolean
   error: unknown
+  meta?: Record<string, unknown> | null
 }
 
 /**
@@ -23,13 +24,14 @@ export function useInfraGet<T>(
     data: null,
     loading: Boolean(path),
     error: null,
+    meta: null,
   })
   const [tick, setTick] = useState(0)
   const queryKey = useMemo(() => JSON.stringify(query ?? null), [query])
   const intervalMs = opts?.intervalMs
   useEffect(() => {
     if (!path) {
-      const t = setTimeout(() => setState({ data: null, loading: false, error: null }), 0)
+      const t = setTimeout(() => setState({ data: null, loading: false, error: null, meta: null }), 0)
       return () => clearTimeout(t)
     }
     let cancelled = false
@@ -43,10 +45,10 @@ export function useInfraGet<T>(
             >),
     })
       .then((envelope) => {
-        if (!cancelled) setState({ data: envelope.data, loading: false, error: null })
+        if (!cancelled) setState({ data: envelope.data, loading: false, error: null, meta: envelope.meta as Record<string, unknown> | null })
       })
       .catch((cause) => {
-        if (!cancelled) setState({ data: null, loading: false, error: cause })
+        if (!cancelled) setState({ data: null, loading: false, error: cause, meta: null })
       })
     return () => {
       cancelled = true

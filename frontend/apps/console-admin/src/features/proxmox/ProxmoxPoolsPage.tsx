@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from "react"
+import { useState } from "react"
 import { useParams } from "react-router-dom"
 import { toast } from "sonner"
-import { apiDelete, apiGet, apiPost, apiPut, ApiError } from "@/lib/api"
+import { apiDelete, apiPost, apiPut, ApiError } from "@/lib/api"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -16,51 +16,24 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ConfirmDialog, ProviderShell } from "@/features/admin/pages/providers/shared"
+import { useInfraGet } from "@/features/admin/pages/providers/infra"
 import type { PoolRow, PveClusterResource } from "@/features/admin/pages/providers/types"
 
 export default function ProxmoxPoolsPage() {
   const { providerId = "" } = useParams<{ providerId: string }>()
   const base = `/admin/proxmox/${providerId}`
 
-  const [pools, setPools] = useState<PoolRow[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<unknown>(null)
-  const [reloadTick, setReloadTick] = useState(0)
+  const poolsState = useInfraGet<PoolRow[]>(providerId ? `${base}/pools` : null, undefined, { intervalMs: 5000 })
+  const pools = (poolsState.data ?? []) as PoolRow[]
+  const loading = poolsState.loading
+  const error = poolsState.error
+  const reload = poolsState.reload
 
   const [createOpen, setCreateOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<PoolRow | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<PoolRow | null>(null)
   const [membersTarget, setMembersTarget] = useState<PoolRow | null>(null)
   const [busy, setBusy] = useState(false)
-
-  const reload = useCallback(() => setReloadTick((v) => v + 1), [])
-
-  useEffect(() => {
-    if (!providerId) {
-      setLoading(false)
-      setError(new Error("Missing providerId"))
-      return
-    }
-    let cancelled = false
-    setLoading(true)
-    setError(null)
-    apiGet<PoolRow[]>(`${base}/pools`)
-      .then((env) => {
-        if (cancelled) return
-        setPools(Array.isArray(env.data) ? env.data : [])
-        setError(null)
-      })
-      .catch((cause) => {
-        if (cancelled) return
-        setError(cause)
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [providerId, base, reloadTick])
 
   const runAction = async (action: () => Promise<unknown>, success: string, done?: () => void) => {
     setBusy(true)

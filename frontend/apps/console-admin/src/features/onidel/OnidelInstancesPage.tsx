@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { toast } from "sonner"
-import { apiGet, apiPost, ApiError } from "@/lib/api"
+import { apiPost, ApiError } from "@/lib/api"
 import { ProviderShell } from "@/features/admin/pages/providers/shared"
+import { useInfraGet } from "@/features/admin/pages/providers/infra"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { Button } from "@/components/ui/button"
@@ -18,7 +19,6 @@ import {
 } from "@/components/ui/alert-dialog"
 import { PaginationBar, StatusBadge } from "@/features/admin/pages/shared"
 import { formatDateTime } from "@/features/admin/pages/format"
-import type { PagedMeta } from "@/lib/types"
 import {
   Select,
   SelectContent,
@@ -63,42 +63,38 @@ type PendingAction = { id: string; kind: "suspend" | "unsuspend" | "terminate" }
 
 export default function OnidelInstancesPage() {
   const { providerId = "" } = useParams<{ providerId: string }>()
-  const providerFilter = providerId || "onidel"
 
-  const [rows, setRows] = useState<OnidelInstanceRow[]>([])
-  const [meta, setMeta] = useState<PagedMeta & Record<string, unknown>>()
   const [page, setPage] = useState(1)
   const [status, setStatus] = useState("all")
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<unknown>(null)
   const [pending, setPending] = useState<PendingAction>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    try {
-      const envelope = await apiGet<OnidelInstanceRow[]>("/admin/instances", {
-        query: {
-          page,
-          per_page: PER_PAGE,
-          status: status === "all" ? null : status,
-          provider: providerFilter,
-        },
-      })
-      setRows(Array.isArray(envelope.data) ? envelope.data : [])
-      setMeta(envelope.meta as PagedMeta & Record<string, unknown>)
-      setError(null)
-    } catch (cause) {
-      setError(cause)
-    } finally {
-      setLoading(false)
-    }
-  }, [page, status, providerFilter])
+  const providerFilter = providerId || "onidel"
 
-  useEffect(() => {
-    const t = setTimeout(() => void load(), 0)
-    return () => clearTimeout(t)
-  }, [load])
+  // Per-provider realtime: GET /admin/onidel/:id/instances polled every 5s via useInfraGet.
+  // Falls back to /admin/instances?provider=onidel when no :id (global view).
+  const query = useMemo(
+    () => ({
+      page,
+      per_page: PER_PAGE,
+      status: status === "all" ? null : status,
+      ...(providerId ? {} : { provider: providerFilter }),
+    }),
+    [page, status, providerId, providerFilter],
+  )
+  const infraPath = providerId ? `/admin/onidel/${providerId}/instances` : "/admin/instances"
+  const infra = useInfraGet<OnidelInstanceRow[]>(
+    infraPath,
+    query as Record<string, string | number | boolean | null | undefined>,
+    { intervalMs: 5000 },
+  )
+  const rows = Array.isArray(infra.data) ? infra.data : []
+  const meta = infra.meta as import("@/lib/types").PagedMeta & Record<string, unknown> | undefined
+  const loading = infra.loading
+  const error = infra.error
+  const load = useCallback(async () => {
+    infra.reload()
+  }, [infra])
 
   const runAction = useCallback(
     async (id: string, kind: "suspend" | "unsuspend" | "terminate") => {

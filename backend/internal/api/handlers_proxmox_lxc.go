@@ -64,11 +64,11 @@ func (s *Server) adminProxmoxProvisionLXC(c fiber.Ctx) error {
 		return mw.WriteError(c, err)
 	}
 	spec := provider.InstanceSpec{
-		Name:     strings.TrimSpace(in.Name),
-		Location: in.normalizedNode(),
-		CPU:      in.CPU,
-		RAM:      in.RAM,
-		Disk:     in.Disk,
+		Name:      strings.TrimSpace(in.Name),
+		Location:  in.normalizedNode(),
+		CPU:       in.CPU,
+		RAM:       in.RAM,
+		Disk:      in.Disk,
 		SSHKeyIDs: in.SSHKeys,
 	}
 	if err := ad.ProvisionContainer(c.Context(), spec); err != nil {

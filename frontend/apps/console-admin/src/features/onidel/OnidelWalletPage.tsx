@@ -149,6 +149,13 @@ export default function OnidelWalletPage() {
 
   const reloadBalances = useCallback(() => setBalanceTick((t) => t + 1), [])
 
+  const intervalMs = 5000
+  useEffect(() => {
+    if (orgs.length === 0) return
+    const id = setInterval(() => setBalanceTick((t) => t + 1), intervalMs)
+    return () => clearInterval(id)
+  }, [orgs.length, intervalMs])
+
   useEffect(() => {
     if (!providerId) return
     let cancelled = false

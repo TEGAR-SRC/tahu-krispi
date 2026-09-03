@@ -830,6 +830,35 @@ func (c *Client) NodeCertificates(ctx context.Context, node string) (*goproxmox.
 	return certs, wrapErr("node certificates", err)
 }
 
+// NodeCertificateUpload installs a custom TLS certificate chain + key on the node.
+// It wraps the SDK's POST /nodes/{node}/certificates/custom endpoint.
+func (c *Client) NodeCertificateUpload(ctx context.Context, node string, cert *goproxmox.CustomCertificate) error {
+	if cert == nil {
+		return apperrors.New(apperrors.CodeValidation, "proxmox: certificate payload is required")
+	}
+	n, err := c.sdk.Node(ctx, node)
+	if err != nil {
+		return wrapErr("node "+node, err)
+	}
+	if err := n.UploadCustomCertificate(ctx, cert); err != nil {
+		return wrapErr("node certificates upload", err)
+	}
+	return nil
+}
+
+// NodeCertificateDelete removes the custom certificate from the node.
+// It wraps the SDK's DELETE /nodes/{node}/certificates/custom endpoint.
+func (c *Client) NodeCertificateDelete(ctx context.Context, node string) error {
+	n, err := c.sdk.Node(ctx, node)
+	if err != nil {
+		return wrapErr("node "+node, err)
+	}
+	if err := n.DeleteCustomCertificate(ctx); err != nil {
+		return wrapErr("node certificates delete", err)
+	}
+	return nil
+}
+
 // NodeCommand issues reboot/shutdown against POST /nodes/{node}/status.
 // Gating to platform admins happens at the API layer; this is deliberately
 // raw because v0.8.1 has no typed wrapper for it.
@@ -1563,6 +1592,19 @@ func (c *Client) NodeTimeGet(ctx context.Context, node string) (map[string]any, 
 		return nil, wrapErr("node time get", err)
 	}
 	return out, nil
+}
+
+// NodeTimeSet updates the node timezone (PUT /nodes/{node}/time).
+// timezone must be a valid IANA zone from /usr/share/zoneinfo/zone.tab.
+func (c *Client) NodeTimeSet(ctx context.Context, node, timezone string) error {
+	if strings.TrimSpace(timezone) == "" {
+		return apperrors.New(apperrors.CodeValidation, "proxmox: timezone is required")
+	}
+	n, err := c.sdk.Node(ctx, node)
+	if err != nil {
+		return wrapErr("node "+node, err)
+	}
+	return wrapErr("node time set", n.SetTimezone(ctx, strings.TrimSpace(timezone)))
 }
 
 // ---- CPU models ----

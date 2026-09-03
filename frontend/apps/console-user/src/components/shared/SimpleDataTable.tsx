@@ -41,6 +41,8 @@ export function SimpleDataTable<T>({
   emptyMessage = "No data yet.",
   getRowKey,
 }: SimpleDataTableProps<T>) {
+  const safeRows = Array.isArray(rows) ? rows : []
+  const safeColumns = Array.isArray(columns) ? columns : []
   if (error) {
     return <ErrorBanner error={error} />
   }
@@ -54,7 +56,7 @@ export function SimpleDataTable<T>({
         </div>
         {Array.from({ length: Math.max(skeletonRows, 1) }).map((_, rowIndex) => (
           <div key={rowIndex} className="flex min-w-0 items-center gap-4">
-            {columns.map((column) => (
+            {safeColumns.map((column) => (
               <Skeleton key={column.key} className={cn("h-6 flex-1", column.className)} />
             ))}
           </div>
@@ -63,7 +65,7 @@ export function SimpleDataTable<T>({
     )
   }
 
-  if (rows.length === 0) {
+  if (safeRows.length === 0) {
     return <EmptyState message={emptyMessage} />
   }
 
@@ -78,7 +80,7 @@ export function SimpleDataTable<T>({
       <Table>
         <TableHeader>
           <TableRow>
-            {columns.map((column) => (
+            {safeColumns.map((column) => (
               <TableHead key={column.key} className={column.className}>
                 {column.header}
               </TableHead>
@@ -86,9 +88,9 @@ export function SimpleDataTable<T>({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {rows.map((row, index) => (
+          {safeRows.map((row, index) => (
             <TableRow key={getRowKey ? getRowKey(row, index) : index}>
-              {columns.map((column) => (
+              {safeColumns.map((column) => (
                 <TableCell key={column.key} className={column.className}>
                   {cellFor(row, column)}
                 </TableCell>

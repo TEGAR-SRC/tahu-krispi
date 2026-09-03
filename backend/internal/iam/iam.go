@@ -196,9 +196,9 @@ const (
 // Platform matrix (single source of truth — do not drift):
 //   - platform_admin = "*" (all areas, all methods)
 //   - noc            = infra + tickets + users.read + marketing
-//                     (GET infra allowed, POST/DELETE on infra stays platform_admin via staffAreaFor)
+//     (GET infra allowed, POST/DELETE on infra stays platform_admin via staffAreaFor)
 //   - finance        = billing + affiliate + users.read
-//                     (billing read-only view; no infra — never grant infra/infra:* to finance)
+//     (billing read-only view; no infra — never grant infra/infra:* to finance)
 //   - user (org roles owner/admin/billing/operator/developer/viewer) is unchanged;
 //     paket selection stays via region (no provider_id), auto-resolved.
 var staffPermissions = map[StaffRole][]string{

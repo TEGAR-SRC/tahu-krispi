@@ -18,7 +18,11 @@ export default function ProxmoxContainersPage() {
   const params = useParams()
   const providerId = (params as Record<string, string>).providerId ?? (params as Record<string, string>).id ?? ""
 
-  const cluster = useInfraGet<ClusterPayload>(providerId ? `/admin/proxmox/${providerId}/cluster` : null)
+  const cluster = useInfraGet<ClusterPayload>(
+    providerId ? `/admin/proxmox/${providerId}/cluster` : null,
+    undefined,
+    { intervalMs: 5000 },
+  )
   const nodes = Array.isArray(cluster.data?.nodes) ? cluster.data!.nodes! : []
   const nodeNames = nodes
     .map((n) => n.node ?? n.name ?? "")
@@ -30,6 +34,7 @@ export default function ProxmoxContainersPage() {
   const containers = useInfraGet<ContainerRow[]>(
     providerId ? `/admin/proxmox/${providerId}/containers` : null,
     { node: effectiveNode },
+    { intervalMs: 5000 },
   )
 
   const safeRows: ContainerRow[] = Array.isArray(containers.data) ? containers.data : []

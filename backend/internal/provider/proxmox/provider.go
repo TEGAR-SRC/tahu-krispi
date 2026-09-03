@@ -1669,6 +1669,10 @@ func (a *Adapter) NodeTimeGet(ctx context.Context, node string) (map[string]any,
 	return a.c.NodeTimeGet(ctx, node)
 }
 
+func (a *Adapter) NodeTimeSet(ctx context.Context, node, timezone string) error {
+	return a.c.NodeTimeSet(ctx, node, timezone)
+}
+
 // NodeQEMUCPUModels lists the CPU models this node can run (arch "" for the
 // host default, "x86_64" or "aarch64").
 func (a *Adapter) NodeQEMUCPUModels(ctx context.Context, node, arch string) ([]*goproxmox.QEMUCPUModel, error) {
@@ -1917,9 +1921,15 @@ func (a *Adapter) ContainerMetrics(ctx context.Context, externalID, timeframe st
 
 // ContainersListAll maps every LXC resource row onto VMState using the same
 // status mapping as ListVMs; template rows are skipped.
+// Fallback: when cluster/resources returns no lxc rows or errors (single-node
+// PVE where /cluster/resources is empty), enumerate via /nodes/pve/lxc and
+// per-node /nodes/{node}/lxc so containers remain visible.
 func (a *Adapter) ContainersListAll(ctx context.Context) ([]provider.VMState, error) {
 	resources, err := a.c.ClusterResources(ctx)
 	if err != nil {
+		if fb, ferr := a.containersListAllFallback(ctx); ferr == nil && len(fb) > 0 {
+			return fb, nil
+		}
 		return nil, err
 	}
 	out := make([]provider.VMState, 0, len(resources))
@@ -1936,6 +1946,73 @@ func (a *Adapter) ContainersListAll(ctx context.Context) ([]provider.VMState, er
 			RAM:         int64(r.MaxMem >> 20),
 			Disk:        int64(r.MaxDisk >> 30),
 		})
+	}
+	if len(out) > 0 {
+		return out, nil
+	}
+	if fb, _ := a.containersListAllFallback(ctx); len(fb) > 0 {
+		return fb, nil
+	}
+	return out, nil
+}
+
+func (a *Adapter) containersListAllFallback(ctx context.Context) ([]provider.VMState, error) {
+	ns, err := a.c.Nodes(ctx)
+	if err != nil {
+		return nil, err
+	}
+	seenNode := map[string]bool{}
+	nodeNames := make([]string, 0, len(ns))
+	for _, n := range ns {
+		name := strings.TrimSpace(n.Node)
+		if name == "" {
+			name = strings.TrimSpace(n.Name)
+		}
+		if name == "" || seenNode[name] {
+			continue
+		}
+		seenNode[name] = true
+		nodeNames = append(nodeNames, name)
+	}
+	if len(nodeNames) == 0 {
+		nodeNames = []string{"pve"}
+	} else {
+		idx := -1
+		for i, nm := range nodeNames {
+			if nm == "pve" {
+				idx = i
+				break
+			}
+		}
+		if idx > 0 {
+			pve := nodeNames[idx]
+			copy(nodeNames[1:idx+1], nodeNames[0:idx])
+			nodeNames[0] = pve
+		}
+	}
+	seenCT := map[string]bool{}
+	var out []provider.VMState
+	for _, node := range nodeNames {
+		cts, ferr := a.c.ContainersList(ctx, node)
+		if ferr != nil {
+			continue
+		}
+		for _, ct := range cts {
+			ext := containerExternalID(int(ct.VMID))
+			if seenCT[ext] {
+				continue
+			}
+			seenCT[ext] = true
+			out = append(out, provider.VMState{
+				ExternalID:  ext,
+				Name:        ct.Name,
+				Status:      mapPVEStatus(ct.Status),
+				PowerStatus: ct.Status,
+				VCPU:        int64(ct.CPUs),
+				RAM:         int64(ct.MaxMem >> 20),
+				Disk:        int64(ct.MaxDisk >> 30),
+			})
+		}
 	}
 	return out, nil
 }
