@@ -30,10 +30,14 @@ function LoadingScreen() {
 
 // A signed-in user landing on any page is bounced to the handoff, which sends
 // them to their console. Otherwise the root redirects to /login.
+// Customers skip handoff — they would just handoff to console and bounce back.
 function RootRedirect() {
   const { token, role, loading } = useAuth()
   if (loading) return <LoadingScreen />
-  if (token && role) return <Navigate to="/handoff" replace />
+  if (token && role) {
+    if (role === "customer") return <Navigate to="/login" replace />
+    return <Navigate to="/handoff" replace />
+  }
   return <Navigate to="/login" replace />
 }
 

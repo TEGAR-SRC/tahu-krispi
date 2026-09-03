@@ -109,11 +109,15 @@ export default function LoginPage() {
   const [resending, setResending] = useState(false)
 
   // Already signed in: send the user to their role's home.
+  // Skip for customer (already on login) and for ?already=customer to avoid
+  // Handoff → login → handoff intra-auth loop introduced in 14a231f.
   useEffect(() => {
     if (!loading && token && role) {
+      if (role === "customer") return
+      if (searchParams.get("already") === "customer") return
       navigate(homePathFor(role), { replace: true })
     }
-  }, [loading, token, role, navigate])
+  }, [loading, token, role, navigate, searchParams])
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()

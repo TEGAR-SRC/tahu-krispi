@@ -24,22 +24,9 @@ export default function HandoffPage() {
 
     fired.current = true
     ;(async () => {
-      // Re-validate role server-side before handoff to avoid using a stale
-      // localStorage role (e.g. demoted admin or stale customer value).
-      let freshRole = role
-      try {
-        const { resolveRole } = await import("@/lib/auth")
-        freshRole = await resolveRole()
-      } catch {
-        // if resolveRole throws (session expired) let outer catch handle it
-      }
-      // Customer accounts stay on the auth console — no handoff needed.
-      // Previously this redirected to console.kilat-cloud.com which then
-      // probes /admin/* on api-user (always 403) and loops back to auth.
-      if (freshRole === "customer") {
-        window.location.assign("/login?already=customer")
-        return
-      }
+      // Role already validated on mount by AuthProvider (resolveRole + /me).
+      // Re-probing here caused duplicate 3x 403 fetches per navigation.
+      const freshRole = role
       const origin = consoleUrlFor(freshRole)
       if (!origin || origin.startsWith("/")) {
         setError("Could not determine your console.")

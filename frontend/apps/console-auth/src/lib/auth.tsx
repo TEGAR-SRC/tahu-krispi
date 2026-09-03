@@ -104,9 +104,14 @@ export function consoleUrlFor(role: AppRole | null): string {
 /**
  * After sign-in, the auth console always bounces to /handoff (same origin),
  * which then redirects cross-origin to the right console with the token in the
- * URL fragment. `/handoff` is the only in-app landing target.
+ * URL fragment. `/handoff` is the only in-app landing target for staff;
+ * customers are handed off directly to the user console.
  */
-export function homePathFor(_role: AppRole | null): string {
+export function homePathFor(role: AppRole | null): string {
+  // Customer handoff is handled directly via consoleUrlFor; returning
+  // /handoff for customer would bounce LoginPage → handoff → console → loop.
+  // Keep staff on /handoff, customers on /login (they will be re-handoffed).
+  if (role === "customer") return "/login"
   return "/handoff"
 }
 

@@ -119,6 +119,9 @@ async function probe(path: string): Promise<{ status: number; body: string }> {
 }
 
 function isAuthFailure(status: number, _body: string): boolean {
+  // Only 401 is a real unauthenticated expiry. 403 is RBAC/audience denial
+  // ("not available on the user API domain" or staff-only RBAC) and must
+  // fall through to the customer role, not clear the session.
   return status === 401
 }
 
@@ -205,6 +208,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   // If any role/profile cached, re-validate via cookie session on mount.
+  // resolveRole only throws on 401; 403 + network 0 must keep the customer
+  // session alive (valid /me) instead of clearing it and bouncing to auth.
   useEffect(() => {
     let cancelled = false
     ;(async () => {
@@ -218,7 +223,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setLoading(false)
           return
         }
-        const resolved = await resolveRole()
+        let resolved: AppRole
+        try {
+          resolved = await resolveRole()
+        } catch (e) {
+          if (cancelled) return
+          // 403/network errors never throw (isAuthFailure only 401), so this
+          // catch is only for a genuine 401 session expiry.
+          if (e instanceof Error && e.message === "Session expired") throw e
+          resolved = "customer"
+        }
         if (cancelled) return
         setTokenState("cookie")
         setClaims({})
