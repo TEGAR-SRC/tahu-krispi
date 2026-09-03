@@ -1174,6 +1174,11 @@ func onlineNodes(ctx context.Context, c *Client) ([]string, error) {
 	return out, nil
 }
 
+// NodeForVMID finds the hosting node of a VMID without the full resource row.
+func (a *Adapter) NodeForVMID(ctx context.Context, vmid int64) (string, error) {
+	return a.nodeForVMID(ctx, vmid)
+}
+
 // nodeForVMID finds the hosting node of a VMID without the full resource row.
 func (a *Adapter) nodeForVMID(ctx context.Context, vmid int64) (string, error) {
 	res, err := a.locateVM(ctx, strconv.FormatInt(vmid, 10))

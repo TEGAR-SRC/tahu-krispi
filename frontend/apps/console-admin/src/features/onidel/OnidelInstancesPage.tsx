@@ -221,7 +221,7 @@ export default function OnidelInstancesPage() {
             render: (row) => (
               <div className="flex justify-end gap-2">
                 <Button asChild variant="outline" size="sm">
-                  <Link to={`/admin/instances/${row.id}`}>Detail</Link>
+                  <Link to={providerId ? `/admin/onidel/${providerId}/instances/${row.id}` : `/admin/instances/${row.id}`}>Detail</Link>
                 </Button>
                 {row.status === "suspended" ? (
                   <Button

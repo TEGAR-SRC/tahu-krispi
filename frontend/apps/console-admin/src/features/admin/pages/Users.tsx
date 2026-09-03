@@ -385,6 +385,8 @@ export default function AdminUsersPage() {
                   </div>
                 </section>
 
+                <AttachOrgSection user={selected} />
+
                 <LimitsEditor user={selected} />
               </div>
             </>
@@ -469,6 +471,106 @@ export default function AdminUsersPage() {
         </DialogContent>
       </Dialog>
     </div>
+  )
+}
+
+const MEMBER_ROLES = ["owner", "admin", "billing", "operator", "developer", "viewer"] as const
+
+function AttachOrgSection({ user }: { user: AdminUserRow }) {
+  const [open, setOpen] = useState(false)
+  const [orgId, setOrgId] = useState("")
+  const [role, setRole] = useState<string>("viewer")
+  const [orgs, setOrgs] = useState<{ id: string; name: string; slug: string }[]>([])
+  const [saving, setSaving] = useState(false)
+
+  const loadOrgs = useCallback(async () => {
+    try {
+      const envelope = await apiGet<{ id: string; name: string; slug: string }[]>("/admin/organizations", {
+        query: { page: 1, per_page: 100 },
+      })
+      setOrgs(Array.isArray(envelope.data) ? envelope.data : [])
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  return (
+    <section className="space-y-2">
+      <h3 className="text-sm font-semibold">Attach to organization</h3>
+      <Button size="sm" variant="outline" onClick={() => { setOpen(true); void loadOrgs() }}>
+        Attach to org
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Attach {user.email} to organization</DialogTitle>
+            <DialogDescription>POST /admin/users/:id/attach-org</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>Organization</Label>
+              <Select value={orgId} onValueChange={setOrgId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select organization" />
+                </SelectTrigger>
+                <SelectContent>
+                  {orgs.map((o) => (
+                    <SelectItem key={o.id} value={o.id}>
+                      {o.name || o.slug} — {o.id.slice(0, 8)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                placeholder="Or paste org UUID"
+                value={orgId}
+                onChange={(e) => setOrgId(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Role</Label>
+              <Select value={role} onValueChange={setRole}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MEMBER_ROLES.map((r) => (
+                    <SelectItem key={r} value={r}>
+                      {r}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={saving || !orgId.trim()}
+              onClick={() => {
+                const oid = orgId.trim()
+                if (!oid) return
+                setSaving(true)
+                apiPost(`/admin/users/${user.id}/attach-org`, { organization_id: oid, role })
+                  .then(() => {
+                    toast.success(`Attached to org as ${role}`)
+                    setOpen(false)
+                    setOrgId("")
+                  })
+                  .catch((cause) => {
+                    toast.error(cause instanceof ApiError ? cause.message : "Attach failed")
+                  })
+                  .finally(() => setSaving(false))
+              }}
+            >
+              {saving ? "Attaching…" : "Attach"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </section>
   )
 }
 

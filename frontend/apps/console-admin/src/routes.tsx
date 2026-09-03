@@ -95,6 +95,12 @@ const ProxmoxPrunePage = lazy(() => import("@/features/proxmox/ProxmoxPrunePage"
 const ProxmoxCertsUploadPage = lazy(() => import("@/features/proxmox/ProxmoxCertsUploadPage"))
 const ProxmoxPoolsPage = lazy(() => import("@/features/proxmox/ProxmoxPoolsPage"))
 const ProxmoxQemuPerNodePage = lazy(() => import("@/features/proxmox/ProxmoxQemuPerNodePage"))
+const ProxmoxRrdPage = lazy(() => import("@/features/proxmox/ProxmoxRrdPage"))
+const ProxmoxCloudInitPage = lazy(() => import("@/features/proxmox/ProxmoxCloudInitPage"))
+const ProxmoxDiagnosticsPage = lazy(() => import("@/features/proxmox/ProxmoxDiagnosticsPage"))
+const ProxmoxAccessPage = lazy(() => import("@/features/proxmox/ProxmoxAccessPage"))
+const ProxmoxTemplatesPage = lazy(() => import("@/features/proxmox/ProxmoxTemplatesPage"))
+const ProxmoxSnapshotsPage = lazy(() => import("@/features/proxmox/ProxmoxSnapshotsPage"))
 const OnidelCatalog = lazy(() =>
   import("@/features/admin/pages/providers/OnidelCatalog"),
 )
@@ -112,6 +118,10 @@ const CreateVmwarePage = lazy(() =>
 )
 const VmwareMigratePage = lazy(() => import("@/features/vmware/VmwareMigratePage"))
 const VmwareDatastoresPage = lazy(() => import("@/features/vmware/VmwareDatastoresPage"))
+const VmwareDatastoreDetailPage = lazy(() => import("@/features/vmware/VmwareDatastoreDetailPage"))
+const VmwareHostDetailPage = lazy(() => import("@/features/vmware/VmwareHostDetailPage"))
+const VmwarePerfPage = lazy(() => import("@/features/vmware/VmwarePerfPage"))
+const VmwarePerfDetailPage = lazy(() => import("@/features/vmware/VmwarePerfDetailPage"))
 const OnidelCreateChoices = lazy(() => import("@/features/onidel/OnidelCreateChoicesPage"))
 const OnidelJobs = lazy(() =>
   import("@/features/onidel/OnidelJobsPage"),
@@ -124,6 +134,9 @@ const OnidelHealthDetail = lazy(() =>
 )
 const OnidelInstances = lazy(() => import("@/features/onidel/OnidelInstancesPage")
 )
+const OnidelInstanceDetail = lazy(() => import("@/features/onidel/OnidelInstanceDetailPage")
+)
+const OnidelBillingSync = lazy(() => import("@/features/onidel/OnidelBillingSyncPage"))
 const RegionsPools = lazy(() => import("@/features/admin/pages/RegionsPools"))
 const StorageBackends = lazy(() =>
   import("@/features/admin/pages/StorageBackends"),
@@ -498,6 +511,7 @@ const LEGACY_SUFFIX_TO_NEW: Array<{ match: (s: string) => boolean; build: (id: s
   { match: (s) => s.startsWith("/ceph"), build: (id, s) => `/admin/proxmox/${id}${s}` },
   { match: (s) => s.startsWith("/containers"), build: (id, s) => `/admin/proxmox/${id}${s}` },
   { match: (s) => s.startsWith("/pools"), build: (id, s) => `/admin/proxmox/${id}${s}` },
+  { match: (s) => s.startsWith("/access"), build: (id, s) => `/admin/proxmox/${id}${s}` },
   { match: (s) => s.startsWith("/inventory"), build: (id) => `/admin/vmware/${id}/inventory` },
   { match: (s) => s.startsWith("/onidel"), build: (id) => `/admin/onidel/${id}/onidel` },
   { match: (s) => s.startsWith("/perf"), build: (id, s) => `/admin/proxmox/${id}${s}` },
@@ -642,7 +656,13 @@ export default function AppRoutes() {
           <Route path="proxmox/:providerId/pools" element={<ProviderPools />} />
           <Route path="proxmox/:providerId/pools/:pool" element={<ProxmoxPoolsPage />} />
           <Route path="proxmox/:providerId/perf" element={<GuestPerf />} />
+          <Route path="proxmox/:providerId/nodes/:node/rrd" element={<ProxmoxRrdPage />} />
           <Route path="proxmox/:providerId/clone" element={<ProxmoxClonePage />} />
+          <Route path="proxmox/:providerId/nodes/:node/qemu/:vmid/cloud-init" element={<ProxmoxCloudInitPage />} />
+          <Route path="proxmox/:providerId/diagnostics" element={<ProxmoxDiagnosticsPage />} />
+          <Route path="proxmox/:providerId/access" element={<ProxmoxAccessPage />} />
+          <Route path="proxmox/:providerId/templates" element={<ProxmoxTemplatesPage />} />
+          <Route path="proxmox/:providerId/snapshots" element={<ProxmoxSnapshotsPage />} />
 
           <Route path="onidel/:providerId/onidel" element={<OnidelCatalog />} />
           <Route path="onidel/:providerId/jobs" element={<OnidelJobs />} />
@@ -651,9 +671,15 @@ export default function AppRoutes() {
           <Route path="onidel/:providerId/create-choices" element={<OnidelCreateChoices />} />
           <Route path="onidel/:providerId/health/detail" element={<OnidelHealthDetail />} />
           <Route path="onidel/:providerId/instances" element={<OnidelInstances />} />
+          <Route path="onidel/:providerId/instances/:instanceId" element={<OnidelInstanceDetail />} />
+          <Route path="onidel/:providerId/regions/sync" element={<OnidelBillingSync />} />
 
           <Route path="vmware/:providerId/inventory" element={<VmwareInventory />} />
           <Route path="vmware/:providerId/datastores" element={<VmwareDatastoresPage />} />
+          <Route path="vmware/:providerId/datastores/:ds" element={<VmwareDatastoreDetailPage />} />
+          <Route path="vmware/:providerId/hosts/:host" element={<VmwareHostDetailPage />} />
+          <Route path="vmware/:providerId/perf" element={<VmwarePerfPage />} />
+          <Route path="vmware/:providerId/perf/:vmid" element={<VmwarePerfDetailPage />} />
           <Route path="vmware/:providerId/migrate" element={<VmwareMigratePage />} />
           <Route path="vmware/:providerId/create" element={<CreateVmwarePage />} />
 

@@ -1828,6 +1828,16 @@ func (c *Client) ContainerSnapshotRollback(ctx context.Context, node string, vmi
 	return task, wrapErr("rollback snapshot", err)
 }
 
+// NodeRRDData pulls round-robin metrics for a node (GET /nodes/{node}/rrddata).
+func (c *Client) NodeRRDData(ctx context.Context, node string, timeframe string, cf string) ([]*goproxmox.RRDData, error) {
+	n, err := c.sdk.Node(ctx, node)
+	if err != nil {
+		return nil, wrapErr("node "+node, err)
+	}
+	data, err := n.RRDData(ctx, goproxmox.Timeframe(timeframe), goproxmox.ConsolidationFunction(cf))
+	return data, wrapErr("rrd data", err)
+}
+
 // ContainerRRDData pulls round-robin metrics (CPU/mem/net/disk series).
 func (c *Client) ContainerRRDData(ctx context.Context, node string, vmid int, timeframe string, cf string) ([]*goproxmox.RRDData, error) {
 	ct, err := c.containerHandle(ctx, node, vmid)
@@ -1836,4 +1846,41 @@ func (c *Client) ContainerRRDData(ctx context.Context, node string, vmid int, ti
 	}
 	data, err := ct.RRDData(ctx, goproxmox.Timeframe(timeframe), goproxmox.ConsolidationFunction(cf))
 	return data, wrapErr("rrd data", err)
+}
+
+// ---- Access: users / groups / roles (GET /access/*) ----
+
+func (c *Client) AccessUsers(ctx context.Context) (goproxmox.Users, error) {
+	users, err := c.sdk.Users(ctx)
+	return users, wrapErr("access users", err)
+}
+
+func (c *Client) AccessUserCreate(ctx context.Context, user *goproxmox.NewUser) error {
+	return wrapErr("access user create", c.sdk.NewUser(ctx, user))
+}
+
+func (c *Client) AccessUserUpdate(ctx context.Context, userid string, opts goproxmox.UserOptions) error {
+	u, err := c.sdk.User(ctx, userid)
+	if err != nil {
+		return wrapErr("access user get", err)
+	}
+	return wrapErr("access user update", u.Update(ctx, opts))
+}
+
+func (c *Client) AccessUserDelete(ctx context.Context, userid string) error {
+	u, err := c.sdk.User(ctx, userid)
+	if err != nil {
+		return wrapErr("access user get", err)
+	}
+	return wrapErr("access user delete", u.Delete(ctx))
+}
+
+func (c *Client) AccessGroups(ctx context.Context) (goproxmox.Groups, error) {
+	groups, err := c.sdk.Groups(ctx)
+	return groups, wrapErr("access groups", err)
+}
+
+func (c *Client) AccessRoles(ctx context.Context) (goproxmox.Roles, error) {
+	roles, err := c.sdk.Roles(ctx)
+	return roles, wrapErr("access roles", err)
 }

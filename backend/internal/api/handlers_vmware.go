@@ -7,6 +7,7 @@
 package api
 
 import (
+	"net/url"
 	"strings"
 
 	"github.com/gofiber/fiber/v3"
@@ -112,6 +113,49 @@ func (s *Server) adminProviderPerf(c fiber.Ctx) error {
 // adminVMwarePerf alias murni vmware untuk route yang ingin nama eksplisit.
 func (s *Server) adminVMwarePerf(c fiber.Ctx) error {
 	return s.adminProviderPerf(c)
+}
+
+// GET /v1/admin/vmware/:id/perf/:vmid — per-VM realtime perf drill-down.
+// Path-param variant of /perf for detail pages that poll every 5s.
+// Guard kind==vmware via vmwareAdapterFor; RBAC infra (NOC readable, finance 403).
+// :vmid is the vSphere VM external id (e.g. VirtualMachine:vm-42 or vm-42, url-escaped).
+// Optional query timeframe=hour|day (default hour = realtime 20s interval).
+func (s *Server) adminVMwarePerfDetail(c fiber.Ctx) error {
+	providerID, code, ad, err := s.vmwareAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	rawVmid := c.Params("vmid")
+	if rawVmid == "" {
+		rawVmid = c.Params("vmId")
+	}
+	decoded, _ := url.PathUnescape(rawVmid)
+	vmExt := strings.TrimSpace(decoded)
+	if vmExt == "" {
+		vmExt = strings.TrimSpace(c.Query("v"))
+	}
+	if vmExt == "" {
+		return mw.WriteError(c, vErrField("vmid", "vm external id is required (e.g. VirtualMachine:vm-42 or vm-42)"))
+	}
+	timeframe := strings.ToLower(strings.TrimSpace(c.Query("timeframe", "hour")))
+	if timeframe == "" {
+		timeframe = "hour"
+	}
+	if !adminPerfTimeframes[timeframe] {
+		return mw.WriteError(c, vErrField("timeframe", "must be one of hour, day"))
+	}
+	data, err := ad.GuestMetrics(c.Context(), vmExt, timeframe)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, fiber.Map{
+		"provider_id": providerID,
+		"code":        code,
+		"external_id": vmExt,
+		"vmid":        vmExt,
+		"timeframe":   timeframe,
+		"metrics":     data,
+	}, nil)
 }
 
 // GET /v1/admin/vmware/:id/datastores — only the datastores slice of the
@@ -342,6 +386,68 @@ func (s *Server) adminVMwareMigrateStatus(c fiber.Ctx) error {
 		"hint":        "POST /admin/vmware/:id/migrate {source, target_host}",
 		"example":     map[string]string{"source": "VirtualMachine:vm-42", "target_host": "esxi-02.example.com"},
 	}, nil)
+}
+
+// GET /v1/admin/vmware/:id/hosts/:host — single ESXi host detail from
+// vCenter inventory. Guard kind==vmware via vmwareAdapterFor; RBAC infra
+// (NOC readable, finance 403). Polling via useInfraGet every 5s. :host is the
+// ESXi host name (url-escaped), matched exactly against InventoryReport.Hosts.
+func (s *Server) adminVMwareHostDetail(c fiber.Ctx) error {
+	providerID, code, ad, err := s.vmwareAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	rawHost := c.Params("host")
+	hostName, _ := url.PathUnescape(rawHost)
+	hostName = strings.TrimSpace(hostName)
+	if hostName == "" {
+		return mw.WriteError(c, vErrField("host", "host name is required"))
+	}
+	report, err := ad.Inventory(c.Context())
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	for _, h := range report.Hosts {
+		if h.Name == hostName {
+			return mw.JSON(c, 200, fiber.Map{
+				"provider_id": providerID,
+				"code":        code,
+				"host":        h,
+			}, nil)
+		}
+	}
+	return mw.WriteError(c, apperrors.Newf(apperrors.CodeNotFound, "vmware: host %q not found", hostName))
+}
+
+// GET /v1/admin/vmware/:id/datastores/:ds — single datastore detail from
+// vCenter inventory. Guard kind==vmware via vmwareAdapterFor; RBAC infra
+// (NOC readable, finance 403). Polling via useInfraGet every 5s. :ds is the
+// datastore name (url-escaped), matched exactly against InventoryReport.Datastores.
+func (s *Server) adminVMwareDatastoreDetail(c fiber.Ctx) error {
+	providerID, code, ad, err := s.vmwareAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	rawDS := c.Params("ds")
+	dsName, _ := url.PathUnescape(rawDS)
+	dsName = strings.TrimSpace(dsName)
+	if dsName == "" {
+		return mw.WriteError(c, vErrField("ds", "datastore name is required"))
+	}
+	report, err := ad.Inventory(c.Context())
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	for _, d := range report.Datastores {
+		if d.Name == dsName {
+			return mw.JSON(c, 200, fiber.Map{
+				"provider_id": providerID,
+				"code":        code,
+				"datastore":   d,
+			}, nil)
+		}
+	}
+	return mw.WriteError(c, apperrors.Newf(apperrors.CodeNotFound, "vmware: datastore %q not found", dsName))
 }
 
 // POST /v1/admin/vmware/:id/migrate — vMotion a VM to another ESXi host within

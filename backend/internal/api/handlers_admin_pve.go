@@ -1287,6 +1287,35 @@ func (s *Server) adminPruneBackups(c fiber.Ctx) error {
 	return mw.JSON(c, 202, fiber.Map{"node": node, "storage": storage, "task": task}, nil)
 }
 
+// adminProxmoxCloudInitGet returns the pending cloud-init diff for one QEMU
+// guest (GET /nodes/{node}/qemu/{vmid}/cloudinit). GET is infra-readable
+// (NOC + platform_admin) via requireStaff("infra"); the live PVE response is
+// a per-key diff — Value is what is applied, Pending is what a regenerate
+// would write, Delete marks a key pending removal.
+func (s *Server) adminProxmoxCloudInitGet(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	node := strings.TrimSpace(c.Params("node"))
+	if node == "" {
+		return mw.WriteError(c, vErrField("node", "node is required"))
+	}
+	vmidStr := strings.TrimSpace(c.Params("vmid"))
+	vmid, cerr := strconv.Atoi(vmidStr)
+	if cerr != nil || vmid <= 0 {
+		return mw.WriteError(c, vErrField("vmid", "must be a positive integer"))
+	}
+	pending, err := ad.Client().CloudInitPending(c.Context(), node, vmid)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	if pending == nil {
+		pending = []*goproxmox.VirtualMachineCloudInitPending{}
+	}
+	return mw.JSON(c, 200, pending, nil)
+}
+
 // adminProxmoxQemuPerNode returns QEMU guests on one node via
 // ClusterResources filtered to type=vm per node. GET is infra-readable.
 func (s *Server) adminProxmoxQemuPerNode(c fiber.Ctx) error {
@@ -1317,3 +1346,571 @@ func (s *Server) adminProxmoxQemuPerNode(c fiber.Ctx) error {
 	}
 	return mw.JSON(c, 200, filtered, nil)
 }
+
+// adminProxmoxNodeRRDData exposes node RRD series (GET /nodes/{node}/rrddata).
+// GET /admin/proxmox/:id/nodes/:node/rrd?timeframe=&cf= — infra-readable.
+func (s *Server) adminProxmoxNodeRRDData(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	node := strings.TrimSpace(c.Params("node"))
+	if node == "" {
+		return mw.WriteError(c, vErrField("node", "node is required"))
+	}
+	timeframe := strings.TrimSpace(c.Query("timeframe"))
+	if timeframe == "" {
+		timeframe = "hour"
+	}
+	cf := strings.TrimSpace(c.Query("cf"))
+	if cf == "" {
+		cf = "AVERAGE"
+	}
+	data, err := ad.Client().NodeRRDData(c.Context(), node, timeframe, cf)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	if data == nil {
+		data = []*goproxmox.RRDData{}
+	}
+	return mw.JSON(c, 200, data, nil)
+}
+
+// adminProxmoxQemuRRDData exposes QEMU guest RRD series (GET /nodes/{node}/qemu/{vmid}/rrddata).
+// GET /admin/proxmox/:id/nodes/:node/qemu/:vmid/rrd?timeframe=&cf= — infra-readable.
+func (s *Server) adminProxmoxQemuRRDData(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	node := strings.TrimSpace(c.Params("node"))
+	if node == "" {
+		return mw.WriteError(c, vErrField("node", "node is required"))
+	}
+	vmidStr := strings.TrimSpace(c.Params("vmid"))
+	vmid, cerr := strconv.Atoi(vmidStr)
+	if cerr != nil || vmid <= 0 {
+		return mw.WriteError(c, vErrField("vmid", "must be a positive integer"))
+	}
+	timeframe := strings.TrimSpace(c.Query("timeframe"))
+	if timeframe == "" {
+		timeframe = "hour"
+	}
+	cf := strings.TrimSpace(c.Query("cf"))
+	if cf == "" {
+		cf = "AVERAGE"
+	}
+	data, err := ad.Client().VMRRDData(c.Context(), node, vmid, timeframe, cf)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	if data == nil {
+		data = []*goproxmox.RRDData{}
+	}
+	return mw.JSON(c, 200, data, nil)
+}
+
+// adminProxmoxVersion exposes PVE's /version (proxmox murni).
+// GET /admin/proxmox/:id/version — infra-readable (NOC + platform_admin),
+// guard via proxmoxAdapterFor so non-proxmox kind answers 501 expect proxmox.
+func (s *Server) adminProxmoxVersion(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	v, err := ad.Client().Version(c.Context())
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	if v == nil {
+		return mw.JSON(c, 200, fiber.Map{}, nil)
+	}
+	return mw.JSON(c, 200, v, nil)
+}
+
+// adminProxmoxNextID allocates the next free VMID from the cluster
+// (GET /cluster/nextid). GET is infra-readable.
+func (s *Server) adminProxmoxNextID(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	id, err := ad.Client().ClusterNextID(c.Context())
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, fiber.Map{"next_id": id}, nil)
+}
+
+// adminProxmoxTemplates lists QEMU/LXC templates (cluster resources where template==1).
+// GET /admin/proxmox/:id/templates — infra-readable (NOC + platform_admin), proxmoxAdapterFor guard.
+func (s *Server) adminProxmoxTemplates(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	resources, err := ad.Client().ClusterResources(c.Context(), "vm")
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	filtered := make([]any, 0)
+	for _, r := range resources {
+		if r == nil {
+			continue
+		}
+		if r.Template != 1 {
+			continue
+		}
+		filtered = append(filtered, r)
+	}
+	// Also include LXC templates if any (type lxc template==1)
+	resources2, err := ad.Client().ClusterResources(c.Context())
+	if err == nil {
+		for _, r := range resources2 {
+			if r == nil || r.Type != "lxc" || r.Template != 1 {
+				continue
+			}
+			filtered = append(filtered, r)
+		}
+	}
+	return mw.JSON(c, 200, filtered, nil)
+}
+
+// adminProxmoxTemplateDelete deletes a template VM via QEMUDestroy/LXC destroy.
+// DELETE /admin/proxmox/:id/templates/:vmid?node= — platform_admin only.
+func (s *Server) adminProxmoxTemplateDelete(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	vmidStr := strings.TrimSpace(c.Params("vmid"))
+	vmid, cerr := strconv.Atoi(vmidStr)
+	if cerr != nil || vmid <= 0 {
+		return mw.WriteError(c, vErrField("vmid", "must be a positive integer"))
+	}
+	node := strings.TrimSpace(c.Query("node"))
+	if node == "" {
+		n, nerr := ad.NodeForVMID(c.Context(), int64(vmid))
+		if nerr != nil {
+			return mw.WriteError(c, nerr)
+		}
+		node = n
+	}
+	task, err := ad.Client().QEMUDestroy(c.Context(), node, vmid, true)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 202, fiber.Map{"node": node, "vmid": vmid, "task": task}, nil)
+}
+
+// adminProxmoxSnapshotsList lists snapshots for one QEMU VM.
+// GET /admin/proxmox/:id/snapshots?vmid= — infra-readable.
+func (s *Server) adminProxmoxSnapshotsList(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	vmidStr := strings.TrimSpace(c.Query("vmid"))
+	vmid, cerr := strconv.Atoi(vmidStr)
+	if cerr != nil || vmid <= 0 {
+		return mw.WriteError(c, vErrField("vmid", "must be a positive integer"))
+	}
+	node, err := ad.NodeForVMID(c.Context(), int64(vmid))
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	snaps, err := ad.Client().SnapshotsList(c.Context(), node, vmid)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	if snaps == nil {
+		snaps = []*goproxmox.VirtualMachineSnapshot{}
+	}
+	return mw.JSON(c, 200, snaps, nil)
+}
+
+// adminProxmoxSnapshotCreate creates a snapshot on one QEMU VM.
+// POST /admin/proxmox/:id/snapshots {vmid, snapname, description?} — platform_admin only.
+func (s *Server) adminProxmoxSnapshotCreate(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	var in struct {
+		VMID        int    `json:"vmid"`
+		Snapname    string `json:"snapname"`
+		Description string `json:"description"`
+	}
+	if err := c.Bind().Body(&in); err != nil || in.VMID <= 0 || strings.TrimSpace(in.Snapname) == "" {
+		return mw.WriteError(c, vErrField("snapname", "vmid and snapname are required"))
+	}
+	if strings.TrimSpace(in.Snapname) == "current" {
+		return mw.WriteError(c, vErrField("snapname", "current is reserved by PVE"))
+	}
+	node, err := ad.NodeForVMID(c.Context(), int64(in.VMID))
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	task, err := ad.Client().SnapshotCreate(c.Context(), node, in.VMID, strings.TrimSpace(in.Snapname), strings.TrimSpace(in.Description))
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 202, fiber.Map{"node": node, "vmid": in.VMID, "snapname": strings.TrimSpace(in.Snapname), "task": task}, nil)
+}
+
+// adminProxmoxSnapshotRollback rolls a VM back to a snapshot and restarts it.
+// POST /admin/proxmox/:id/snapshots/rollback {vmid, snapname} — platform_admin only.
+func (s *Server) adminProxmoxSnapshotRollback(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	var in struct {
+		VMID     int    `json:"vmid"`
+		Snapname string `json:"snapname"`
+	}
+	if err := c.Bind().Body(&in); err != nil || in.VMID <= 0 || strings.TrimSpace(in.Snapname) == "" {
+		return mw.WriteError(c, vErrField("snapname", "vmid and snapname are required"))
+	}
+	node, err := ad.NodeForVMID(c.Context(), int64(in.VMID))
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	task, err := ad.Client().SnapshotRollback(c.Context(), node, in.VMID, strings.TrimSpace(in.Snapname))
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	// Restart after rollback so guest returns to captured state.
+	if err := ad.Client().WaitForTask(c.Context(), task, "rollback snapshot", 5*60*1_000_000_000); err != nil {
+		return mw.WriteError(c, err)
+	}
+	startTask, err := ad.Client().QEMUStart(c.Context(), node, in.VMID)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 202, fiber.Map{"node": node, "vmid": in.VMID, "snapname": strings.TrimSpace(in.Snapname), "task": startTask}, nil)
+}
+
+// adminProxmoxSnapshotDelete deletes a snapshot.
+// DELETE /admin/proxmox/:id/snapshots/:snapname?vmid= — platform_admin only.
+func (s *Server) adminProxmoxSnapshotDelete(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	snapname := strings.TrimSpace(c.Params("snapname"))
+	if snapname == "" {
+		snapname = strings.TrimSpace(c.Query("snapname"))
+	}
+	if snapname == "" {
+		return mw.WriteError(c, vErrField("snapname", "snapname is required"))
+	}
+	vmidStr := strings.TrimSpace(c.Query("vmid"))
+	vmid, cerr := strconv.Atoi(vmidStr)
+	if cerr != nil || vmid <= 0 {
+		return mw.WriteError(c, vErrField("vmid", "must be a positive integer"))
+	}
+	node, err := ad.NodeForVMID(c.Context(), int64(vmid))
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	task, err := ad.Client().SnapshotDelete(c.Context(), node, vmid, snapname)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 202, fiber.Map{"node": node, "vmid": vmid, "snapname": snapname, "task": task}, nil)
+}
+
+// ---- Access: users / groups / roles (GET /access/*) ----
+
+// adminAccessUsersList lists PVE users (GET /access/users).
+// GET /admin/proxmox/:id/access/users — infra-readable (NOC + platform_admin).
+func (s *Server) adminAccessUsersList(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	users, err := ad.Client().AccessUsers(c.Context())
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	if users == nil {
+		users = goproxmox.Users{}
+	}
+	return mw.JSON(c, 200, users, nil)
+}
+
+// adminAccessUserCreate creates a PVE user.
+// POST /admin/proxmox/:id/access/users — platform_admin only.
+func (s *Server) adminAccessUserCreate(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	var raw map[string]any
+	if err := c.Bind().Body(&raw); err != nil || raw == nil {
+		return mw.WriteError(c, errValidation("invalid user payload"))
+	}
+	userid, _ := raw["userid"].(string)
+	userid = strings.TrimSpace(userid)
+	if userid == "" {
+		if v, ok := raw["user"].(string); ok {
+			userid = strings.TrimSpace(v)
+		}
+	}
+	if userid == "" {
+		return mw.WriteError(c, vErrField("userid", "userid is required (e.g. alice@pve)"))
+	}
+	if !strings.Contains(userid, "@") {
+		return mw.WriteError(c, vErrField("userid", "userid must contain realm, e.g. alice@pve"))
+	}
+	password, _ := raw["password"].(string)
+	password = strings.TrimSpace(password)
+	if password == "" {
+		return mw.WriteError(c, vErrField("password", "password is required"))
+	}
+	email, _ := raw["email"].(string)
+	firstname, _ := raw["firstname"].(string)
+	lastname, _ := raw["lastname"].(string)
+	comment, _ := raw["comment"].(string)
+	groups := parseAccessCSV(raw["groups"])
+	keysRaw := raw["keys"]
+	var keys []string
+	switch v := keysRaw.(type) {
+	case string:
+		if strings.TrimSpace(v) != "" {
+			keys = []string{strings.TrimSpace(v)}
+		}
+	case []any:
+		for _, it := range v {
+			if s, ok := it.(string); ok && strings.TrimSpace(s) != "" {
+				keys = append(keys, strings.TrimSpace(s))
+			}
+		}
+	case []string:
+		keys = v
+	}
+	expire := 0
+	if v, ok := raw["expire"]; ok {
+		switch vv := v.(type) {
+		case float64:
+			expire = int(vv)
+		case int:
+			expire = vv
+		case string:
+			if n, perr := strconv.Atoi(strings.TrimSpace(vv)); perr == nil {
+				expire = n
+			}
+		}
+	}
+	enable := true
+	if v, ok := raw["enable"]; ok {
+		switch vv := v.(type) {
+		case bool:
+			enable = vv
+		case float64:
+			enable = vv != 0
+		case string:
+			if strings.EqualFold(strings.TrimSpace(vv), "false") || strings.TrimSpace(vv) == "0" {
+				enable = false
+			}
+		}
+	}
+	nu := &goproxmox.NewUser{
+		UserID:    userid,
+		Password:  password,
+		Email:     strings.TrimSpace(email),
+		Firstname: strings.TrimSpace(firstname),
+		Lastname:  strings.TrimSpace(lastname),
+		Comment:   strings.TrimSpace(comment),
+		Groups:    goproxmox.CSV(groups),
+		Keys:      keys,
+		Expire:    expire,
+		Enable:    enable,
+	}
+	if err := ad.Client().AccessUserCreate(c.Context(), nu); err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 201, fiber.Map{"status": "created", "userid": userid}, nil)
+}
+
+// adminAccessUserUpdate updates a PVE user.
+// PUT /admin/proxmox/:id/access/users/:userid — platform_admin only.
+func (s *Server) adminAccessUserUpdate(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	userid := strings.TrimSpace(c.Params("userid"))
+	if userid == "" {
+		return mw.WriteError(c, vErrField("userid", "userid is required"))
+	}
+	var raw map[string]any
+	if err := c.Bind().Body(&raw); err != nil || raw == nil {
+		return mw.WriteError(c, errValidation("invalid user payload"))
+	}
+	var opts goproxmox.UserOptions
+	if v, ok := raw["comment"]; ok {
+		if s, ok := v.(string); ok {
+			opts.Comment = strings.TrimSpace(s)
+		}
+	}
+	if v, ok := raw["email"]; ok {
+		if s, ok := v.(string); ok {
+			opts.Email = strings.TrimSpace(s)
+		}
+	}
+	if v, ok := raw["firstname"]; ok {
+		if s, ok := v.(string); ok {
+			opts.Firstname = strings.TrimSpace(s)
+		}
+	}
+	if v, ok := raw["lastname"]; ok {
+		if s, ok := v.(string); ok {
+			opts.Lastname = strings.TrimSpace(s)
+		}
+	}
+	if v, ok := raw["keys"]; ok {
+		switch vv := v.(type) {
+		case string:
+			opts.Keys = strings.TrimSpace(vv)
+		case []any:
+			parts := make([]string, 0, len(vv))
+			for _, it := range vv {
+				if s, ok := it.(string); ok && strings.TrimSpace(s) != "" {
+					parts = append(parts, strings.TrimSpace(s))
+				}
+			}
+			opts.Keys = strings.Join(parts, "\n")
+		}
+	}
+	if v, ok := raw["groups"]; ok {
+		groups := parseAccessCSV(v)
+		opts.Groups = goproxmox.CSV(groups)
+	}
+	if v, ok := raw["expire"]; ok {
+		switch vv := v.(type) {
+		case float64:
+			opts.Expire = int(vv)
+		case int:
+			opts.Expire = vv
+		case string:
+			if n, perr := strconv.Atoi(strings.TrimSpace(vv)); perr == nil {
+				opts.Expire = n
+			}
+		}
+	}
+	if v, ok := raw["enable"]; ok {
+		var b goproxmox.IntOrBool
+		switch vv := v.(type) {
+		case bool:
+			b = goproxmox.IntOrBool(vv)
+		case float64:
+			b = goproxmox.IntOrBool(vv != 0)
+		case string:
+			b = goproxmox.IntOrBool(!(strings.EqualFold(strings.TrimSpace(vv), "false") || strings.TrimSpace(vv) == "0"))
+		default:
+			b = goproxmox.IntOrBool(true)
+		}
+		opts.Enable = &b
+	}
+	if v, ok := raw["append"]; ok {
+		switch vv := v.(type) {
+		case bool:
+			opts.Append = goproxmox.IntOrBool(vv)
+		case float64:
+			opts.Append = goproxmox.IntOrBool(vv != 0)
+		}
+	}
+	if err := ad.Client().AccessUserUpdate(c.Context(), userid, opts); err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, fiber.Map{"status": "updated", "userid": userid}, nil)
+}
+
+// adminAccessUserDelete deletes a PVE user.
+// DELETE /admin/proxmox/:id/access/users/:userid — platform_admin only.
+func (s *Server) adminAccessUserDelete(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	userid := strings.TrimSpace(c.Params("userid"))
+	if userid == "" {
+		return mw.WriteError(c, vErrField("userid", "userid is required"))
+	}
+	if err := ad.Client().AccessUserDelete(c.Context(), userid); err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, fiber.Map{"status": "deleted", "userid": userid}, nil)
+}
+
+// adminAccessGroupsList lists PVE groups.
+// GET /admin/proxmox/:id/access/groups — infra-readable.
+func (s *Server) adminAccessGroupsList(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	groups, err := ad.Client().AccessGroups(c.Context())
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	if groups == nil {
+		groups = goproxmox.Groups{}
+	}
+	return mw.JSON(c, 200, groups, nil)
+}
+
+// adminAccessRolesList lists PVE roles.
+// GET /admin/proxmox/:id/access/roles — infra-readable.
+func (s *Server) adminAccessRolesList(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	roles, err := ad.Client().AccessRoles(c.Context())
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	if roles == nil {
+		roles = goproxmox.Roles{}
+	}
+	return mw.JSON(c, 200, roles, nil)
+}
+
+func parseAccessCSV(v any) []string {
+	switch vv := v.(type) {
+	case string:
+		s := strings.TrimSpace(vv)
+		if s == "" {
+			return nil
+		}
+		parts := strings.Split(s, ",")
+		out := make([]string, 0, len(parts))
+		for _, p := range parts {
+			if q := strings.TrimSpace(p); q != "" {
+				out = append(out, q)
+			}
+		}
+		return out
+	case []any:
+		out := make([]string, 0, len(vv))
+		for _, it := range vv {
+			switch sv := it.(type) {
+			case string:
+				if q := strings.TrimSpace(sv); q != "" {
+					out = append(out, q)
+				}
+			case float64:
+				out = append(out, strconv.FormatFloat(sv, 'f', -1, 64))
+			}
+		}
+		return out
+	case []string:
+		return vv
+	default:
+		return nil
+	}
+}
+

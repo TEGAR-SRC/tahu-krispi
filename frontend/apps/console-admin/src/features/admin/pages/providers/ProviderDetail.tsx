@@ -109,6 +109,13 @@ const SECTIONS: SectionLink[] = [
     kinds: ["proxmox"],
   },
   {
+    to: "access",
+    title: "Access",
+    description: "Users, groups and roles — POST/PUT/DELETE users, read groups/roles.",
+    icon: ShieldCheckIcon,
+    kinds: ["proxmox"],
+  },
+  {
     to: "clone",
     title: "Clone (VM+LXC)",
     description: "Full-copy clone for qemu VMs and LXC containers — POST /admin/proxmox/:id/clone.",

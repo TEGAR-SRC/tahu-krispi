@@ -73,6 +73,9 @@ export const adminNav: ConsoleNavSection[] = [
       { title: "Ceph", url: "/admin/providers?kind=proxmox&section=ceph", icon: LayersIcon },
       { title: "Pools", url: "/admin/providers?kind=proxmox&section=pools", icon: BoxesIcon },
       { title: "Clone (VM+LXC)", url: "/admin/providers?kind=proxmox&section=clone", icon: BoxesIcon },
+      { title: "Templates", url: "/admin/providers?kind=proxmox&section=templates", icon: LayersIcon },
+      { title: "Snapshots", url: "/admin/providers?kind=proxmox&section=snapshots", icon: DatabaseBackupIcon },
+      { title: "Diagnostics", url: "/admin/providers?kind=proxmox&section=diagnostics", icon: GaugeIcon },
       { title: "Performance", url: "/admin/providers?kind=proxmox&section=perf", icon: GaugeIcon },
     ],
   },
@@ -84,6 +87,7 @@ export const adminNav: ConsoleNavSection[] = [
       { title: "Health", url: "/admin/providers?kind=onidel&section=health", icon: HeartPulseIcon },
       { title: "Health detail", url: "/admin/providers?kind=onidel&section=health-detail", icon: HeartPulseIcon },
       { title: "Instances (realtime)", url: "/admin/providers?kind=onidel&section=instances", icon: ContainerIcon },
+      { title: "Billing sync", url: "/admin/providers?kind=onidel&section=billing-sync", icon: CreditCardIcon },
     ],
   },
   {

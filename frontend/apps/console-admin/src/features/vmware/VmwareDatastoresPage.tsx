@@ -180,7 +180,21 @@ export default function VmwareDatastoresPage() {
             <CardContent>
               <SimpleDataTable<DatastoreRow>
                 columns={[
-                  { key: "name", header: "Datastore", render: (row) => <span className="font-mono text-xs">{row.name || "—"}</span> },
+                  {
+                    key: "name",
+                    header: "Datastore",
+                    render: (row) =>
+                      row.name ? (
+                        <Link
+                          to={`/admin/vmware/${providerId}/datastores/${encodeURIComponent(row.name)}`}
+                          className="font-mono text-xs font-medium text-primary hover:underline"
+                        >
+                          {row.name}
+                        </Link>
+                      ) : (
+                        <span className="font-mono text-xs">—</span>
+                      ),
+                  },
                   { key: "type", header: "Type" },
                   { key: "capacity_bytes", header: "Capacity", render: (row) => formatBytes(getCapacity(row)) },
                   {
@@ -221,18 +235,30 @@ export default function VmwareDatastoresPage() {
                   const cap = getCapacity(row)
                   const free = getFree(row)
                   return (
-                    <button
+                    <div
                       key={String(row.name ?? `ds-${index}`)}
-                      type="button"
-                      onClick={() => setSelectedDs(row)}
-                      className={`rounded-md border px-3 py-2 text-left text-xs hover:bg-muted ${selectedDs === row ? "border-primary bg-muted" : ""}`}
+                      className={`flex flex-wrap items-center gap-2 rounded-md border px-3 py-2 text-xs ${selectedDs === row ? "border-primary bg-muted" : ""}`}
                     >
-                      <span className="font-mono font-medium">{row.name || `ds-${index}`}</span>
-                      <span className="ml-2 text-muted-foreground">
-                        {row.type || "—"} · {formatBytes(cap)} cap · {formatBytes(free)} free
-                      </span>
-                      <span className="ml-2 text-primary">→ inspect</span>
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedDs(row)}
+                        className="text-left hover:underline"
+                      >
+                        <span className="font-mono font-medium">{row.name || `ds-${index}`}</span>
+                        <span className="ml-2 text-muted-foreground">
+                          {row.type || "—"} · {formatBytes(cap)} cap · {formatBytes(free)} free
+                        </span>
+                        <span className="ml-2 text-primary">→ inspect</span>
+                      </button>
+                      {row.name ? (
+                        <Link
+                          to={`/admin/vmware/${providerId}/datastores/${encodeURIComponent(row.name)}`}
+                          className="ml-auto font-mono text-xs text-primary hover:underline"
+                        >
+                          detail →
+                        </Link>
+                      ) : null}
+                    </div>
                   )
                 })}
               </div>

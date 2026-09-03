@@ -1,21 +1,23 @@
-// VMware guest performance — dedicated per-provider page for kind=vmware.
-// Uses the per-provider endpoints GET /admin/vmware/:id/perf?v=<external_id>&timeframe=hour|day
-// and per-VM drill GET /admin/vmware/:id/perf/:vmid (realtime 5s). Guard kind==vmware
-// via vmwareAdapterFor. Shows provider lookup + chart + samples table + drill link.
-// NOC may GET infra (requireStaff infra), mutating stays platform_admin only.
+// VMware per-VM perf detail — GET /admin/vmware/:id/perf/:vmid realtime 5s drill.
+// Endpoint: GET /admin/vmware/:id/perf/:vmid?timeframe=hour|day (vmwareAdapterFor
+// guard kind==vmware, requireStaff infra → NOC readable, finance 403).
+// Reuses the same chart/table normalizers as VmwarePerfPage but polls the
+// path-param drill endpoint and renders SimpleDataTable + ProviderShell.
+// Route: /admin/vmware/:providerId/perf/:vmid
 import { useEffect, useMemo, useState } from "react"
 import { Link, useParams, useSearchParams } from "react-router-dom"
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { EmptyState } from "@/components/shared/EmptyState"
+import { ErrorBanner } from "@/components/shared/ErrorBanner"
+import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
+import { JsonBlock } from "@/features/admin/pages/shared"
+import { ProviderShell } from "@/features/admin/pages/providers/shared"
+import { useInfraGet } from "@/features/admin/pages/providers/infra"
+import type { ProviderRow } from "@/features/admin/pages/providers/types"
+import { ApiError } from "@/lib/api"
 import {
   ChartContainer,
   ChartTooltip,
@@ -23,26 +25,19 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart"
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
-import { EmptyState } from "@/components/shared/EmptyState"
-import { ErrorBanner } from "@/components/shared/ErrorBanner"
-import { ApiError } from "@/lib/api"
-import { JsonBlock } from "@/features/admin/pages/shared"
-import { ProviderShell } from "@/features/admin/pages/providers/shared"
-import { useInfraGet } from "@/features/admin/pages/providers/infra"
-import type { ProviderRow } from "@/features/admin/pages/providers/types"
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
 
-interface PerfPayload {
+interface PerfDetailPayload {
   provider_id: string
   code: string
   external_id: string
+  vmid?: string
   timeframe: string
   metrics: unknown
 }
@@ -151,30 +146,40 @@ function formatAxis(value: number): string {
   return String(value)
 }
 
-export default function VmwarePerfPage() {
+export default function VmwarePerfDetailPage() {
   const params = useParams()
-  const providerId = params.providerId ?? (params as Record<string, string>).id ?? ""
-  const [searchParams] = useSearchParams()
-  const initialVmid = searchParams.get("vmid") ?? ""
+  const providerId = (params.providerId ?? (params as Record<string, string>).id ?? "") as string
+  const vmidParam = (params.vmid ?? (params as Record<string, string>).vmId ?? "") as string
+  const [searchParams, setSearchParams] = useSearchParams()
+  const decodedVmid = useMemo(() => {
+    try {
+      return decodeURIComponent(vmidParam)
+    } catch {
+      return vmidParam
+    }
+  }, [vmidParam])
+
+  const [timeframe, setTimeframe] = useState<(typeof TIMEFRAMES)[number]>(
+    (searchParams.get("timeframe") as (typeof TIMEFRAMES)[number]) ?? "hour",
+  )
+
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams)
+    next.set("timeframe", timeframe)
+    setSearchParams(next, { replace: true })
+  }, [timeframe]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const providers = useInfraGet<ProviderRow[]>("/admin/providers")
-  const match = providers.data?.find((row) => row.id === providerId) ?? null
+  const match = useMemo(() => providers.data?.find((row) => row.id === providerId) ?? null, [providers.data, providerId])
   const isVmware = !match || match.kind === "vmware"
+  const kindMismatch = Boolean(match && match.kind !== "vmware")
 
-  const [extId, setExtId] = useState(initialVmid)
-  const [timeframe, setTimeframe] = useState<(typeof TIMEFRAMES)[number]>("hour")
-  const [applied, setApplied] = useState<{ ext: string; tf: string } | null>(() =>
-    initialVmid ? { ext: initialVmid, tf: "hour" } : null,
-  )
-  useEffect(() => {
-    if (initialVmid && !applied) setApplied({ ext: initialVmid, tf: "hour" })
-  }, [initialVmid, applied])
+  const perfPath =
+    providerId && decodedVmid && isVmware
+      ? `/admin/vmware/${providerId}/perf/${encodeURIComponent(decodedVmid)}`
+      : null
 
-  const perf = useInfraGet<PerfPayload>(
-    applied && providerId ? `/admin/vmware/${providerId}/perf` : null,
-    { v: applied?.ext, timeframe: applied?.tf },
-    { intervalMs: 5000 },
-  )
+  const perf = useInfraGet<PerfDetailPayload>(perfPath, { timeframe }, { intervalMs: 5000 })
 
   const normalized = useMemo(() => {
     const metrics = perf.data?.metrics
@@ -191,14 +196,40 @@ export default function VmwarePerfPage() {
     (group?.series ?? []).map((series, index) => [series.key, { label: series.label, color: `var(--chart-${(index % 5) + 1})` }]),
   ) satisfies ChartConfig
 
-  const kindMismatch = match && match.kind !== "vmware"
-  const loadError =
-    perf.error instanceof ApiError && perf.error.status === 501
-      ? "This provider kind does not expose VMware guest metrics — use a vmware provider (kind=vmware)."
-      : null
+  if (!providerId || !decodedVmid) {
+    return (
+      <ProviderShell providerId={providerId} title="VMware perf detail" description="Per-VM realtime perf drill — /admin/vmware/:id/perf/:vmid">
+        <ErrorBanner error={new Error("Missing providerId or vmid in route params")} />
+      </ProviderShell>
+    )
+  }
+
+  if (perf.error instanceof ApiError && perf.error.status === 501) {
+    return (
+      <ProviderShell providerId={providerId} title="VMware perf detail" description="Per-VM realtime perf drill — /admin/vmware/:id/perf/:vmid">
+        <EmptyState
+          message="Perf detail is only available for vmware providers."
+          description="This provider runs another platform (the API answered HTTP 501 via vmwareAdapterFor kind guard). Switch to a vmware provider and retry GET /v1/admin/vmware/:id/perf/:vmid."
+        />
+        {match ? (
+          <Card>
+            <CardContent className="pt-6 text-sm text-muted-foreground">
+              Current provider <span className="font-mono">{match.code}</span> is kind{" "}
+              <Badge variant="destructive">{match.kind}</Badge> — perf detail at{" "}
+              <span className="font-mono">/admin/vmware/:id/perf/:vmid</span> requires <span className="font-mono">kind=vmware</span>.
+            </CardContent>
+          </Card>
+        ) : null}
+      </ProviderShell>
+    )
+  }
 
   return (
-    <ProviderShell providerId={providerId} title="VMware guest performance" description="Per-VM metrics via vSphere GuestMetrics — provider lookup + chart (realtime hour / 5-min day).">
+    <ProviderShell
+      providerId={providerId}
+      title={`VMware perf — ${decodedVmid}`}
+      description={`Per-VM realtime metrics via vSphere GuestMetrics — GET /v1/admin/vmware/:id/perf/:vmid?timeframe= — polling every 5s.`}
+    >
       {providers.error ? <ErrorBanner error={providers.error} /> : null}
       {match ? (
         <Card>
@@ -215,7 +246,7 @@ export default function VmwarePerfPage() {
           </CardHeader>
           {kindMismatch ? (
             <CardContent>
-              <EmptyState message="This provider is not vmware." description={`Kind is ${match.kind} — perf at /admin/vmware/:id/perf answers 501. Switch to a vmware provider or use /admin/proxmox/:id/perf for Proxmox.`} />
+              <EmptyState message="This provider is not vmware." description={`Kind is ${match.kind} — perf at /admin/vmware/:id/perf/:vmid answers 501.`} />
             </CardContent>
           ) : null}
         </Card>
@@ -227,71 +258,43 @@ export default function VmwarePerfPage() {
         <>
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Per-VM metrics</CardTitle>
-              <CardDescription>Pick a guest external ID (vSphere moref like vm-123) and timeframe. The chart normalizes vSphere EntityMetric series and falls back to raw JSON for unknown shapes.</CardDescription>
+              <CardTitle className="text-base">VM — {decodedVmid}</CardTitle>
+              <CardDescription>
+                Realtime perf drill for <span className="font-mono">{decodedVmid}</span> — timeframe via query, polled every 5s via{" "}
+                <span className="font-mono">useInfraGet intervalMs 5000</span>. Matches existing VmwarePerf chart normalizers.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex flex-wrap items-end gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="vmware-perf-v">Guest external ID *</Label>
-                  <Input
-                    id="vmware-perf-v"
-                    value={extId}
-                    onChange={(event) => setExtId(event.target.value)}
-                    placeholder="e.g. vm-123 or vm-42"
-                    className="w-72 font-mono text-xs"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="vmware-perf-tf">Timeframe</Label>
-                  <Select value={timeframe} onValueChange={(value) => setTimeframe(value as typeof timeframe)}>
-                    <SelectTrigger id="vmware-perf-tf" className="w-32">
+                  <Label htmlFor="vmware-perf-detail-tf">Timeframe</Label>
+                  <Select value={timeframe} onValueChange={(v) => setTimeframe(v as typeof timeframe)}>
+                    <SelectTrigger id="vmware-perf-detail-tf" className="w-32">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {TIMEFRAMES.map((value) => (
-                        <SelectItem key={value} value={value}>
-                          {value}
+                      {TIMEFRAMES.map((v) => (
+                        <SelectItem key={v} value={v}>
+                          {v}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                <Button
-                  disabled={extId.trim() === "" || !providerId || Boolean(kindMismatch)}
-                  onClick={() => {
-                    setGroupId("cpu")
-                    setApplied({ ext: extId.trim(), tf: timeframe })
-                  }}
-                >
-                  Load metrics
+                <Button variant="outline" size="sm" onClick={() => perf.reload()} disabled={perf.loading}>
+                  {perf.loading ? "Refreshing…" : "Refresh"}
                 </Button>
-                {applied ? (
-                  <>
-                    <Button variant="outline" size="sm" asChild>
-                      <Link to={`/admin/vmware/${providerId}/perf/${encodeURIComponent(applied.ext)}?timeframe=${applied.tf}`}>
-                        Open detail drill
-                      </Link>
-                    </Button>
-                    <span className="text-xs text-muted-foreground">
-                      loaded {applied.ext} · {applied.tf}
-                      {perf.data?.code ? ` · ${perf.data.code}` : ""} — realtime 5s via <span className="font-mono">useInfraGet intervalMs 5000</span>
-                    </span>
-                  </>
-                ) : null}
+                <Button variant="outline" size="sm" asChild>
+                  <Link to={`/admin/vmware/${providerId}/perf?vmid=${encodeURIComponent(decodedVmid)}`}>Open perf picker</Link>
+                </Button>
+                <span className="text-xs text-muted-foreground">
+                  Endpoint <span className="font-mono">GET /v1/admin/vmware/:id/perf/:vmid?timeframe=</span> — NOC infra (read), platform_admin for mutations elsewhere.
+                </span>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Endpoint <span className="font-mono">GET /v1/admin/vmware/:id/perf?v=&timeframe=</span> — NOC read (infra), admin full. Mirrors the existing GuestPerf chart with added provider lookup card. Detail drill at{" "}
-                <span className="font-mono">GET /v1/admin/vmware/:id/perf/:vmid?timeframe=</span> realtime every 5s.
-              </p>
             </CardContent>
           </Card>
 
-          {loadError ? (
-            <EmptyState message={loadError} description="Inventory/perf only serve vmware providers (guard kind==vmware returns 501 otherwise)." />
-          ) : !applied ? (
-            <EmptyState message="Pick a guest to chart." description="External ID is the vSphere managed object reference for the VM." />
-          ) : perf.loading ? (
+          {perf.loading && !perf.data ? (
             <p className="text-sm text-muted-foreground">Loading metrics…</p>
           ) : perf.error ? (
             <ErrorBanner error={perf.error} />
@@ -340,8 +343,8 @@ export default function VmwarePerfPage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Samples (per-VM)</CardTitle>
-                  <CardDescription>First 50 samples of the normalized series — full payload below as JSON.</CardDescription>
+                  <CardTitle className="text-base">Samples (per-VM drill)</CardTitle>
+                  <CardDescription>First 100 samples of the normalized series — full payload below as JSON. Polls every 5s.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <SimpleDataTable
@@ -356,7 +359,7 @@ export default function VmwarePerfPage() {
                         },
                       })),
                     ]}
-                    rows={normalized.rows.slice(0, 50)}
+                    rows={normalized.rows.slice(0, 100)}
                     getRowKey={(_row, index) => String(index)}
                     emptyMessage="No samples."
                     skeletonRows={5}
@@ -368,7 +371,7 @@ export default function VmwarePerfPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">The response did not match a known metric shape — raw payload:</p>
+              <p className="text-sm text-muted-foreground">The response did not match a known metric shape — raw payload ( polled every 5s ):</p>
               <JsonBlock value={perf.data} />
             </div>
           )}

@@ -270,6 +270,64 @@ func (s *Server) adminGrantAdmin(c fiber.Ctx) error {
 	return mw.JSON(c, 200, fiber.Map{"id": userID, "is_platform_admin": grant}, nil)
 }
 
+var admMemberRoles = map[string]bool{"owner": true, "admin": true, "billing": true, "operator": true, "developer": true, "viewer": true}
+
+type admAttachOrgInput struct {
+	OrganizationID string `json:"organization_id"`
+	Role           string `json:"role"`
+}
+
+func (s *Server) adminAttachUserToOrg(c fiber.Ctx) error {
+	userID, err := admParseUUIDParam(c, "user_id", "user_id")
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	var in admAttachOrgInput
+	if err := c.Bind().Body(&in); err != nil {
+		return mw.WriteError(c, errValidation("invalid json body"))
+	}
+	orgIDRaw := strings.TrimSpace(in.OrganizationID)
+	if orgIDRaw == "" {
+		return mw.WriteError(c, vErrField("organization_id", "organization_id is required"))
+	}
+	orgID, err := uuid.Parse(orgIDRaw)
+	if err != nil {
+		return mw.WriteError(c, vErrField("organization_id", "must be a valid uuid"))
+	}
+	role := lower(strings.TrimSpace(in.Role))
+	if role == "" {
+		role = "viewer"
+	}
+	if !admMemberRoles[role] {
+		return mw.WriteError(c, vErrField("role", "must be one of: admin, billing, developer, operator, owner, viewer"))
+	}
+	ctx := c.Context()
+	var userExists bool
+	if err := s.db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE id=$1 AND deleted_at IS NULL)`, userID).Scan(&userExists); err != nil {
+		return mw.WriteError(c, err)
+	}
+	if !userExists {
+		return mw.WriteError(c, apperrors.New(apperrors.CodeNotFound, "user not found"))
+	}
+	var orgExists bool
+	if err := s.db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM organizations WHERE id=$1 AND deleted_at IS NULL)`, orgID).Scan(&orgExists); err != nil {
+		return mw.WriteError(c, err)
+	}
+	if !orgExists {
+		return mw.WriteError(c, apperrors.New(apperrors.CodeNotFound, "organization not found"))
+	}
+	_, err = s.db.Exec(ctx, `INSERT INTO organization_members(organization_id, user_id, role) VALUES ($1,$2,$3::member_role)`, orgID, userID, role)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return mw.WriteError(c, apperrors.New(apperrors.CodeConflict, "user is already a member of this organization"))
+		}
+		return mw.WriteError(c, err)
+	}
+	s.admAuditMeta(c, "admin.user.attach_org", "user", &userID, map[string]any{"organization_id": orgID, "role": role})
+	return mw.JSON(c, 200, fiber.Map{"user_id": userID, "organization_id": orgID, "role": role}, nil)
+}
+
 // ---- Organizations ----
 
 type admOrgRow struct {
