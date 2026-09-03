@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import rehypeHighlight from "rehype-highlight"
-import { Link, Navigate, useLocation, useParams } from "react-router-dom"
+import { Link, useLocation, useParams, Routes, Route, Navigate } from "react-router-dom"
 import { FileTextIcon, SearchIcon, BookOpenIcon, MenuIcon } from "lucide-react"
 import { fetchDoc, fetchDocs, type DocEntry } from "./docs"
 import "highlight.js/styles/github-dark.css"
@@ -118,6 +118,28 @@ function Sidebar({
   )
 }
 
+function NotFound() {
+  return (
+    <div className="flex min-h-svh flex-col items-center justify-center gap-4 p-6 text-center">
+      <p className="text-6xl font-semibold tracking-tight">404</p>
+      <p className="text-muted-foreground">The page you are looking for does not exist.</p>
+      <Link to="/docs" className="text-sm text-primary underline underline-offset-4">
+        Back to docs
+      </Link>
+    </div>
+  )
+}
+
+function EmptyDocs({ loaded }: { loaded: boolean }) {
+  if (!loaded) return <div className="px-6 py-16 text-center text-muted-foreground">Loading…</div>
+  return (
+    <div className="px-6 py-16 text-center text-muted-foreground">
+      <p className="text-lg font-medium">No documents yet</p>
+      <p className="mt-1 text-sm">Docs will appear here once published.</p>
+    </div>
+  )
+}
+
 function DocPage() {
   const { slug } = useParams<{ slug: string }>()
   const [doc, setDoc] = useState<DocEntry | undefined>()
@@ -148,7 +170,15 @@ function DocPage() {
   if (loading) {
     return <div className="px-6 py-16 text-center text-muted-foreground">Loading…</div>
   }
-  if (!doc) return <Navigate to="/docs" replace />
+  if (!doc)
+    return (
+      <div className="px-6 py-16 text-center text-muted-foreground">
+        <p>Document not found.</p>
+        <Link to="/docs" className="mt-2 inline-block text-sm text-primary underline underline-offset-4">
+          Back to docs
+        </Link>
+      </div>
+    )
   return (
     <article className="mx-auto w-full max-w-3xl px-6 py-10">
       <div className="mb-8">
@@ -159,13 +189,73 @@ function DocPage() {
   )
 }
 
-export default function App() {
+function DocsLayout({
+  docs,
+  loaded,
+  query,
+  onQueryChange,
+}: {
+  docs: DocEntry[]
+  loaded: boolean
+  query: string
+  onQueryChange: (v: string) => void
+}) {
+  const [mobileNav, setMobileNav] = useState(false)
   const location = useLocation()
+  useEffect(() => {
+    setMobileNav(false)
+    onQueryChange("")
+  }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <div className="flex min-h-svh w-full bg-background">
+      <div className="hidden w-64 shrink-0 md:block">
+        <Sidebar docs={docs} query={query} onQueryChange={onQueryChange} />
+      </div>
+      {mobileNav ? (
+        <div className="fixed inset-0 z-50 flex bg-background/95 backdrop-blur-sm md:hidden">
+          <Sidebar
+            docs={docs}
+            query={query}
+            onQueryChange={onQueryChange}
+            onCloseMobile={() => setMobileNav(false)}
+          />
+          <button
+            onClick={() => setMobileNav(false)}
+            className="absolute right-3 top-3 rounded p-2 text-muted-foreground hover:bg-accent"
+            aria-label="Close menu"
+          >
+            ✕
+          </button>
+        </div>
+      ) : null}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="flex items-center gap-2 border-b px-4 py-3 md:hidden">
+          <button
+            onClick={() => setMobileNav(true)}
+            className="rounded p-1.5 text-muted-foreground hover:bg-accent"
+            aria-label="Open menu"
+          >
+            <MenuIcon className="size-5" />
+          </button>
+          <span className="font-semibold">Kilat Docs</span>
+        </header>
+        <div className="min-w-0 flex-1 overflow-y-auto">
+          <Routes>
+            <Route path="/docs/:slug" element={<DocPage />} />
+            <Route path="/docs" element={loaded && docs.length === 0 ? <EmptyDocs loaded={loaded} /> : <Navigate to={docs.length ? `/docs/${[...docs].sort((a, b) => a.sort_order - b.sort_order)[0].slug}` : "/docs"} replace />} />
+            <Route path="/" element={<Navigate to="/docs" replace />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function App() {
   const [docs, setDocs] = useState<DocEntry[]>([])
   const [loaded, setLoaded] = useState(false)
   const [query, setQuery] = useState("")
-  const [mobileNav, setMobileNav] = useState(false)
-
   useEffect(() => {
     let cancelled = false
     fetchDocs()
@@ -182,59 +272,5 @@ export default function App() {
       cancelled = true
     }
   }, [])
-
-  useEffect(() => {
-    setQuery("")
-    setMobileNav(false)
-  }, [location.pathname])
-
-  // Redirect the index route to the first available doc.
-  useEffect(() => {
-    if (loaded && location.pathname === "/docs" && docs.length > 0) {
-      const first = [...docs].sort((a, b) => a.sort_order - b.sort_order)[0]
-      window.history.replaceState(null, "", `/docs/${first.slug}`)
-    }
-  }, [loaded, docs, location.pathname])
-
-  return (
-    <div className="flex min-h-svh w-full bg-background">
-      <div className="hidden w-64 shrink-0 md:block">
-        <Sidebar docs={docs} query={query} onQueryChange={setQuery} />
-      </div>
-
-      {mobileNav ? (
-        <div className="fixed inset-0 z-50 flex bg-background/95 backdrop-blur-sm md:hidden">
-          <Sidebar
-            docs={docs}
-            query={query}
-            onQueryChange={setQuery}
-            onCloseMobile={() => setMobileNav(false)}
-          />
-          <button
-            onClick={() => setMobileNav(false)}
-            className="absolute right-3 top-3 rounded p-2 text-muted-foreground hover:bg-accent"
-            aria-label="Close menu"
-          >
-            ✕
-          </button>
-        </div>
-      ) : null}
-
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center gap-2 border-b px-4 py-3 md:hidden">
-          <button
-            onClick={() => setMobileNav(true)}
-            className="rounded p-1.5 text-muted-foreground hover:bg-accent"
-            aria-label="Open menu"
-          >
-            <MenuIcon className="size-5" />
-          </button>
-          <span className="font-semibold">Kilat Docs</span>
-        </header>
-        <div className="min-w-0 flex-1 overflow-y-auto">
-          <DocPage />
-        </div>
-      </div>
-    </div>
-  )
+  return <DocsLayout docs={docs} loaded={loaded} query={query} onQueryChange={setQuery} />
 }

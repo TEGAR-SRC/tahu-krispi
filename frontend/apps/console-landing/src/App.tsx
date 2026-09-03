@@ -1,4 +1,4 @@
-import { Routes, Route, Link } from "react-router-dom"
+import { Routes, Route, Link, Navigate } from "react-router-dom"
 import LandingPage from "./Landing"
 import { BlogList, BlogDetail } from "./Blog"
 
@@ -18,6 +18,26 @@ function BlogHeader() {
       </nav>
     </header>
   )
+}
+
+function NotFound() {
+  return (
+    <div className="flex min-h-svh flex-col items-center justify-center gap-4 p-6 text-center">
+      <p className="text-6xl font-semibold tracking-tight">404</p>
+      <p className="text-muted-foreground">The page you are looking for does not exist.</p>
+      <Link to="/" className="text-sm text-primary underline underline-offset-4">
+        Back to home
+      </Link>
+    </div>
+  )
+}
+
+function DocsRedirect() {
+  if (typeof window !== "undefined") {
+    window.location.replace("https://docs.kilat-cloud.com" + window.location.pathname)
+    return null
+  }
+  return <Navigate to="/" replace />
 }
 
 export default function App() {
@@ -48,6 +68,9 @@ export default function App() {
           </div>
         }
       />
+      <Route path="/docs" element={<DocsRedirect />} />
+      <Route path="/docs/*" element={<DocsRedirect />} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   )
 }
