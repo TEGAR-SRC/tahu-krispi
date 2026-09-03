@@ -43,6 +43,11 @@ function handleSessionExpired(): void {
   } catch {
     // ignore
   }
+  if (
+    window.location.pathname.startsWith("/oauth/callback") ||
+    window.location.pathname.startsWith("/handoff")
+  )
+    return
   if (window.location.pathname !== "/login") {
     const target = `${window.location.pathname}${window.location.search}`
     window.location.assign(`/login?next=${encodeURIComponent(target)}`)

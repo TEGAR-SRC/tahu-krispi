@@ -106,11 +106,23 @@ export function homePathFor(role: AppRole | null): string {
   return "/login"
 }
 
-async function probe(path: string): Promise<number> {
-  const response = await fetch(`${API_ORIGIN}${API_BASE}${path}`, {
-    credentials: "include",
-  })
-  return response.status
+async function probe(path: string): Promise<{ status: number; body: string }> {
+  try {
+    const response = await fetch(`${API_ORIGIN}${API_BASE}${path}`, {
+      credentials: "include",
+    })
+    const body = await response.text().catch(() => "")
+    return { status: response.status, body }
+  } catch {
+    return { status: 0, body: "" }
+  }
+}
+
+function isAuthFailure(status: number, body: string): boolean {
+  if (status === 401) return true
+  if (status === 0) return true
+  if (status === 403 && body.includes("not available on the")) return true
+  return false
 }
 
 export async function resolveRole(): Promise<AppRole> {
@@ -121,9 +133,9 @@ export async function resolveRole(): Promise<AppRole> {
   ]
   let sawAuthError = false
   for (const attempt of attempts) {
-    const status = await probe(attempt.path)
+    const { status, body } = await probe(attempt.path)
     if (status >= 200 && status < 300) return attempt.role
-    if (status === 401) sawAuthError = true
+    if (isAuthFailure(status, body)) sawAuthError = true
   }
   if (sawAuthError) throw new Error("Session expired")
   return "customer"

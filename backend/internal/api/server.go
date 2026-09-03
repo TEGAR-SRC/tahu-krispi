@@ -129,6 +129,10 @@ func NewServer(cfg *config.Config, log *logger.Logger, db *pgxpool.Pool, rdb *go
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 30 * time.Second,
 		BodyLimit:    16 * 1024 * 1024,
+		TrustProxy:   true,
+		TrustProxyConfig: fiber.TrustProxyConfig{
+			Proxies: []string{"0.0.0.0/0"},
+		},
 		ErrorHandler: func(c fiber.Ctx, err error) error {
 			if e, ok := err.(*apperrors.AppError); !ok || e.HTTPStatus >= 500 {
 				s.log.Error("request failed", map[string]any{

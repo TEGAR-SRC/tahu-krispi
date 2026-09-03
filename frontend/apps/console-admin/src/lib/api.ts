@@ -43,6 +43,12 @@ function handleSessionExpired(): void {
   } catch {
     // ignore
   }
+  // Don't redirect while on handoff/callback — those pages handle 401 themselves
+  if (
+    window.location.pathname.startsWith("/oauth/callback") ||
+    window.location.pathname.startsWith("/handoff")
+  )
+    return
   if (window.location.pathname !== "/login") {
     const target = `${window.location.pathname}${window.location.search}`
     window.location.assign(`/login?next=${encodeURIComponent(target)}`)

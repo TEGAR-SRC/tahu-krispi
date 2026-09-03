@@ -110,11 +110,24 @@ export function homePathFor(_role: AppRole | null): string {
   return "/handoff"
 }
 
-async function probe(path: string): Promise<number> {
-  const response = await fetch(`${API_ORIGIN}${API_BASE}${path}`, {
-    credentials: "include",
-  })
-  return response.status
+async function probe(path: string): Promise<{ status: number; body: string }> {
+  try {
+    const response = await fetch(`${API_ORIGIN}${API_BASE}${path}`, {
+      credentials: "include",
+    })
+    const body = await response.text().catch(() => "")
+    return { status: response.status, body }
+  } catch {
+    // Network/CORS error — treat as auth error so caller doesn't fallback to customer
+    return { status: 0, body: "" }
+  }
+}
+
+function isAuthFailure(status: number, body: string): boolean {
+  if (status === 401) return true
+  if (status === 0) return true // network failure
+  if (status === 403 && body.includes("not available on the")) return true // audience 403
+  return false
 }
 
 export async function resolveRole(): Promise<AppRole> {
@@ -125,9 +138,9 @@ export async function resolveRole(): Promise<AppRole> {
   ]
   let sawAuthError = false
   for (const attempt of attempts) {
-    const status = await probe(attempt.path)
+    const { status, body } = await probe(attempt.path)
     if (status >= 200 && status < 300) return attempt.role
-    if (status === 401) sawAuthError = true
+    if (isAuthFailure(status, body)) sawAuthError = true
   }
   if (sawAuthError) throw new Error("Session expired")
   return "customer"
@@ -182,9 +195,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [claims, setClaims] = useState<AuthClaims | null>(initialSession.claims)
   const [role, setRole] = useState<AppRole | null>(initialSession.role)
   const [profile, setProfile] = useState<MeProfile | null>(initialSession.profile)
-  // True while a persisted token is being re-validated on first mount, or an
-  // in-flight login/register is resolving the role.
-  const [loading, setLoading] = useState(() => Boolean(initialSession.token))
+  // Always validate session on mount — token is HttpOnly (token==null) but
+  // cookie may be valid; this avoids stale-role handoff races fixed in 5ff96f7.
+  const [loading, setLoading] = useState(true)
 
   const adoptSession = useCallback(async (): Promise<AppRole> => {
     const resolved = await resolveRole()

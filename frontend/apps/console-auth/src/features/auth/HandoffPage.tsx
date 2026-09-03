@@ -22,20 +22,23 @@ export default function HandoffPage() {
       return
     }
 
-    const origin = consoleUrlFor(role)
-    if (!origin || origin.startsWith("/")) {
-      setError("Could not determine your console.")
-      return
-    }
-
     fired.current = true
     ;(async () => {
+      // Re-validate role server-side before handoff to avoid using a stale
+      // localStorage role (e.g. demoted admin or stale customer value).
+      let freshRole = role
       try {
-        // Try canonical handoff (needs deployed 350b3cc backend where
-        // POST /auth/handoff is CSRF-exempt). If VPS still on old image,
-        // fallback to direct redirect — session cookie already set on
-        // auth.kilat-cloud.com, user can still use auth console; target
-        // console will show login again until VPS is rebuilt.
+        const { resolveRole } = await import("@/lib/auth")
+        freshRole = await resolveRole()
+      } catch {
+        // if resolveRole throws (session expired) let outer catch handle it
+      }
+      const origin = consoleUrlFor(freshRole)
+      if (!origin || origin.startsWith("/")) {
+        setError("Could not determine your console.")
+        return
+      }
+      try {
         const csrf = document.cookie.match(/(?:^|;\s*)kc_csrf=([^;]+)/)
         const headers: Record<string, string> = {}
         if (csrf) headers["X-CSRF-Token"] = decodeURIComponent(csrf[1])

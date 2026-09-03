@@ -33,11 +33,32 @@ const (
 	CookieCSRF = "kc_csrf"
 )
 
+// forwardedProto extracts the first X-Forwarded-Proto value (case-insensitive,
+// handles "https, http" from multiple proxies).
+func forwardedProto(c fiber.Ctx) string {
+	raw := c.Get("X-Forwarded-Proto")
+	if raw == "" {
+		return ""
+	}
+	if idx := strings.Index(raw, ","); idx >= 0 {
+		raw = raw[:idx]
+	}
+	return strings.ToLower(strings.TrimSpace(raw))
+}
+
+// isHTTPS returns true when the request is over HTTPS.
+func isHTTPS(c fiber.Ctx) bool {
+	if c.Secure() || c.Protocol() == "https" {
+		return true
+	}
+	return forwardedProto(c) == "https"
+}
+
 // sessionCookieName returns the appropriate session cookie name for the
 // current request. On HTTPS use __Host- (strictest); on plain HTTP fall
 // back to kc_session so local dev keeps working.
 func sessionCookieName(c fiber.Ctx) string {
-	if c.Secure() || c.Protocol() == "https" || c.Get("X-Forwarded-Proto") == "https" {
+	if isHTTPS(c) {
 		return CookieSession
 	}
 	return CookieSessionLegacy
@@ -45,15 +66,7 @@ func sessionCookieName(c fiber.Ctx) string {
 
 // wantsSecure returns true when the request is over HTTPS (or behind a
 // trusted HTTPS-terminating proxy). Only then should Secure be set.
-func wantsSecure(c fiber.Ctx) bool {
-	if c.Secure() || c.Protocol() == "https" {
-		return true
-	}
-	if strings.EqualFold(c.Get("X-Forwarded-Proto"), "https") {
-		return true
-	}
-	return false
-}
+func wantsSecure(c fiber.Ctx) bool { return isHTTPS(c) }
 
 // setSessionCookie issues the HttpOnly session cookie.
 func (s *Server) setSessionCookie(c fiber.Ctx, sessionID uuid.UUID) {
@@ -75,13 +88,14 @@ func (s *Server) setSessionCookie(c fiber.Ctx, sessionID uuid.UUID) {
 // clearSessionCookie expires the session cookie (both names for safety).
 func clearSessionCookie(c fiber.Ctx) {
 	for _, name := range []string{CookieSession, CookieSessionLegacy} {
+		secure := name == CookieSession // __Host- prefix requires Secure=true to delete
 		c.Cookie(&fiber.Cookie{
 			Name:     name,
 			Value:    "",
 			Path:     "/",
 			MaxAge:   -1,
 			HTTPOnly: true,
-			Secure:   false,
+			Secure:   secure,
 			SameSite: "Lax",
 		})
 	}
