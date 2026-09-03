@@ -22,7 +22,15 @@ APP_DOMAIN=kilat-cloud.com
 PUBLIC_API_BASE_URL=https://api.kilat-cloud.com
 CONSOLE_BASE_URL=https://console.kilat-cloud.com
 ADMIN_CONSOLE_BASE_URL=https://admin.kilat-cloud.com
+AUTH_CONSOLE_BASE_URL=https://auth.kilat-cloud.com
 DOWNLOAD_BASE_URL=https://dl.kilat-cloud.com
+
+# Per-console API domains (audience scoping) — defaults match compose.env
+ADMIN_API_DOMAIN=https://api-admin.kilat-cloud.com
+USER_API_DOMAIN=https://api-user.kilat-cloud.com
+AUTH_API_DOMAIN=https://api-auth.kilat-cloud.com
+LANDING_API_DOMAIN=https://api-landing.kilat-cloud.com
+DOCS_API_DOMAIN=https://api-docs.kilat-cloud.com
 
 # OAuth — Google / GitHub (empty = provider disabled, login will redirect with ?error=oauth_not_configured)
 # For local dev, add http://localhost:8080/v1/auth/oauth/<provider>/callback to each app's Allowed Redirect URIs.

@@ -69,9 +69,18 @@ func sessionCookieName(c fiber.Ctx) string {
 func wantsSecure(c fiber.Ctx) bool { return isHTTPS(c) }
 
 // setSessionCookie issues the HttpOnly session cookie.
+//
+// __Host- prefix invariant: whenever the cookie name is __Host-kc_session,
+// Secure MUST be true, otherwise the Set-Cookie is silently rejected by
+// browsers (the prefix requires Secure + Path=/ + no Domain). This helper
+// forces Secure=true for __Host- regardless of scheme sniffing, so even if
+// X-Forwarded-Proto is stripped upstream the cookie stays valid.
 func (s *Server) setSessionCookie(c fiber.Ctx, sessionID uuid.UUID) {
 	name := sessionCookieName(c)
 	secure := wantsSecure(c)
+	if name == CookieSession {
+		secure = true
+	}
 	ck := &fiber.Cookie{
 		Name:     name,
 		Value:    sessionID.String(),
@@ -99,8 +108,8 @@ func clearSessionCookie(c fiber.Ctx) {
 			SameSite: "Lax",
 		})
 	}
-	// also clear CSRF
-	c.Cookie(&fiber.Cookie{Name: CookieCSRF, Value: "", Path: "/", MaxAge: -1, SameSite: "Lax"})
+	// also clear CSRF (match Secure of current scheme so HTTPS cookie is actually deleted)
+	c.Cookie(&fiber.Cookie{Name: CookieCSRF, Value: "", Path: "/", MaxAge: -1, Secure: wantsSecure(c), SameSite: "Lax"})
 }
 
 // sessionIDFromCookie returns the session ID from the cookie, if present.

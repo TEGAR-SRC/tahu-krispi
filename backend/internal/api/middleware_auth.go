@@ -169,7 +169,8 @@ func (s *Server) requireStaff(area string) fiber.Handler {
 		userStr, _ := c.Locals(auth.LocalsUserID).(string)
 		userID, err := uuid.Parse(userStr)
 		if err != nil {
-			return mw.WriteError(c, apperrors.New(apperrors.CodeForbidden, "staff access required"))
+			s.log.Warn("requireStaff: missing or invalid user_id", map[string]any{"path": c.Path(), "area": area})
+			return mw.WriteError(c, apperrors.New(apperrors.CodeUnauthorized, "authentication required"))
 		}
 		var (
 			isAdmin   bool
@@ -178,8 +179,23 @@ func (s *Server) requireStaff(area string) fiber.Handler {
 		err = s.db.QueryRow(c.Context(),
 			`SELECT is_platform_admin, staff_role FROM users WHERE id=$1 AND deleted_at IS NULL AND status='active'`,
 			userID).Scan(&isAdmin, &staffRole)
-		if err != nil || (!isAdmin && !iam.StaffCan(iam.StaffRole(staffRole), area)) {
+		if err != nil {
+			s.log.Warn("requireStaff: user lookup failed", map[string]any{"user_id": userID.String(), "area": area, "path": c.Path(), "error": err.Error()})
 			return mw.WriteError(c, apperrors.New(apperrors.CodeForbidden, "staff access required"))
+		}
+		if isAdmin {
+			c.Locals("user_id_uuid", userID)
+			return c.Next()
+		}
+		if !iam.StaffCan(iam.StaffRole(staffRole), area) {
+			s.log.Warn("requireStaff denied", map[string]any{"user_id": userID.String(), "staff_role": staffRole, "area": area, "path": c.Path(), "method": c.Method()})
+			msg := "staff access required"
+			if area != "" {
+				msg = "staff access required for " + area
+			} else {
+				msg = "staff access required (platform_admin only)"
+			}
+			return mw.WriteError(c, apperrors.New(apperrors.CodeForbidden, msg))
 		}
 		c.Locals("user_id_uuid", userID)
 		return c.Next()
