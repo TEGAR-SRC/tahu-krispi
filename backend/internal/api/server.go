@@ -672,7 +672,19 @@ func (s *Server) withOrg(h fiber.Handler) fiber.Handler {
 		} else {
 			userIDStr, _ := c.Locals(auth.LocalsUserID).(string)
 			userID, _ := uuid.Parse(userIDStr)
-			if _, err := s.orgSvc.RequireMember(c.Context(), orgID, userID); err != nil {
+			// Staff (admin/finance) viewing wallet/billing across orgs: bypass
+			// membership check but keep IDOR guard — they already passed authJWT.
+			var isStaff bool
+			var staffRole string
+			if err := s.db.QueryRow(c.Context(),
+				`SELECT is_platform_admin, staff_role FROM users WHERE id=$1 AND deleted_at IS NULL`,
+				userID).Scan(&isStaff, &staffRole); err == nil {
+				if isStaff || staffRole == "platform_admin" || staffRole == "finance" {
+					// staff sees cross-org wallets without membership
+				} else if _, err := s.orgSvc.RequireMember(c.Context(), orgID, userID); err != nil {
+					return mw.WriteError(c, err)
+				}
+			} else if _, err := s.orgSvc.RequireMember(c.Context(), orgID, userID); err != nil {
 				return mw.WriteError(c, err)
 			}
 		}
