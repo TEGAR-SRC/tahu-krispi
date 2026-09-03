@@ -101,6 +101,10 @@ const ProxmoxDiagnosticsPage = lazy(() => import("@/features/proxmox/ProxmoxDiag
 const ProxmoxAccessPage = lazy(() => import("@/features/proxmox/ProxmoxAccessPage"))
 const ProxmoxTemplatesPage = lazy(() => import("@/features/proxmox/ProxmoxTemplatesPage"))
 const ProxmoxSnapshotsPage = lazy(() => import("@/features/proxmox/ProxmoxSnapshotsPage"))
+const ProxmoxQemuSnapshotPage = lazy(() => import("@/features/proxmox/ProxmoxQemuSnapshotPage"))
+const LxcMigratePage = lazy(() => import("@/features/proxmox/LxcMigratePage"))
+const ProxmoxQemuConfigPage = lazy(() => import("@/features/proxmox/ProxmoxQemuConfigPage"))
+const ProxmoxFwAliasesPage = lazy(() => import("@/features/proxmox/ProxmoxFwAliasesPage"))
 const OnidelCatalog = lazy(() =>
   import("@/features/admin/pages/providers/OnidelCatalog"),
 )
@@ -119,6 +123,7 @@ const CreateVmwarePage = lazy(() =>
 const VmwareMigratePage = lazy(() => import("@/features/vmware/VmwareMigratePage"))
 const VmwareDatastoresPage = lazy(() => import("@/features/vmware/VmwareDatastoresPage"))
 const VmwareDatastoreDetailPage = lazy(() => import("@/features/vmware/VmwareDatastoreDetailPage"))
+const VmwareDatastoreBrowsePage = lazy(() => import("@/features/vmware/VmwareDatastoreBrowsePage"))
 const VmwareHostDetailPage = lazy(() => import("@/features/vmware/VmwareHostDetailPage"))
 const VmwarePerfPage = lazy(() => import("@/features/vmware/VmwarePerfPage"))
 const VmwarePerfDetailPage = lazy(() => import("@/features/vmware/VmwarePerfDetailPage"))
@@ -663,6 +668,10 @@ export default function AppRoutes() {
           <Route path="proxmox/:providerId/access" element={<ProxmoxAccessPage />} />
           <Route path="proxmox/:providerId/templates" element={<ProxmoxTemplatesPage />} />
           <Route path="proxmox/:providerId/snapshots" element={<ProxmoxSnapshotsPage />} />
+          <Route path="proxmox/:providerId/nodes/:node/qemu/:vmid/snapshot" element={<ProxmoxQemuSnapshotPage />} />
+          <Route path="proxmox/:providerId/nodes/:node/lxc/:vmid/migrate" element={<LxcMigratePage />} />
+          <Route path="proxmox/:providerId/nodes/:node/qemu/:vmid/config" element={<ProxmoxQemuConfigPage />} />
+          <Route path="proxmox/:providerId/fw-aliases" element={<ProxmoxFwAliasesPage />} />
 
           <Route path="onidel/:providerId/onidel" element={<OnidelCatalog />} />
           <Route path="onidel/:providerId/jobs" element={<OnidelJobs />} />
@@ -676,6 +685,7 @@ export default function AppRoutes() {
 
           <Route path="vmware/:providerId/inventory" element={<VmwareInventory />} />
           <Route path="vmware/:providerId/datastores" element={<VmwareDatastoresPage />} />
+          <Route path="vmware/:providerId/datastores/:ds/browse" element={<VmwareDatastoreBrowsePage />} />
           <Route path="vmware/:providerId/datastores/:ds" element={<VmwareDatastoreDetailPage />} />
           <Route path="vmware/:providerId/hosts/:host" element={<VmwareHostDetailPage />} />
           <Route path="vmware/:providerId/perf" element={<VmwarePerfPage />} />

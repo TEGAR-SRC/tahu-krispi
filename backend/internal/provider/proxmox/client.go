@@ -267,6 +267,40 @@ func (c *Client) QEMUConfigSet(ctx context.Context, node string, vmid int, opts 
 	return task, wrapErr("set config", err)
 }
 
+// QEMUConfigGet returns the raw QEMU config map (GET /nodes/{node}/qemu/{vmid}/config).
+// The SDK's typed VirtualMachineConfig is flattened by PVE; decoding into a
+// loose map preserves every key (cores, memory, net0, scsi0, …) without
+// needing the caller to know the full schema up front.
+func (c *Client) QEMUConfigGet(ctx context.Context, node string, vmid int) (map[string]any, error) {
+	var out map[string]any
+	if err := c.sdk.Get(ctx, fmt.Sprintf("/nodes/%s/qemu/%d/config", node, vmid), &out); err != nil {
+		return nil, wrapErr("qemu config get", err)
+	}
+	if out == nil {
+		out = map[string]any{}
+	}
+	return out, nil
+}
+
+// QEMUConfigUpdate applies a raw key/value config patch via the synchronous
+// PUT /nodes/{node}/qemu/{vmid}/config endpoint. PVE validates keys
+// server-side; an empty patch is a no-op so callers can safely forward a
+// user-edited map after trimming unchanged entries.
+func (c *Client) QEMUConfigUpdate(ctx context.Context, node string, vmid int, data map[string]any) error {
+	if len(data) == 0 {
+		return apperrors.New(apperrors.CodeValidation, "proxmox: qemu config update payload is empty")
+	}
+	vm, err := c.nodeHandle(ctx, node, vmid)
+	if err != nil {
+		return err
+	}
+	opts := make([]goproxmox.VirtualMachineOption, 0, len(data))
+	for k, v := range data {
+		opts = append(opts, goproxmox.VirtualMachineOption{Name: k, Value: v})
+	}
+	return wrapErr("qemu config update", vm.ConfigSync(ctx, opts...))
+}
+
 // QEMUResizeDisk grows disk to size (PVE accepts absolute "Nn" units or
 // "+N" increments on PUT .../qemu/{vmid}/resize).
 func (c *Client) QEMUResizeDisk(ctx context.Context, node string, vmid int, disk, size string) (*goproxmox.Task, error) {
@@ -1265,6 +1299,31 @@ func (c *Client) ClusterFirewallRuleDelete(ctx context.Context, pos int) error {
 		return err
 	}
 	return wrapErr("cluster fw rule delete", cl.FirewallRuleDelete(ctx, pos))
+}
+
+func (c *Client) FirewallAliases(ctx context.Context) ([]*goproxmox.FirewallAlias, error) {
+	cl, err := c.sdk.Cluster(ctx)
+	if err != nil {
+		return nil, wrapErr("cluster", err)
+	}
+	aliases, err := cl.FirewallAliases(ctx)
+	return aliases, wrapErr("fw aliases", err)
+}
+
+func (c *Client) FirewallAliasCreate(ctx context.Context, alias *goproxmox.FirewallAliasCreateOption) error {
+	cl, err := c.sdk.Cluster(ctx)
+	if err != nil {
+		return err
+	}
+	return wrapErr("fw alias create", cl.NewFirewallAlias(ctx, alias))
+}
+
+func (c *Client) FirewallAliasDelete(ctx context.Context, name string) error {
+	cl, err := c.sdk.Cluster(ctx)
+	if err != nil {
+		return err
+	}
+	return wrapErr("fw alias delete", cl.FirewallAliasDelete(ctx, name))
 }
 
 // ---- Pools ----

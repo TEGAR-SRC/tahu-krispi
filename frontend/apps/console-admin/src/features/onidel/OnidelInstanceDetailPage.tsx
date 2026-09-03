@@ -110,6 +110,12 @@ function DetailField({ label, children }: { label: string; children?: React.Reac
   )
 }
 
+function shortId(value: string | null | undefined) {
+  if (!value) return "—"
+  const v = String(value).trim()
+  return v.length > 12 ? `${v.slice(0, 8)}…` : v
+}
+
 export default function OnidelInstanceDetailPage() {
   const { providerId = "", instanceId = "" } = useParams<{ providerId: string; instanceId: string }>()
   const detail = useInfraGet<InstanceDetailPayload>(
@@ -203,7 +209,8 @@ export default function OnidelInstanceDetailPage() {
                 {data.power_status ? <span className="text-sm text-muted-foreground">{data.power_status}</span> : null}
               </h1>
               <p className="font-mono text-sm text-muted-foreground">{data.public_id}</p>
-              <p className="font-mono text-xs text-muted-foreground">provider {data.provider_id.slice(0, 8)} · {data.id.slice(0, 8)}</p>
+              <p className="font-mono text-xs text-muted-foreground">provider {shortId(data.provider_id)} · {shortId(data.id)}</p>
+              {data.external_vm_id ? <p className="font-mono text-xs text-muted-foreground">external {data.external_vm_id}</p> : null}
             </div>
             <div className="flex flex-wrap gap-2">
               {data.status === "suspended" ? (
@@ -241,7 +248,7 @@ export default function OnidelInstanceDetailPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Compute</CardTitle>
-                <CardDescription>Provisioned shape and network addresses.</CardDescription>
+                <CardDescription>Provisioned shape, addresses and network flags.</CardDescription>
               </CardHeader>
               <CardContent>
                 <dl className="grid w-full max-w-full min-w-0 grid-cols-2 gap-4 md:grid-cols-3">
@@ -254,7 +261,17 @@ export default function OnidelInstanceDetailPage() {
                   <DetailField label="IPv4">{data.primary_ipv4 || "—"}</DetailField>
                   <DetailField label="IPv6">{data.primary_ipv6 || "—"}</DetailField>
                   <DetailField label="Provider">
-                    <span className="font-mono text-xs">{data.provider_id.slice(0, 8)}…</span>
+                    <span className="font-mono text-xs">{shortId(data.provider_id)}</span>
+                  </DetailField>
+                  <DetailField label="Bandwidth">{data.bandwidth_gb != null ? `${data.bandwidth_gb} GB` : "—"}</DetailField>
+                  <DetailField label="Network rate">{data.network_rate_mbps != null ? `${data.network_rate_mbps} Mbps` : "—"}</DetailField>
+                  <DetailField label="Flags">
+                    <span className="text-xs">
+                      {data.bgp_enabled ? "BGP " : ""}
+                      {data.measured_boot_enabled ? "Measured-boot " : ""}
+                      {data.auto_backup_enabled ? "Auto-backup" : ""}
+                      {!data.bgp_enabled && !data.measured_boot_enabled && !data.auto_backup_enabled ? "—" : ""}
+                    </span>
                   </DetailField>
                 </dl>
               </CardContent>
@@ -263,7 +280,7 @@ export default function OnidelInstanceDetailPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Billing &amp; ownership</CardTitle>
-                <CardDescription>Organization, plan pricing and subscription state.</CardDescription>
+                <CardDescription>Organization, pricing, subscription and catalog refs.</CardDescription>
               </CardHeader>
               <CardContent>
                 <dl className="grid w-full max-w-full min-w-0 grid-cols-2 gap-4 md:grid-cols-3">
@@ -273,7 +290,7 @@ export default function OnidelInstanceDetailPage() {
                         {data.organization.name || data.organization.slug}
                       </Link>
                     ) : (
-                      data.organization_id.slice(0, 8)
+                      shortId(data.organization_id)
                     )}
                   </DetailField>
                   <DetailField label="Pricing">
@@ -283,7 +300,7 @@ export default function OnidelInstanceDetailPage() {
                   {data.subscription ? (
                     <>
                       <DetailField label="Subscription">
-                        <span className="font-mono text-xs">{data.subscription.public_id || data.subscription.id.slice(0, 8)}</span>
+                        <span className="font-mono text-xs">{data.subscription.public_id || shortId(data.subscription.id)}</span>
                       </DetailField>
                       <DetailField label="Subscription status">
                         <StatusBadge status={data.subscription.status ?? null} />
@@ -296,6 +313,13 @@ export default function OnidelInstanceDetailPage() {
                   <DetailField label="Snapshots / backups">
                     {data.child_counts.snapshots} / {data.child_counts.backups}
                   </DetailField>
+                  <DetailField label="Region / type">
+                    <span className="font-mono text-xs">{shortId(data.region_id)} / {shortId(data.instance_type_id)}</span>
+                  </DetailField>
+                  <DetailField label="OS / product">
+                    <span className="font-mono text-xs">{shortId(data.os_template_id)} / {shortId(data.product_id)}</span>
+                  </DetailField>
+                  <DetailField label="Plan">{shortId(data.plan_id)}</DetailField>
                 </dl>
               </CardContent>
             </Card>
@@ -309,13 +333,17 @@ export default function OnidelInstanceDetailPage() {
             <CardContent>
               <dl className="grid w-full max-w-full min-w-0 grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
                 <DetailField label="Created">{formatDateTime(data.created_at)}</DetailField>
+                <DetailField label="Provision started">{formatDateTime(data.provision_started_at)}</DetailField>
                 <DetailField label="Provisioned">{formatDateTime(data.provisioned_at)}</DetailField>
+                <DetailField label="Updated">{formatDateTime(data.updated_at)}</DetailField>
                 <DetailField label="Sync">{data.sync_status || "—"}</DetailField>
                 <DetailField label="Last synced">{formatDateTime(data.last_synced_at)}</DetailField>
                 <DetailField label="Suspended at">{formatDateTime(data.suspended_at)}</DetailField>
                 <DetailField label="Termination requested">{formatDateTime(data.termination_requested_at)}</DetailField>
                 <DetailField label="Terminated">{formatDateTime(data.terminated_at)}</DetailField>
                 <DetailField label="Deleted">{formatDateTime(data.deleted_at)}</DetailField>
+                <DetailField label="Created by">{data.created_by || "—"}</DetailField>
+                <DetailField label="Provider account">{shortId(data.provider_account_id)}</DetailField>
               </dl>
             </CardContent>
           </Card>

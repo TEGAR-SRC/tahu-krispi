@@ -8,6 +8,7 @@
 // POST /v1/admin/onidel/:id/instances/:instance_id/suspend   -> suspend (platform_admin, 202)
 // POST /v1/admin/onidel/:id/instances/:instance_id/terminate -> terminate (platform_admin, 202)
 // POST /v1/admin/onidel/:id/regions/sync            -> enqueue provider_sync (catalog sync) for this onidel provider, onidelAdapterFor-guarded
+// POST /v1/admin/onidel/:id/catalog/sync            -> same as regions/sync (billing sync alias, task contract), onidelAdapterFor-guarded
 // All GET ride requireStaff("infra") for GET so NOC can read; POST/DELETE stay platform_admin-only.
 package api
 
@@ -630,6 +631,30 @@ func (s *Server) adminOnidelRegionsSync(c fiber.Ctx) error {
 		return mw.WriteError(c, err)
 	}
 	s.admAuditMeta(c, "admin.onidel.regions.sync", "provider", &providerID, map[string]any{
+		"code": code, "job_id": jobID,
+	})
+	return mw.JSON(c, 202, fiber.Map{
+		"provider_id": providerID,
+		"code":        code,
+		"job_id":      jobID,
+		"status":      "queued",
+	}, nil)
+}
+
+// POST /v1/admin/onidel/:id/catalog/sync — billing sync alias for regions/sync (task contract).
+// Same onidelAdapterFor guard + queue (catalog/provider_sync); kept as distinct audit key
+// so billing sync is traceable separately. RBAC: requireStaff("") = platform_admin only.
+func (s *Server) adminOnidelCatalogSync(c fiber.Ctx) error {
+	providerID, code, _, err := s.onidelAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	jobID, err := s.admEnqueueJob(c.Context(), "catalog", "provider_sync", "provider", providerID,
+		map[string]any{"provider_id": providerID.String()})
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	s.admAuditMeta(c, "admin.onidel.catalog.sync", "provider", &providerID, map[string]any{
 		"code": code, "job_id": jobID,
 	})
 	return mw.JSON(c, 202, fiber.Map{

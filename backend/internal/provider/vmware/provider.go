@@ -1819,6 +1819,18 @@ type DatastoreInventory struct {
 	FreeBytes int64  `json:"free_bytes"`
 }
 
+// DatastoreBrowseFile is one filesystem entry inside a vSphere datastore
+// (VMFS/vSAN/NFS) as returned by HostDatastoreBrowser.SearchDatastore.
+type DatastoreBrowseFile struct {
+	Path         string     `json:"path"`
+	FriendlyName string     `json:"friendly_name,omitempty"`
+	FileSize     int64      `json:"file_size"`
+	Modification *time.Time `json:"modification,omitempty"`
+	Owner        string     `json:"owner,omitempty"`
+	Type         string     `json:"type,omitempty"`
+	IsFolder     bool       `json:"is_folder"`
+}
+
 // InventoryReport is the raw vSphere infrastructure view served by the NOC
 // inventory endpoint.
 type InventoryReport struct {
@@ -1898,6 +1910,113 @@ func (a *Adapter) Inventory(ctx context.Context) (*InventoryReport, error) {
 			"vmware: inventory: %v", err)
 	}
 	return rep, nil
+}
+
+// DatastoreBrowse lists filesystem entries inside one vSphere datastore at the
+// given datastore-relative path ("" = root). It uses the HostDatastoreBrowser
+// so the datastore type (VMFS/vSAN/NFS) does not matter. The path is relative
+// to the datastore root without the "[ds]" prefix.
+func (a *Adapter) DatastoreBrowse(ctx context.Context, datastoreName, datastorePath string) ([]DatastoreBrowseFile, string, error) {
+	datastorePath = strings.TrimSpace(datastorePath)
+	// Normalize: empty or "/" means datastore root; otherwise strip leading "/"
+	if datastorePath == "/" {
+		datastorePath = ""
+	} else if strings.HasPrefix(datastorePath, "/") {
+		datastorePath = strings.TrimPrefix(datastorePath, "/")
+	}
+	// Guard datastore existence early (helps produce 404 vs generic provider error)
+	type browseResult struct {
+		files      []DatastoreBrowseFile
+		folderPath string
+	}
+	res, err := vimCall(ctx, a.c, func(v *vim25.Client) (browseResult, error) {
+		f := finder(ctx, v)
+		ds, err := f.Datastore(ctx, datastoreName)
+		if err != nil {
+			return browseResult{}, apperrors.Newf(apperrors.CodeNotFound, "vmware: datastore %q not found: %v", datastoreName, err)
+		}
+		browser, err := ds.Browser(ctx)
+		if err != nil {
+			return browseResult{}, err
+		}
+		dsPath := (&object.DatastorePath{Datastore: datastoreName, Path: datastorePath}).String()
+		spec := types.HostDatastoreBrowserSearchSpec{
+			MatchPattern: []string{"*"},
+			Details: &types.FileQueryFlags{
+				FileType:     true,
+				FileSize:     true,
+				FileOwner:    true,
+				Modification: true,
+			},
+		}
+		task, err := browser.SearchDatastore(ctx, dsPath, &spec)
+		if err != nil {
+			return browseResult{}, err
+		}
+		info, err := task.WaitForResult(ctx, nil)
+		if err != nil {
+			return browseResult{}, err
+		}
+		var results []types.HostDatastoreBrowserSearchResults
+		switch r := info.Result.(type) {
+		case types.HostDatastoreBrowserSearchResults:
+			results = []types.HostDatastoreBrowserSearchResults{r}
+		case types.ArrayOfHostDatastoreBrowserSearchResults:
+			results = r.HostDatastoreBrowserSearchResults
+		default:
+			return browseResult{}, fmt.Errorf("vmware: unexpected browse result type %T", r)
+		}
+		if len(results) == 0 {
+			return browseResult{folderPath: dsPath}, nil
+		}
+		// Single search is expected (no recurse)
+		sr := results[0]
+		out := make([]DatastoreBrowseFile, 0, len(sr.File))
+		for _, f := range sr.File {
+			fi := f.GetFileInfo()
+			isFolder := false
+			if _, ok := f.(*types.FolderFileInfo); ok {
+				isFolder = true
+			}
+			ftype := ""
+			if isFolder {
+				ftype = "Folder"
+			} else if _, ok := f.(*types.VmConfigFileInfo); ok {
+				ftype = "VmConfig"
+			} else if _, ok := f.(*types.VmDiskFileInfo); ok {
+				ftype = "VmDisk"
+			} else if _, ok := f.(*types.IsoImageFileInfo); ok {
+				ftype = "IsoImage"
+			} else if _, ok := f.(*types.FloppyImageFileInfo); ok {
+				ftype = "FloppyImage"
+			}
+			out = append(out, DatastoreBrowseFile{
+				Path:         fi.Path,
+				FriendlyName: fi.FriendlyName,
+				FileSize:     fi.FileSize,
+				Modification: fi.Modification,
+				Owner:        fi.Owner,
+				Type:         ftype,
+				IsFolder:     isFolder,
+			})
+		}
+		sort.Slice(out, func(i, j int) bool {
+			if out[i].IsFolder != out[j].IsFolder {
+				return out[i].IsFolder
+			}
+			return out[i].Path < out[j].Path
+		})
+		return browseResult{files: out, folderPath: sr.FolderPath}, nil
+	})
+	if err != nil {
+		// Map "file not found" on a datastore path to 404
+		lower := strings.ToLower(err.Error())
+		if strings.Contains(lower, "file not found") || strings.Contains(lower, "was not found") || strings.Contains(lower, "no such") {
+			return nil, "", apperrors.Newf(apperrors.CodeNotFound, "vmware: datastore %q path %q not found", datastoreName, datastorePath)
+		}
+		return nil, "", apperrors.Newf(apperrors.CodeProviderUnavailable, "vmware: browse datastore %q %q: %v", datastoreName, datastorePath, err)
+	}
+	return res.files, res.folderPath, nil
 }
 
 // ---- catalog sync ----

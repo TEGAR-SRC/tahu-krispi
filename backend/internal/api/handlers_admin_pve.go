@@ -736,6 +736,65 @@ func (s *Server) adminDeleteClusterFirewallRule(c fiber.Ctx) error {
 	return mw.JSON(c, 200, fiber.Map{"status": "deleted"}, nil)
 }
 
+// ---- Firewall aliases (cluster /firewall/aliases) ----
+
+func (s *Server) adminListFWAliases(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	aliases, err := ad.Client().FirewallAliases(c.Context())
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	if aliases == nil {
+		aliases = []*goproxmox.FirewallAlias{}
+	}
+	return mw.JSON(c, 200, aliases, nil)
+}
+
+func (s *Server) adminCreateFWAlias(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	var in goproxmox.FirewallAliasCreateOption
+	if err := c.Bind().Body(&in); err != nil {
+		return mw.WriteError(c, errValidation("invalid fw alias payload"))
+	}
+	if strings.TrimSpace(in.Name) == "" {
+		return mw.WriteError(c, vErrField("name", "name is required"))
+	}
+	if strings.TrimSpace(in.CIDR) == "" {
+		return mw.WriteError(c, vErrField("cidr", "cidr is required"))
+	}
+	in.Name = strings.TrimSpace(in.Name)
+	in.CIDR = strings.TrimSpace(in.CIDR)
+	in.Comment = strings.TrimSpace(in.Comment)
+	if err := ad.Client().FirewallAliasCreate(c.Context(), &in); err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 201, fiber.Map{"status": "created", "name": in.Name}, nil)
+}
+
+func (s *Server) adminDeleteFWAlias(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	name := strings.TrimSpace(c.Params("name"))
+	if name == "" {
+		name = strings.TrimSpace(c.Query("name"))
+	}
+	if name == "" {
+		return mw.WriteError(c, vErrField("name", "name is required"))
+	}
+	if err := ad.Client().FirewallAliasDelete(c.Context(), name); err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, fiber.Map{"status": "deleted", "name": name}, nil)
+}
+
 // ---- Pools ----
 
 func (s *Server) adminListPools(c fiber.Ctx) error {
@@ -1621,6 +1680,140 @@ func (s *Server) adminProxmoxSnapshotDelete(c fiber.Ctx) error {
 	return mw.JSON(c, 202, fiber.Map{"node": node, "vmid": vmid, "snapname": snapname, "task": task}, nil)
 }
 
+// ---- QEMU snapshots per node (GET infra, POST/DELETE platform_admin) ----
+
+// adminProxmoxQemuSnapshotList lists snapshots for one QEMU VM on a specific node.
+// GET /admin/proxmox/:id/nodes/:node/qemu/:vmid/snapshot — infra-readable (NOC + platform_admin).
+func (s *Server) adminProxmoxQemuSnapshotList(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	node := strings.TrimSpace(c.Params("node"))
+	if node == "" {
+		return mw.WriteError(c, vErrField("node", "node is required"))
+	}
+	vmidStr := strings.TrimSpace(c.Params("vmid"))
+	vmid, cerr := strconv.Atoi(vmidStr)
+	if cerr != nil || vmid <= 0 {
+		return mw.WriteError(c, vErrField("vmid", "must be a positive integer"))
+	}
+	snaps, err := ad.Client().SnapshotsList(c.Context(), node, vmid)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	if snaps == nil {
+		snaps = []*goproxmox.VirtualMachineSnapshot{}
+	}
+	return mw.JSON(c, 200, snaps, nil)
+}
+
+// adminProxmoxQemuSnapshotCreate creates a snapshot on one QEMU VM on a specific node.
+// POST /admin/proxmox/:id/nodes/:node/qemu/:vmid/snapshot {snapname, description?} — platform_admin only.
+func (s *Server) adminProxmoxQemuSnapshotCreate(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	node := strings.TrimSpace(c.Params("node"))
+	if node == "" {
+		return mw.WriteError(c, vErrField("node", "node is required"))
+	}
+	vmidStr := strings.TrimSpace(c.Params("vmid"))
+	vmid, cerr := strconv.Atoi(vmidStr)
+	if cerr != nil || vmid <= 0 {
+		return mw.WriteError(c, vErrField("vmid", "must be a positive integer"))
+	}
+	var in struct {
+		Snapname    string `json:"snapname"`
+		Description string `json:"description"`
+	}
+	if err := c.Bind().Body(&in); err != nil || strings.TrimSpace(in.Snapname) == "" {
+		return mw.WriteError(c, vErrField("snapname", "snapname is required"))
+	}
+	snapname := strings.TrimSpace(in.Snapname)
+	if snapname == "current" {
+		return mw.WriteError(c, vErrField("snapname", "current is reserved by PVE"))
+	}
+	task, err := ad.Client().SnapshotCreate(c.Context(), node, vmid, snapname, strings.TrimSpace(in.Description))
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 202, fiber.Map{"node": node, "vmid": vmid, "snapname": snapname, "task": task}, nil)
+}
+
+// adminProxmoxQemuSnapshotDelete deletes a snapshot on one QEMU VM on a specific node.
+// DELETE /admin/proxmox/:id/nodes/:node/qemu/:vmid/snapshot/:snapname — platform_admin only.
+func (s *Server) adminProxmoxQemuSnapshotDelete(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	node := strings.TrimSpace(c.Params("node"))
+	if node == "" {
+		return mw.WriteError(c, vErrField("node", "node is required"))
+	}
+	vmidStr := strings.TrimSpace(c.Params("vmid"))
+	vmid, cerr := strconv.Atoi(vmidStr)
+	if cerr != nil || vmid <= 0 {
+		return mw.WriteError(c, vErrField("vmid", "must be a positive integer"))
+	}
+	snapname := strings.TrimSpace(c.Params("snapname"))
+	if snapname == "" {
+		snapname = strings.TrimSpace(c.Query("snapname"))
+	}
+	if snapname == "" {
+		return mw.WriteError(c, vErrField("snapname", "snapname is required"))
+	}
+	task, err := ad.Client().SnapshotDelete(c.Context(), node, vmid, snapname)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 202, fiber.Map{"node": node, "vmid": vmid, "snapname": snapname, "task": task}, nil)
+}
+
+// adminProxmoxQemuSnapshotRollback rolls a VM back to a snapshot on a specific node and restarts it.
+// POST /admin/proxmox/:id/nodes/:node/qemu/:vmid/snapshot/rollback {snapname}
+// also accepts POST /admin/proxmox/:id/nodes/:node/qemu/:vmid/snapshot/:snapname/rollback — platform_admin only.
+func (s *Server) adminProxmoxQemuSnapshotRollback(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	node := strings.TrimSpace(c.Params("node"))
+	if node == "" {
+		return mw.WriteError(c, vErrField("node", "node is required"))
+	}
+	vmidStr := strings.TrimSpace(c.Params("vmid"))
+	vmid, cerr := strconv.Atoi(vmidStr)
+	if cerr != nil || vmid <= 0 {
+		return mw.WriteError(c, vErrField("vmid", "must be a positive integer"))
+	}
+	snapname := strings.TrimSpace(c.Params("snapname"))
+	if snapname == "" {
+		var in struct {
+			Snapname string `json:"snapname"`
+		}
+		_ = c.Bind().Body(&in)
+		snapname = strings.TrimSpace(in.Snapname)
+	}
+	if snapname == "" {
+		return mw.WriteError(c, vErrField("snapname", "snapname is required"))
+	}
+	task, err := ad.Client().SnapshotRollback(c.Context(), node, vmid, snapname)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	if err := ad.Client().WaitForTask(c.Context(), task, "rollback snapshot", 5*60*1_000_000_000); err != nil {
+		return mw.WriteError(c, err)
+	}
+	startTask, err := ad.Client().QEMUStart(c.Context(), node, vmid)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 202, fiber.Map{"node": node, "vmid": vmid, "snapname": snapname, "task": startTask}, nil)
+}
+
 // ---- Access: users / groups / roles (GET /access/*) ----
 
 // adminAccessUsersList lists PVE users (GET /access/users).
@@ -1877,6 +2070,76 @@ func (s *Server) adminAccessRolesList(c fiber.Ctx) error {
 		roles = goproxmox.Roles{}
 	}
 	return mw.JSON(c, 200, roles, nil)
+}
+
+// ---- QEMU config (GET infra, PUT platform_admin) ----
+
+// adminProxmoxQemuConfigGet returns the raw QEMU config for one VM.
+// GET /admin/proxmox/:id/nodes/:node/qemu/:vmid/config — infra-readable (NOC + platform_admin),
+// guard via proxmoxAdapterFor so non-proxmox kind answers 501 expect proxmox.
+func (s *Server) adminProxmoxQemuConfigGet(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	node := strings.TrimSpace(c.Params("node"))
+	if node == "" {
+		return mw.WriteError(c, vErrField("node", "node is required"))
+	}
+	vmidStr := strings.TrimSpace(c.Params("vmid"))
+	vmid, cerr := strconv.Atoi(vmidStr)
+	if cerr != nil || vmid <= 0 {
+		return mw.WriteError(c, vErrField("vmid", "must be a positive integer"))
+	}
+	cfg, err := ad.Client().QEMUConfigGet(c.Context(), node, vmid)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, cfg, nil)
+}
+
+// adminProxmoxQemuConfigSet updates the QEMU config for one VM.
+// PUT /admin/proxmox/:id/nodes/:node/qemu/:vmid/config — platform_admin only,
+// body is a free-form JSON object of PVE config keys (e.g. {"cores":2,"memory":2048}).
+func (s *Server) adminProxmoxQemuConfigSet(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	node := strings.TrimSpace(c.Params("node"))
+	if node == "" {
+		return mw.WriteError(c, vErrField("node", "node is required"))
+	}
+	vmidStr := strings.TrimSpace(c.Params("vmid"))
+	vmid, cerr := strconv.Atoi(vmidStr)
+	if cerr != nil || vmid <= 0 {
+		return mw.WriteError(c, vErrField("vmid", "must be a positive integer"))
+	}
+	var raw map[string]any
+	if err := c.Bind().Body(&raw); err != nil || raw == nil {
+		return mw.WriteError(c, errValidation("invalid qemu config payload"))
+	}
+	// Trim empty string keys so a UI that sends {name:""} does not accidentally
+	// clear a required field; explicit deletes should use the dedicated delete
+	// API rather than blank PUT values.
+	clean := make(map[string]any, len(raw))
+	for k, v := range raw {
+		kk := strings.TrimSpace(k)
+		if kk == "" {
+			continue
+		}
+		if s, ok := v.(string); ok && strings.TrimSpace(s) == "" {
+			continue
+		}
+		clean[kk] = v
+	}
+	if len(clean) == 0 {
+		return mw.WriteError(c, errValidation("qemu config payload is empty"))
+	}
+	if err := ad.Client().QEMUConfigUpdate(c.Context(), node, vmid, clean); err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, fiber.Map{"status": "updated", "node": node, "vmid": vmid}, nil)
 }
 
 func parseAccessCSV(v any) []string {

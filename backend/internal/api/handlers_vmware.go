@@ -450,6 +450,41 @@ func (s *Server) adminVMwareDatastoreDetail(c fiber.Ctx) error {
 	return mw.WriteError(c, apperrors.Newf(apperrors.CodeNotFound, "vmware: datastore %q not found", dsName))
 }
 
+// GET /v1/admin/vmware/:id/datastores/:ds/browse — browse files inside one
+// vSphere datastore (VMFS/vSAN/NFS) via HostDatastoreBrowser. Guard
+// kind==vmware via vmwareAdapterFor; RBAC infra (NOC readable, finance 403).
+// Polling via useInfraGet every 5s. :ds is the datastore name (url-escaped);
+// query ?path=<datastore-relative path> defaults to "/" (root). Results are
+// sorted folder-first.
+func (s *Server) adminVMwareDatastoreBrowse(c fiber.Ctx) error {
+	_, code, ad, err := s.vmwareAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	rawDS := c.Params("ds")
+	dsName, _ := url.PathUnescape(rawDS)
+	dsName = strings.TrimSpace(dsName)
+	if dsName == "" {
+		return mw.WriteError(c, vErrField("ds", "datastore name is required"))
+	}
+	dsRel := strings.TrimSpace(c.Query("path", "/"))
+	files, folderPath, err := ad.DatastoreBrowse(c.Context(), dsName, dsRel)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	if files == nil {
+		files = []vmware.DatastoreBrowseFile{}
+	}
+	return mw.JSON(c, 200, fiber.Map{
+		"code":        code,
+		"datastore":   dsName,
+		"path":        dsRel,
+		"folder_path": folderPath,
+		"files":       files,
+		"total":       len(files),
+	}, nil)
+}
+
 // POST /v1/admin/vmware/:id/migrate — vMotion a VM to another ESXi host within
 // the same vCenter. Guard kind==vmware via vmwareAdapterFor, target_host
 // re-validated server-side by finder.HostSystem (unknown host → 422).
