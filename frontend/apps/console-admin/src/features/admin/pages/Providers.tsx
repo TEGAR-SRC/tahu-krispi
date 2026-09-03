@@ -229,6 +229,20 @@ export default function AdminProvidersPage() {
                   onClick={() =>
                     void runProviderAction(
                       row,
+                      () => apiPost(`/admin/providers/${row.id}/test`),
+                      `Test ok for ${row.code}`,
+                    )
+                  }
+                >
+                  Test
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={busyId === row.id}
+                  onClick={() =>
+                    void runProviderAction(
+                      row,
                       () => apiPost(`/admin/providers/${row.id}/sync`),
                       `Sync queued for ${row.code}`,
                     )

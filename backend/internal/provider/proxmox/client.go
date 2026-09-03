@@ -11,6 +11,7 @@ package proxmox
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"net/http"
@@ -79,6 +80,7 @@ func NewClient(baseURL, tokenUser, tokenSecret string) (*Client, error) {
 	}
 
 	transport := &http.Transport{
+		TLSClientConfig:     &tls.Config{InsecureSkipVerify: true},
 		MaxIdleConns:        50,
 		MaxIdleConnsPerHost: 20,
 		IdleConnTimeout:     90 * time.Second,

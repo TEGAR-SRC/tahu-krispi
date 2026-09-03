@@ -497,6 +497,7 @@ func (s *Server) registerRoutes() {
 	admin.Put("/organizations/:org_id/provider-account", s.requireStaff("infra"), s.adminUpsertProviderAccount)
 	admin.Get("/providers", s.requireStaff("auto"), s.adminListProviders)
 	admin.Post("/providers", s.requireStaff("auto"), s.adminUpsertProvider)
+	admin.Post("/providers/:provider_id/test", s.requireStaff("auto"), s.adminTestProvider)
 	admin.Post("/providers/:provider_id/sync", s.requireStaff("auto"), s.adminTriggerProviderSync)
 	admin.Delete("/providers/:provider_id", s.requireStaff("auto"), s.adminDeleteProvider)
 	// Proxmox cluster observability (NOC): raw PVE inventory from the adapter's

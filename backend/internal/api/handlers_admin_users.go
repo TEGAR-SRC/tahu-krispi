@@ -14,6 +14,7 @@ import (
 
 	"kilat.cloud/backend/internal/audit"
 	"kilat.cloud/backend/internal/platform/crypto"
+	"kilat.cloud/backend/internal/provider"
 	apperrors "kilat.cloud/backend/pkg/errors"
 	httputil "kilat.cloud/backend/pkg/httputil"
 	mw "kilat.cloud/backend/pkg/middleware"
@@ -587,6 +588,25 @@ SELECT EXISTS(SELECT 1 FROM instances WHERE provider_id=$1)
 	}
 	s.admAudit(c, "admin.provider.delete", "provider", &providerID)
 	return c.SendStatus(204)
+}
+
+func (s *Server) adminTestProvider(c fiber.Ctx) error {
+	providerID, err := admParseUUIDParam(c, "provider_id", "provider_id")
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	var code, kind string
+	if err := s.db.QueryRow(c.Context(), `SELECT code, kind FROM providers WHERE id=$1`, providerID).Scan(&code, &kind); err != nil {
+		return mw.WriteError(c, apperrors.New(apperrors.CodeNotFound, "provider not found"))
+	}
+	p, err := provider.Lookup(code)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	if _, _, _, err := p.SyncCatalog(c.Context()); err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, fiber.Map{"code": code, "kind": kind, "status": "ok"}, nil)
 }
 
 func (s *Server) adminTriggerProviderSync(c fiber.Ctx) error {
