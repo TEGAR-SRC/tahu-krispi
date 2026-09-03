@@ -91,6 +91,18 @@ const GuestPerf = lazy(() =>
 const OnidelCatalog = lazy(() =>
   import("@/features/admin/pages/providers/OnidelCatalog"),
 )
+const CreateLxcPage = lazy(() =>
+  import("@/features/admin/pages/providers/CreateLxcPage"),
+)
+const CreateVmPage = lazy(() =>
+  import("@/features/admin/pages/providers/CreateVmPage"),
+)
+const CreateOnidelVmPage = lazy(() =>
+  import("@/features/admin/pages/providers/CreateOnidelVmPage"),
+)
+const CreateVmwarePage = lazy(() =>
+  import("@/features/admin/pages/providers/CreateVmwarePage"),
+)
 const RegionsPools = lazy(() => import("@/features/admin/pages/RegionsPools"))
 const StorageBackends = lazy(() =>
   import("@/features/admin/pages/StorageBackends"),
@@ -588,12 +600,16 @@ export default function AppRoutes() {
           <Route path="proxmox/:providerId/sdn" element={<ProviderSdn />} />
           <Route path="proxmox/:providerId/ceph" element={<ProviderCeph />} />
           <Route path="proxmox/:providerId/containers" element={<ProviderContainers />} />
+          <Route path="proxmox/:providerId/containers/new" element={<CreateLxcPage />} />
+          <Route path="proxmox/:providerId/vms/new" element={<CreateVmPage />} />
           <Route path="proxmox/:providerId/pools" element={<ProviderPools />} />
           <Route path="proxmox/:providerId/perf" element={<GuestPerf />} />
 
           <Route path="onidel/:providerId/onidel" element={<OnidelCatalog />} />
+          <Route path="onidel/:providerId/create" element={<CreateOnidelVmPage />} />
 
           <Route path="vmware/:providerId/inventory" element={<VmwareInventory />} />
+          <Route path="vmware/:providerId/create" element={<CreateVmwarePage />} />
 
           {/* Dokploy is its own tree: /admin/dokploy/* (kept below) */}
 

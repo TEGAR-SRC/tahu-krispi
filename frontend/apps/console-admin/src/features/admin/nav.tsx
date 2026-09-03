@@ -6,6 +6,7 @@ import {
   BuildingIcon,
   CloudCogIcon,
   CoinsIcon,
+  ContainerIcon,
   CreditCardIcon,
   DatabaseIcon,
   FileClockIcon,
@@ -13,6 +14,7 @@ import {
   GlobeIcon,
   HardDriveIcon,
   InboxIcon,
+  LayersIcon,
   LayoutDashboardIcon,
   LifeBuoyIcon,
   PackageIcon,
@@ -56,30 +58,28 @@ export const adminNav: ConsoleNavSection[] = [
   {
     title: "Proxmox",
     items: [
-      { title: "Providers", url: "/admin/providers?kind=proxmox", icon: CloudCogIcon },
-      { title: "Nodes", url: "/admin/providers?kind=proxmox", icon: ServerIcon },
-      { title: "Storages", url: "/admin/providers?kind=proxmox", icon: HardDriveIcon },
+      { title: "Providers", url: "/admin/providers?kind=proxmox", icon: ServerIcon },
+      { title: "Nodes", url: "/admin/proxmox", icon: ServerIcon },
+      { title: "Containers", url: "/admin/proxmox", icon: ContainerIcon },
+      { title: "Pools", url: "/admin/proxmox", icon: BoxesIcon },
     ],
   },
   {
     title: "Onidel",
     items: [
-      { title: "Onidel catalog", url: "/admin/providers?kind=onidel", icon: CloudCogIcon },
-      { title: "Instances", url: "/admin/instances", icon: ServerIcon },
+      { title: "Catalog", url: "/admin/onidel", icon: LayersIcon },
     ],
   },
   {
     title: "VMware",
     items: [
-      { title: "Inventory", url: "/admin/providers?kind=vmware", icon: BoxesIcon },
-      { title: "Performance", url: "/admin/providers?kind=vmware", icon: PieChartIcon },
+      { title: "Inventory", url: "/admin/vmware", icon: HardDriveIcon },
     ],
   },
   {
     title: "Dokploy",
     items: [
       { title: "Dokploy hub", url: "/admin/dokploy", icon: DatabaseIcon },
-      { title: "App home", url: "/admin/dokploy/app/home", icon: LayoutDashboardIcon },
       { title: "Projects", url: "/admin/dokploy/app/projects", icon: BoxesIcon },
       { title: "Overview", url: "/admin/dokploy/app/overview", icon: GlobeIcon },
       { title: "Docker", url: "/admin/dokploy/app/docker", icon: HardDriveIcon },

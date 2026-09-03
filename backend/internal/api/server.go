@@ -553,6 +553,8 @@ func (s *Server) registerRoutes() {
 	proxmoxAdmin.Put("/nodes/:node/dns", s.requireStaff(""), s.adminNodeDNSSet)
 	proxmoxAdmin.Get("/nodes/:node/time", s.requireStaff("infra"), s.adminNodeTimeGet)
 	proxmoxAdmin.Get("/cpu-models", s.requireStaff("infra"), s.adminProviderCPUModels)
+	proxmoxAdmin.Post("/lxc", s.requireStaff(""), s.adminProxmoxProvisionLXC)
+	proxmoxAdmin.Post("/qemu", s.requireStaff(""), s.adminProxmoxProvisionQEMU)
 	// Onidel: /admin/onidel/:id/* — murni onidel (kind==onidel), catalog vs proxmox cluster.
 	onidelAdmin := admin.Group("/onidel/:id")
 	onidelAdmin.Get("/catalog", s.requireStaff("infra"), s.adminOnidelCatalog)
