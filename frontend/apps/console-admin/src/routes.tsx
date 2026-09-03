@@ -104,7 +104,17 @@ const ProxmoxSnapshotsPage = lazy(() => import("@/features/proxmox/ProxmoxSnapsh
 const ProxmoxQemuSnapshotPage = lazy(() => import("@/features/proxmox/ProxmoxQemuSnapshotPage"))
 const LxcMigratePage = lazy(() => import("@/features/proxmox/LxcMigratePage"))
 const ProxmoxQemuConfigPage = lazy(() => import("@/features/proxmox/ProxmoxQemuConfigPage"))
+const ProxmoxQemuTagsPage = lazy(() => import("@/features/proxmox/ProxmoxQemuTagsPage"))
+const ProxmoxQemuNotesPage = lazy(() => import("@/features/proxmox/ProxmoxQemuNotesPage"))
 const ProxmoxFwAliasesPage = lazy(() => import("@/features/proxmox/ProxmoxFwAliasesPage"))
+const ProxmoxSerialProxyPage = lazy(() => import("@/features/proxmox/ProxmoxSerialProxyPage"))
+const ProxmoxQemuResetPage = lazy(() => import("@/features/proxmox/ProxmoxQemuResetPage"))
+const ProxmoxQemuResumePage = lazy(() => import("@/features/proxmox/ProxmoxQemuResumePage"))
+const ProxmoxQemuPausePage = lazy(() => import("@/features/proxmox/ProxmoxQemuPausePage"))
+const ProxmoxQemuHibernatePage = lazy(() => import("@/features/proxmox/ProxmoxQemuHibernatePage"))
+const ProxmoxQemuMigratePage = lazy(() => import("@/features/proxmox/ProxmoxQemuMigratePage"))
+const ProxmoxQemuFirewallPage = lazy(() => import("@/features/proxmox/ProxmoxQemuFirewallPage"))
+const ProxmoxQemuAgentPage = lazy(() => import("@/features/proxmox/ProxmoxQemuAgentPage"))
 const OnidelCatalog = lazy(() =>
   import("@/features/admin/pages/providers/OnidelCatalog"),
 )
@@ -127,6 +137,7 @@ const VmwareDatastoreBrowsePage = lazy(() => import("@/features/vmware/VmwareDat
 const VmwareHostDetailPage = lazy(() => import("@/features/vmware/VmwareHostDetailPage"))
 const VmwarePerfPage = lazy(() => import("@/features/vmware/VmwarePerfPage"))
 const VmwarePerfDetailPage = lazy(() => import("@/features/vmware/VmwarePerfDetailPage"))
+const VmwareSnapshotRevertPage = lazy(() => import("@/features/vmware/VmwareSnapshotRevertPage"))
 const OnidelCreateChoices = lazy(() => import("@/features/onidel/OnidelCreateChoicesPage"))
 const OnidelJobs = lazy(() =>
   import("@/features/onidel/OnidelJobsPage"),
@@ -670,7 +681,18 @@ export default function AppRoutes() {
           <Route path="proxmox/:providerId/snapshots" element={<ProxmoxSnapshotsPage />} />
           <Route path="proxmox/:providerId/nodes/:node/qemu/:vmid/snapshot" element={<ProxmoxQemuSnapshotPage />} />
           <Route path="proxmox/:providerId/nodes/:node/lxc/:vmid/migrate" element={<LxcMigratePage />} />
+          <Route path="proxmox/:providerId/nodes/:node/serial-proxy" element={<ProxmoxSerialProxyPage />} />
           <Route path="proxmox/:providerId/nodes/:node/qemu/:vmid/config" element={<ProxmoxQemuConfigPage />} />
+          <Route path="proxmox/:providerId/nodes/:node/qemu/:vmid/tags" element={<ProxmoxQemuTagsPage />} />
+          <Route path="proxmox/:providerId/nodes/:node/qemu/:vmid/notes" element={<ProxmoxQemuNotesPage />} />
+          <Route path="proxmox/:providerId/nodes/:node/qemu/:vmid/reset" element={<ProxmoxQemuResetPage />} />
+          <Route path="proxmox/:providerId/nodes/:node/qemu/:vmid/resume" element={<ProxmoxQemuResumePage />} />
+          <Route path="proxmox/:providerId/nodes/:node/qemu/:vmid/pause" element={<ProxmoxQemuPausePage />} />
+          <Route path="proxmox/:providerId/nodes/:node/qemu/:vmid/hibernate" element={<ProxmoxQemuHibernatePage />} />
+          <Route path="proxmox/:providerId/nodes/:node/qemu/:vmid/migrate" element={<ProxmoxQemuMigratePage />} />
+          <Route path="proxmox/:providerId/nodes/:node/qemu/:vmid/firewall" element={<ProxmoxQemuFirewallPage />} />
+          <Route path="proxmox/:providerId/nodes/:node/qemu/:vmid/agent" element={<ProxmoxQemuAgentPage />} />
+          <Route path="proxmox/:providerId/nodes/:node/qemu/:vmid/agent/*" element={<ProxmoxQemuAgentPage />} />
           <Route path="proxmox/:providerId/fw-aliases" element={<ProxmoxFwAliasesPage />} />
 
           <Route path="onidel/:providerId/onidel" element={<OnidelCatalog />} />
@@ -690,6 +712,7 @@ export default function AppRoutes() {
           <Route path="vmware/:providerId/hosts/:host" element={<VmwareHostDetailPage />} />
           <Route path="vmware/:providerId/perf" element={<VmwarePerfPage />} />
           <Route path="vmware/:providerId/perf/:vmid" element={<VmwarePerfDetailPage />} />
+          <Route path="vmware/:providerId/snapshots/:snap/revert" element={<VmwareSnapshotRevertPage />} />
           <Route path="vmware/:providerId/migrate" element={<VmwareMigratePage />} />
           <Route path="vmware/:providerId/create" element={<CreateVmwarePage />} />
 

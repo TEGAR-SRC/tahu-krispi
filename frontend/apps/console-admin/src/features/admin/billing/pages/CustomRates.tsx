@@ -41,6 +41,7 @@ interface CustomRateRow {
   min_quantity: number
   max_quantity?: number | null
   step_quantity: number
+  provider_id?: string | null
   region_id?: string | null
   active_from: string
   active_until: string
@@ -89,6 +90,7 @@ interface RateFormState {
   min_quantity: string
   max_quantity: string
   step_quantity: string
+  provider_id: string
   region_id: string
 }
 
@@ -102,6 +104,7 @@ const EMPTY_FORM: RateFormState = {
   min_quantity: "0",
   max_quantity: "",
   step_quantity: "1",
+  provider_id: "",
   region_id: "",
 }
 
@@ -199,6 +202,7 @@ export default function BillingCustomRatesPage() {
         min_quantity: minQty,
         max_quantity: maxQty,
         step_quantity: stepQty,
+        provider_id: form.provider_id.trim() || undefined,
         region_id: form.region_id.trim() || undefined,
       })
       toast.success(`Rate added for ${dimension}`)
@@ -243,6 +247,15 @@ export default function BillingCustomRatesPage() {
       key: "step_quantity",
       header: "Step",
       className: "text-right tabular-nums",
+    },
+    {
+      key: "provider_id",
+      header: "Provider",
+      render: (rate) => (
+        <span className="font-mono text-xs">
+          {rate.provider_id ? `${rate.provider_id.slice(0, 8)}…` : "any"}
+        </span>
+      ),
     },
     {
       key: "region_id",
@@ -470,6 +483,18 @@ export default function BillingCustomRatesPage() {
                   }
                 />
               </div>
+            </div>
+
+            <div className="grid w-full max-w-full min-w-0 gap-2">
+              <Label htmlFor="rate-provider">Provider ID</Label>
+              <Input
+                id="rate-provider"
+                placeholder="UUID or blank for any provider"
+                value={form.provider_id}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, provider_id: event.target.value }))
+                }
+              />
             </div>
 
             <div className="grid w-full max-w-full min-w-0 gap-2">

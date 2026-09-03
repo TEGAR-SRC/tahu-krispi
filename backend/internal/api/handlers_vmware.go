@@ -240,22 +240,31 @@ func (s *Server) adminVmwareSnapshotCreate(c fiber.Ctx) error {
 }
 
 // POST /v1/admin/vmware/:id/snapshots/revert — revert VM to snapshot.
-// Body { snapshot_id, vm? }. snapshot_id is the provider snapshot extID
-// ("VirtualMachine:vm-123/snapname"). When vm is omitted it is derived from
-// the prefix before "/". RBAC "" (platform_admin only).
+// Body { snapshot_id, vm? } on the collection path or :snap path param.
+// snapshot_id is the provider snapshot extID ("VirtualMachine:vm-123/snapname").
+// When vm is omitted it is derived from the prefix before "/". The per-snapshot
+// path POST /snapshots/:snap/revert takes :snap (url-escaped) as the snapshot
+// id and optional body {vm?} so the frontend VmwareSnapshotRevertPage can call
+// POST /admin/vmware/:id/snapshots/:snap/revert without repeating snapshot_id
+// in the JSON. RBAC "" (platform_admin only).
 func (s *Server) adminVmwareSnapshotRevert(c fiber.Ctx) error {
 	providerID, _, ad, err := s.vmwareAdapterFor(c)
 	if err != nil {
 		return mw.WriteError(c, err)
 	}
+	rawSnap := strings.TrimSpace(c.Params("snap"))
+	if decoded, derr := url.PathUnescape(rawSnap); derr == nil {
+		rawSnap = strings.TrimSpace(decoded)
+	}
 	var in struct {
 		VM         string `json:"vm"`
 		SnapshotID string `json:"snapshot_id"`
 	}
-	if err := c.Bind().Body(&in); err != nil {
-		return mw.WriteError(c, errValidation("invalid revert payload"))
-	}
+	_ = c.Bind().Body(&in)
 	snapshotID := strings.TrimSpace(in.SnapshotID)
+	if snapshotID == "" {
+		snapshotID = rawSnap
+	}
 	if snapshotID == "" {
 		return mw.WriteError(c, vErrField("snapshot_id", "snapshot_id is required (e.g. VirtualMachine:vm-123/snapname)"))
 	}

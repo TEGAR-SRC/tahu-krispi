@@ -736,6 +736,35 @@ func (c *Client) AgentInfo(ctx context.Context, node string, vmid int) (*goproxm
 	return info, wrapErr("agent info", err)
 }
 
+// AgentPassthrough proxies arbitrary GET/POST requests to /nodes/{node}/qemu/{vmid}/agent/*.
+// subPath is the tail after /agent (may be empty for the index, or e.g. "get-time", "ping", "network-get-interfaces").
+// For GET with a non-empty subPath and query params, they are forwarded verbatim.
+// For POST, body is forwarded as JSON. Response is returned as raw decoded JSON (map/slice/primitive).
+func (c *Client) AgentPassthrough(ctx context.Context, node string, vmid int, method string, subPath string, query url.Values, body any) (any, error) {
+	base := fmt.Sprintf("/nodes/%s/qemu/%d/agent", node, vmid)
+	path := base
+	if strings.TrimSpace(subPath) != "" {
+		path = strings.TrimRight(base, "/") + "/" + strings.Trim(strings.TrimSpace(subPath), "/")
+	}
+	if method == http.MethodGet && len(query) > 0 {
+		path = path + "?" + query.Encode()
+	}
+	var out any
+	var err error
+	switch method {
+	case http.MethodGet:
+		err = c.sdk.Get(ctx, path, &out)
+	case http.MethodPost:
+		err = c.sdk.Post(ctx, path, body, &out)
+	default:
+		return nil, apperrors.Newf(apperrors.CodeValidation, "unsupported agent passthrough method %q", method)
+	}
+	if err != nil {
+		return nil, wrapErr("agent "+strings.TrimSpace(subPath), err)
+	}
+	return out, nil
+}
+
 // VMRRDData pulls round-robin metrics (CPU/mem/net/disk series) for charts.
 func (c *Client) VMRRDData(ctx context.Context, node string, vmid int, timeframe string, cf string) ([]*goproxmox.RRDData, error) {
 	vm, err := c.nodeHandle(ctx, node, vmid)
@@ -852,6 +881,18 @@ func (c *Client) NodeQEMUCapabilities(ctx context.Context, node string) ([]strin
 	}
 	caps, err := n.QEMUCapabilitiesIndex(ctx)
 	return caps, wrapErr("node capabilities", err)
+}
+
+// NodeTermProxy opens a host-shell termproxy ticket on the node (xterm.js).
+// GET /admin/proxmox/:id/nodes/:node/serial-proxy — proxmox murni (Node.TermProxy),
+// mirrors SerialTermProxy/ContainerTermProxy but for the PVE host itself.
+func (c *Client) NodeTermProxy(ctx context.Context, node string) (*goproxmox.Term, error) {
+	n, err := c.sdk.Node(ctx, node)
+	if err != nil {
+		return nil, wrapErr("node "+node, err)
+	}
+	term, err := n.TermProxy(ctx)
+	return term, wrapErr("node termproxy", err)
 }
 
 // NodeCertificates lists custom TLS certificates installed on the node.

@@ -47,6 +47,7 @@ interface CustomRate {
   min_quantity: number | null
   max_quantity: number | null
   step_quantity: number
+  provider_id: string | null
   region_id: string | null
   active_from: string
   active_until: string
@@ -63,6 +64,14 @@ interface Region {
   id: string
   code: string
   name: string
+  enabled: boolean
+}
+
+interface ProviderOption {
+  id: string
+  code: string
+  name: string
+  kind: string
   enabled: boolean
 }
 
@@ -104,6 +113,7 @@ export default function FinanceRatesPage() {
   const [rates, setRates] = useState<CustomRate[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [regions, setRegions] = useState<Region[]>([])
+  const [providers, setProviders] = useState<ProviderOption[]>([])
   const [meta, setMeta] = useState<{ page: number; per_page: number; total?: number } | null>(null)
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
@@ -117,10 +127,11 @@ export default function FinanceRatesPage() {
     setLoading(true)
     setError(null)
     try {
-      const [ratesRes, productsRes, regionsRes] = await Promise.all([
+      const [ratesRes, productsRes, regionsRes, providersRes] = await Promise.all([
         apiGet<CustomRate[]>("/admin/custom-rates", { query: { page, per_page: PER_PAGE } }),
         apiGet<Product[]>("/admin/products"),
         apiGet<Region[]>("/admin/regions"),
+        apiGet<ProviderOption[]>("/admin/providers", { query: { per_page: 100 } }).catch(() => ({ data: [] as ProviderOption[] } as never)),
       ])
       setRates(
         [...ratesRes.data].sort(
@@ -131,6 +142,7 @@ export default function FinanceRatesPage() {
       )
       setProducts(productsRes.data)
       setRegions(regionsRes.data)
+      setProviders(Array.isArray((providersRes as unknown as { data?: ProviderOption[] })?.data) ? (providersRes as unknown as { data: ProviderOption[] }).data : [])
       setMeta(ratesRes.meta ?? null)
     } catch (cause) {
       setError(cause)
@@ -169,6 +181,11 @@ export default function FinanceRatesPage() {
     return (id: string | null) => (id ? (names.get(id) ?? id.slice(0, 8)) : null)
   }, [regions])
 
+  const providerName = useMemo(() => {
+    const names = new Map(providers.map((provider) => [provider.id, `${provider.code} (${provider.kind})`]))
+    return (id: string | null) => (id ? (names.get(id) ?? id.slice(0, 8)) : null)
+  }, [providers])
+
   const columnsFor = (): Array<SimpleColumn<CustomRate>> => [
     {
       key: "dimension_code",
@@ -193,6 +210,11 @@ export default function FinanceRatesPage() {
         if (row.step_quantity > 1) parts.push(`step ${row.step_quantity}`)
         return parts.length > 0 ? parts.join(" · ") : "—"
       },
+    },
+    {
+      key: "provider_id",
+      header: "Provider",
+      render: (row) => providerName(row.provider_id) ?? "Any provider",
     },
     {
       key: "region_id",
@@ -270,6 +292,7 @@ export default function FinanceRatesPage() {
         onOpenChange={setCreateOpen}
         products={products}
         regions={regions}
+        providers={providers}
         onCreated={load}
       />
     </div>
@@ -281,12 +304,14 @@ function RateCreateDialog({
   onOpenChange,
   products,
   regions,
+  providers,
   onCreated,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   products: Product[]
   regions: Region[]
+  providers: ProviderOption[]
   onCreated: () => Promise<void>
 }) {
   const [productId, setProductId] = useState("")
@@ -298,6 +323,7 @@ function RateCreateDialog({
   const [minQuantity, setMinQuantity] = useState("")
   const [maxQuantity, setMaxQuantity] = useState("")
   const [stepQuantity, setStepQuantity] = useState("1")
+  const [providerId, setProviderId] = useState("none")
   const [regionId, setRegionId] = useState("none")
   const [formError, setFormError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -329,6 +355,7 @@ function RateCreateDialog({
         min_quantity: toNumberOrUndefined(minQuantity),
         max_quantity: toNumberOrUndefined(maxQuantity),
         step_quantity: Number(stepQuantity) || 1,
+        ...(providerId !== "none" ? { provider_id: providerId } : {}),
         ...(regionId !== "none" ? { region_id: regionId } : {}),
       })
       toast.success(`Rate for ${dimensionCode.trim()} created`)
@@ -452,6 +479,23 @@ function RateCreateDialog({
           {numField("rate-min", "Min quantity (optional)", minQuantity, setMinQuantity)}
           {numField("rate-max", "Max quantity (optional)", maxQuantity, setMaxQuantity)}
           {numField("rate-step", "Step quantity", stepQuantity, setStepQuantity)}
+          <div className="col-span-2 space-y-1.5">
+            <Label>Provider (optional)</Label>
+            <Select value={providerId} onValueChange={setProviderId}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Any provider" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Any provider</SelectItem>
+                {providers.map((provider) => (
+                  <SelectItem key={provider.id} value={provider.id}>
+                    {provider.name} ({provider.code} · {provider.kind})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">When unset the rate applies to all providers. Provider lookup uses GET /admin/providers.</p>
+          </div>
           <div className="col-span-2 space-y-1.5">
             <Label>Region (optional)</Label>
             <Select value={regionId} onValueChange={setRegionId}>

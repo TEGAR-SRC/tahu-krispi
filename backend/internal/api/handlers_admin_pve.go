@@ -17,6 +17,7 @@ package api
 
 import (
 	"encoding/json"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -1194,6 +1195,25 @@ func (s *Server) adminProviderCPUModels(c fiber.Ctx) error {
 	return mw.JSON(c, 200, fiber.Map{"node": node, "arch": arch, "models": models}, nil)
 }
 
+// adminNodeSerialProxy returns a node host-shell termproxy ticket (xterm.js).
+// GET /admin/proxmox/:id/nodes/:node/serial-proxy — infra-readable (NOC + platform_admin),
+// proxmox murni (proxmoxAdapterFor guard — non-proxmox answers 501 expect proxmox).
+func (s *Server) adminNodeSerialProxy(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	node := strings.TrimSpace(c.Params("node"))
+	if node == "" {
+		return mw.WriteError(c, vErrField("node", "node is required"))
+	}
+	term, err := ad.Client().NodeTermProxy(c.Context(), node)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, term, nil)
+}
+
 func (s *Server) adminNodeReport(c fiber.Ctx) error {
 	_, _, ad, err := s.proxmoxAdapterFor(c)
 	if err != nil {
@@ -2140,6 +2160,598 @@ func (s *Server) adminProxmoxQemuConfigSet(c fiber.Ctx) error {
 		return mw.WriteError(c, err)
 	}
 	return mw.JSON(c, 200, fiber.Map{"status": "updated", "node": node, "vmid": vmid}, nil)
+}
+
+// adminProxmoxQemuTagsGet returns the tag list for one QEMU VM.
+// GET /admin/proxmox/:id/nodes/:node/qemu/:vmid/tags — infra-readable (NOC + platform_admin),
+// proxmox murni via proxmoxAdapterFor guard.
+func (s *Server) adminProxmoxQemuTagsGet(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	node := strings.TrimSpace(c.Params("node"))
+	if node == "" {
+		return mw.WriteError(c, vErrField("node", "node is required"))
+	}
+	vmidStr := strings.TrimSpace(c.Params("vmid"))
+	vmid, cerr := strconv.Atoi(vmidStr)
+	if cerr != nil || vmid <= 0 {
+		return mw.WriteError(c, vErrField("vmid", "must be a positive integer"))
+	}
+	cfg, err := ad.Client().QEMUConfigGet(c.Context(), node, vmid)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	rawTags := ""
+	if v, ok := cfg["tags"]; ok {
+		if s, ok := v.(string); ok {
+			rawTags = strings.TrimSpace(s)
+		}
+	}
+	tags := []string{}
+	if rawTags != "" {
+		for _, p := range strings.Split(rawTags, ";") {
+			if t := strings.TrimSpace(p); t != "" {
+				tags = append(tags, t)
+			}
+		}
+	}
+	return mw.JSON(c, 200, fiber.Map{"node": node, "vmid": vmid, "tags": tags, "raw": rawTags}, nil)
+}
+
+// adminProxmoxQemuTagsSet rewrites the tag list wholesale via PVE tags config.
+// PUT /admin/proxmox/:id/nodes/:node/qemu/:vmid/tags — platform_admin only,
+// body {tags: string[] | string} where string is ";" or "," separated. PVE
+// stores tags as a single ";"-joined string via PUT /nodes/{node}/qemu/{vmid}/config.
+func (s *Server) adminProxmoxQemuTagsSet(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	node := strings.TrimSpace(c.Params("node"))
+	if node == "" {
+		return mw.WriteError(c, vErrField("node", "node is required"))
+	}
+	vmidStr := strings.TrimSpace(c.Params("vmid"))
+	vmid, cerr := strconv.Atoi(vmidStr)
+	if cerr != nil || vmid <= 0 {
+		return mw.WriteError(c, vErrField("vmid", "must be a positive integer"))
+	}
+	var body map[string]any
+	if err := c.Bind().Body(&body); err != nil || body == nil {
+		return mw.WriteError(c, errValidation("invalid tags payload"))
+	}
+	rawVal, ok := body["tags"]
+	if !ok {
+		return mw.WriteError(c, vErrField("tags", "tags is required (string[] or \";\"-separated string)"))
+	}
+	var tags []string
+	switch v := rawVal.(type) {
+	case string:
+		s := strings.TrimSpace(v)
+		if s != "" {
+			for _, p := range strings.Split(s, ";") {
+				for _, q := range strings.Split(p, ",") {
+					if t := strings.TrimSpace(q); t != "" {
+						tags = append(tags, t)
+					}
+				}
+			}
+		}
+	case []any:
+		for _, it := range v {
+			switch sv := it.(type) {
+			case string:
+				if t := strings.TrimSpace(sv); t != "" {
+					tags = append(tags, t)
+				}
+			case float64:
+				tags = append(tags, strconv.FormatFloat(sv, 'f', -1, 64))
+			default:
+				return mw.WriteError(c, vErrField("tags", "each tag must be a string"))
+			}
+		}
+	case []string:
+		for _, t := range v {
+			if s := strings.TrimSpace(t); s != "" {
+				tags = append(tags, s)
+			}
+		}
+	default:
+		return mw.WriteError(c, vErrField("tags", "tags must be a string array or \";\"-separated string"))
+	}
+	if len(tags) > 32 {
+		return mw.WriteError(c, vErrField("tags", "at most 32 tags are allowed"))
+	}
+	for _, t := range tags {
+		if len(t) > 64 {
+			return mw.WriteError(c, vErrField("tags", "each tag must be at most 64 characters"))
+		}
+	}
+	joined := strings.Join(tags, ";")
+	if err := ad.Client().QEMUConfigUpdate(c.Context(), node, vmid, map[string]any{"tags": joined}); err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, fiber.Map{"status": "updated", "node": node, "vmid": vmid, "tags": tags}, nil)
+}
+
+// adminProxmoxQemuReset hard-resets one QEMU VM via PVE POST /nodes/{node}/qemu/{vmid}/status/reset.
+// POST /admin/proxmox/:id/nodes/:node/qemu/:vmid/reset — platform_admin only,
+// proxmox murni (proxmoxAdapterFor guard — non-proxmox answers 501 expect proxmox).
+func (s *Server) adminProxmoxQemuReset(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	node := strings.TrimSpace(c.Params("node"))
+	if node == "" {
+		return mw.WriteError(c, vErrField("node", "node is required"))
+	}
+	vmidStr := strings.TrimSpace(c.Params("vmid"))
+	vmid, cerr := strconv.Atoi(vmidStr)
+	if cerr != nil || vmid <= 0 {
+		return mw.WriteError(c, vErrField("vmid", "must be a positive integer"))
+	}
+	task, err := ad.Client().QEMUReset(c.Context(), node, vmid)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 202, fiber.Map{"node": node, "vmid": vmid, "status": "resetting", "task": task}, nil)
+}
+
+// adminProxmoxQemuResume resumes a suspended QEMU VM via PVE POST /nodes/{node}/qemu/{vmid}/status/resume.
+// POST /admin/proxmox/:id/nodes/:node/qemu/:vmid/resume — platform_admin only,
+// proxmox murni (proxmoxAdapterFor guard — non-proxmox answers 501 expect proxmox).
+func (s *Server) adminProxmoxQemuResume(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	node := strings.TrimSpace(c.Params("node"))
+	if node == "" {
+		return mw.WriteError(c, vErrField("node", "node is required"))
+	}
+	vmidStr := strings.TrimSpace(c.Params("vmid"))
+	vmid, cerr := strconv.Atoi(vmidStr)
+	if cerr != nil || vmid <= 0 {
+		return mw.WriteError(c, vErrField("vmid", "must be a positive integer"))
+	}
+	task, err := ad.Client().QEMUResume(c.Context(), node, vmid)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 202, fiber.Map{"node": node, "vmid": vmid, "status": "resuming", "task": task}, nil)
+}
+
+// adminProxmoxQemuPauseStatus returns QEMU guest context for the pause page (GET infra, 5s poll).
+// GET /admin/proxmox/:id/nodes/:node/qemu/:vmid/pause — infra-readable (NOC + platform_admin),
+// proxmox murni via proxmoxAdapterFor guard — non-proxmox answers 501 expect proxmox.
+func (s *Server) adminProxmoxQemuPauseStatus(c fiber.Ctx) error {
+	providerID, code, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	node := strings.TrimSpace(c.Params("node"))
+	if node == "" {
+		return mw.WriteError(c, vErrField("node", "node is required"))
+	}
+	vmidStr := strings.TrimSpace(c.Params("vmid"))
+	vmid, cerr := strconv.Atoi(vmidStr)
+	if cerr != nil || vmid <= 0 {
+		return mw.WriteError(c, vErrField("vmid", "must be a positive integer"))
+	}
+	ctx := c.Context()
+	resources, _ := ad.Client().ClusterResources(ctx)
+	var guest any
+	for _, r := range resources {
+		if r.Type == "qemu" && int(r.VMID) == vmid {
+			guest = r
+			break
+		}
+	}
+	ext := strconv.Itoa(vmid)
+	return mw.JSON(c, 200, fiber.Map{
+		"provider_id": providerID,
+		"code":        code,
+		"node":        node,
+		"vmid":        vmid,
+		"external_id": ext,
+		"guest":       guest,
+		"hint":        "POST /admin/proxmox/:id/nodes/:node/qemu/:vmid/pause — suspend QEMU VM to RAM",
+	}, nil)
+}
+
+// adminProxmoxQemuPause suspends a QEMU VM to RAM via PVE POST /nodes/{node}/qemu/{vmid}/status/suspend.
+// POST /admin/proxmox/:id/nodes/:node/qemu/:vmid/pause — platform_admin only,
+// proxmox murni (proxmoxAdapterFor guard — non-proxmox answers 501 expect proxmox).
+func (s *Server) adminProxmoxQemuPause(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	node := strings.TrimSpace(c.Params("node"))
+	if node == "" {
+		return mw.WriteError(c, vErrField("node", "node is required"))
+	}
+	vmidStr := strings.TrimSpace(c.Params("vmid"))
+	vmid, cerr := strconv.Atoi(vmidStr)
+	if cerr != nil || vmid <= 0 {
+		return mw.WriteError(c, vErrField("vmid", "must be a positive integer"))
+	}
+	task, err := ad.Client().QEMUPause(c.Context(), node, vmid)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 202, fiber.Map{"node": node, "vmid": vmid, "status": "pausing", "task": task}, nil)
+}
+
+// adminProxmoxQemuHibernateStatus returns QEMU guest context for the hibernate page (GET infra, 5s poll).
+// GET /admin/proxmox/:id/nodes/:node/qemu/:vmid/hibernate — infra-readable (NOC + platform_admin),
+// proxmox murni via proxmoxAdapterFor guard — non-proxmox answers 501 expect proxmox.
+func (s *Server) adminProxmoxQemuHibernateStatus(c fiber.Ctx) error {
+	providerID, code, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	node := strings.TrimSpace(c.Params("node"))
+	if node == "" {
+		return mw.WriteError(c, vErrField("node", "node is required"))
+	}
+	vmidStr := strings.TrimSpace(c.Params("vmid"))
+	vmid, cerr := strconv.Atoi(vmidStr)
+	if cerr != nil || vmid <= 0 {
+		return mw.WriteError(c, vErrField("vmid", "must be a positive integer"))
+	}
+	ctx := c.Context()
+	resources, _ := ad.Client().ClusterResources(ctx)
+	var guest any
+	for _, r := range resources {
+		if r.Type == "qemu" && int(r.VMID) == vmid {
+			guest = r
+			break
+		}
+	}
+	ext := strconv.Itoa(vmid)
+	return mw.JSON(c, 200, fiber.Map{
+		"provider_id": providerID,
+		"code":        code,
+		"node":        node,
+		"vmid":        vmid,
+		"external_id": ext,
+		"guest":       guest,
+		"hint":        "POST /admin/proxmox/:id/nodes/:node/qemu/:vmid/hibernate — hibernate QEMU VM to disk (suspend-to-disk)",
+	}, nil)
+}
+
+// adminProxmoxQemuHibernate suspends a QEMU VM to disk via PVE POST /nodes/{node}/qemu/{vmid}/status/suspend todisk=1.
+// POST /admin/proxmox/:id/nodes/:node/qemu/:vmid/hibernate — platform_admin only,
+// proxmox murni (proxmoxAdapterFor guard — non-proxmox answers 501 expect proxmox).
+func (s *Server) adminProxmoxQemuHibernate(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	node := strings.TrimSpace(c.Params("node"))
+	if node == "" {
+		return mw.WriteError(c, vErrField("node", "node is required"))
+	}
+	vmidStr := strings.TrimSpace(c.Params("vmid"))
+	vmid, cerr := strconv.Atoi(vmidStr)
+	if cerr != nil || vmid <= 0 {
+		return mw.WriteError(c, vErrField("vmid", "must be a positive integer"))
+	}
+	task, err := ad.Client().QEMUHibernate(c.Context(), node, vmid)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 202, fiber.Map{"node": node, "vmid": vmid, "status": "hibernating", "task": task}, nil)
+}
+
+// ---- QEMU notes (GET infra, PUT platform_admin) ----
+
+// adminProxmoxQemuNotesGet returns the notes (PVE description) for one QEMU VM.
+// GET /admin/proxmox/:id/nodes/:node/qemu/:vmid/notes — infra-readable (NOC + platform_admin),
+// guard via proxmoxAdapterFor so non-proxmox kind answers 501 expect proxmox.
+func (s *Server) adminProxmoxQemuNotesGet(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	node := strings.TrimSpace(c.Params("node"))
+	if node == "" {
+		return mw.WriteError(c, vErrField("node", "node is required"))
+	}
+	vmidStr := strings.TrimSpace(c.Params("vmid"))
+	vmid, cerr := strconv.Atoi(vmidStr)
+	if cerr != nil || vmid <= 0 {
+		return mw.WriteError(c, vErrField("vmid", "must be a positive integer"))
+	}
+	cfg, err := ad.Client().QEMUConfigGet(c.Context(), node, vmid)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	notes := ""
+	if v, ok := cfg["description"]; ok && v != nil {
+		if s, ok := v.(string); ok {
+			notes = s
+		} else {
+			b, _ := json.Marshal(v)
+			var s2 string
+			if err := json.Unmarshal(b, &s2); err == nil {
+				notes = s2
+			} else {
+				notes = strings.TrimSpace(string(b))
+				notes = strings.Trim(notes, "\"")
+			}
+		}
+	}
+	return mw.JSON(c, 200, fiber.Map{"node": node, "vmid": vmid, "notes": notes, "description": notes}, nil)
+}
+
+// adminProxmoxQemuNotesSet updates the notes (PVE description) for one QEMU VM.
+// PUT /admin/proxmox/:id/nodes/:node/qemu/:vmid/notes — platform_admin only,
+// body {notes?: string, description?: string} (either key accepted, notes takes precedence),
+// empty string clears the description. Guard via proxmoxAdapterFor.
+func (s *Server) adminProxmoxQemuNotesSet(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	node := strings.TrimSpace(c.Params("node"))
+	if node == "" {
+		return mw.WriteError(c, vErrField("node", "node is required"))
+	}
+	vmidStr := strings.TrimSpace(c.Params("vmid"))
+	vmid, cerr := strconv.Atoi(vmidStr)
+	if cerr != nil || vmid <= 0 {
+		return mw.WriteError(c, vErrField("vmid", "must be a positive integer"))
+	}
+	var raw map[string]any
+	if err := c.Bind().Body(&raw); err != nil {
+		return mw.WriteError(c, errValidation("invalid qemu notes payload"))
+	}
+	if raw == nil {
+		return mw.WriteError(c, errValidation("invalid qemu notes payload"))
+	}
+	var notesPtr *string
+	if v, ok := raw["notes"]; ok {
+		if v == nil {
+			s := ""
+			notesPtr = &s
+		} else if s, ok := v.(string); ok {
+			notesPtr = &s
+		} else {
+			b, _ := json.Marshal(v)
+			var s string
+			if err := json.Unmarshal(b, &s); err == nil {
+				notesPtr = &s
+			} else {
+				ss := strings.TrimSpace(string(b))
+				ss = strings.Trim(ss, "\"")
+				notesPtr = &ss
+			}
+		}
+	} else if v, ok := raw["description"]; ok {
+		if v == nil {
+			s := ""
+			notesPtr = &s
+		} else if s, ok := v.(string); ok {
+			notesPtr = &s
+		} else {
+			b, _ := json.Marshal(v)
+			var s string
+			if err := json.Unmarshal(b, &s); err == nil {
+				notesPtr = &s
+			} else {
+				ss := strings.TrimSpace(string(b))
+				ss = strings.Trim(ss, "\"")
+				notesPtr = &ss
+			}
+		}
+	}
+	if notesPtr == nil {
+		return mw.WriteError(c, vErrField("notes", "notes (or description) is required"))
+	}
+	notes := *notesPtr
+	if err := ad.Client().QEMUConfigUpdate(c.Context(), node, vmid, map[string]any{"description": notes}); err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, fiber.Map{"status": "updated", "node": node, "vmid": vmid, "notes": notes}, nil)
+}
+
+// ---- QEMU per-VM firewall helpers for ProxmoxQemuFirewallPage ----
+
+// adminProxmoxQemuFirewallStatus GETs the live VM firewall rules + options for a QEMU VM.
+// GET /admin/proxmox/:id/nodes/:node/qemu/:vmid/firewall — infra-readable (NOC + platform_admin),
+// proxmox murni (proxmoxAdapterFor guard — non-proxmox answers 501 expect proxmox).
+func (s *Server) adminProxmoxQemuFirewallStatus(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	node := strings.TrimSpace(c.Params("node"))
+	if node == "" {
+		return mw.WriteError(c, vErrField("node", "node is required"))
+	}
+	vmidStr := strings.TrimSpace(c.Params("vmid"))
+	vmid, cerr := strconv.Atoi(vmidStr)
+	if cerr != nil || vmid <= 0 {
+		return mw.WriteError(c, vErrField("vmid", "must be a positive integer"))
+	}
+	rules, err := ad.Client().VMFirewallRules(c.Context(), node, vmid)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	if rules == nil {
+		rules = []*goproxmox.FirewallRule{}
+	}
+	opt, _ := ad.Client().VMFirewallOptionGet(c.Context(), node, vmid)
+	return mw.JSON(c, 200, fiber.Map{"node": node, "vmid": vmid, "rules": rules, "options": opt}, nil)
+}
+
+// adminProxmoxQemuFirewallCreate adds one firewall rule to a QEMU VM.
+// POST /admin/proxmox/:id/nodes/:node/qemu/:vmid/firewall — platform_admin only, proxmox murni.
+func (s *Server) adminProxmoxQemuFirewallCreate(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	node := strings.TrimSpace(c.Params("node"))
+	if node == "" {
+		return mw.WriteError(c, vErrField("node", "node is required"))
+	}
+	vmidStr := strings.TrimSpace(c.Params("vmid"))
+	vmid, cerr := strconv.Atoi(vmidStr)
+	if cerr != nil || vmid <= 0 {
+		return mw.WriteError(c, vErrField("vmid", "must be a positive integer"))
+	}
+	var rule goproxmox.FirewallRule
+	if err := c.Bind().Body(&rule); err != nil {
+		return mw.WriteError(c, errValidation("invalid firewall rule payload"))
+	}
+	if strings.TrimSpace(rule.Action) == "" {
+		return mw.WriteError(c, vErrField("action", "action is required (ACCEPT/DROP/REJECT)"))
+	}
+	if err := ad.Client().VMFirewallRuleCreate(c.Context(), node, vmid, &rule); err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 201, fiber.Map{"status": "created", "node": node, "vmid": vmid, "action": rule.Action}, nil)
+}
+
+// adminProxmoxQemuFirewallDelete removes a firewall rule by pos from a QEMU VM.
+// DELETE /admin/proxmox/:id/nodes/:node/qemu/:vmid/firewall/:pos — platform_admin only, proxmox murni.
+func (s *Server) adminProxmoxQemuFirewallDelete(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	node := strings.TrimSpace(c.Params("node"))
+	if node == "" {
+		return mw.WriteError(c, vErrField("node", "node is required"))
+	}
+	vmidStr := strings.TrimSpace(c.Params("vmid"))
+	vmid, cerr := strconv.Atoi(vmidStr)
+	if cerr != nil || vmid <= 0 {
+		return mw.WriteError(c, vErrField("vmid", "must be a positive integer"))
+	}
+	posStr := strings.TrimSpace(c.Params("pos"))
+	pos, cerr := strconv.Atoi(posStr)
+	if cerr != nil || pos < 0 {
+		return mw.WriteError(c, vErrField("pos", "pos must be a non-negative integer"))
+	}
+	rule, err := ad.Client().VMFirewallRuleAt(c.Context(), node, vmid, pos)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	if err := rule.Delete(c.Context()); err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, fiber.Map{"status": "deleted", "node": node, "vmid": vmid, "pos": pos}, nil)
+}
+
+// adminProxmoxQemuFirewallOptionsGet GETs the VM firewall options (enable/policy).
+// GET /admin/proxmox/:id/nodes/:node/qemu/:vmid/firewall/options — infra-readable, proxmox murni.
+func (s *Server) adminProxmoxQemuFirewallOptionsGet(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	node := strings.TrimSpace(c.Params("node"))
+	if node == "" {
+		return mw.WriteError(c, vErrField("node", "node is required"))
+	}
+	vmidStr := strings.TrimSpace(c.Params("vmid"))
+	vmid, cerr := strconv.Atoi(vmidStr)
+	if cerr != nil || vmid <= 0 {
+		return mw.WriteError(c, vErrField("vmid", "must be a positive integer"))
+	}
+	opt, err := ad.Client().VMFirewallOptionGet(c.Context(), node, vmid)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, fiber.Map{"node": node, "vmid": vmid, "options": opt}, nil)
+}
+
+// adminProxmoxQemuFirewallOptionsSet PUTs the VM firewall options (enable/policy).
+// PUT /admin/proxmox/:id/nodes/:node/qemu/:vmid/firewall/options — platform_admin only, proxmox murni.
+func (s *Server) adminProxmoxQemuFirewallOptionsSet(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	node := strings.TrimSpace(c.Params("node"))
+	if node == "" {
+		return mw.WriteError(c, vErrField("node", "node is required"))
+	}
+	vmidStr := strings.TrimSpace(c.Params("vmid"))
+	vmid, cerr := strconv.Atoi(vmidStr)
+	if cerr != nil || vmid <= 0 {
+		return mw.WriteError(c, vErrField("vmid", "must be a positive integer"))
+	}
+	var opt goproxmox.FirewallVirtualMachineOption
+	if err := c.Bind().Body(&opt); err != nil {
+		return mw.WriteError(c, errValidation("invalid firewall options payload"))
+	}
+	if err := ad.Client().VMFirewallOptionSet(c.Context(), node, vmid, &opt); err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, fiber.Map{"status": "updated", "node": node, "vmid": vmid, "options": opt}, nil)
+}
+
+// ---- QEMU Agent passthrough ----
+// Task specifies GET /admin/proxmox/:id/nodes/:node/qemu/:vmid/agent/* as a per-VM action page.
+// This handler exposes the full PVE QEMU guest-agent surface via a wildcard suffix.
+// GET is infra-readable (NOC + platform_admin), POST is platform_admin-only, guarded via proxmoxAdapterFor.
+// The suffix after /agent/ (trimmed) is proxied 1:1 to the PVE node: empty -> GET /agent (command index),
+// "get-time" -> GET /agent/get-time, "ping" -> POST /agent/ping, etc. Handles file-read encoding,
+// command body forwarding, and the inner {"result":...} unwrap already done by the SDK.
+
+func (s *Server) adminProxmoxQemuAgent(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	node := strings.TrimSpace(c.Params("node"))
+	if node == "" {
+		return mw.WriteError(c, vErrField("node", "node is required"))
+	}
+	vmidStr := strings.TrimSpace(c.Params("vmid"))
+	vmid, cerr := strconv.Atoi(vmidStr)
+	if cerr != nil || vmid <= 0 {
+		return mw.WriteError(c, vErrField("vmid", "must be a positive integer"))
+	}
+	method := string(c.Method())
+	// fiber wildcard param is "*"
+	suffix := strings.TrimSpace(c.Params("*"))
+	suffix = strings.Trim(suffix, "/")
+	// Normalize common aliases and guard traversal attempts.
+	if strings.Contains(suffix, "..") {
+		return mw.WriteError(c, vErrField("agent", "invalid agent path"))
+	}
+	// For POST, body may carry {"command": "..."} or file-write fields; forward generically.
+	var body any
+	if method == "POST" || method == "PUT" {
+		if len(c.Body()) > 0 {
+			var raw any
+			if jerr := json.Unmarshal(c.Body(), &raw); jerr == nil {
+				body = raw
+			} else {
+				body = map[string]any{"raw": string(c.Body())}
+			}
+		}
+	}
+	// Fiber v3 fasthttp request has no URL field — reconstruct query from c.Queries() and raw query string.
+	rawQS := string(c.Request().URI().QueryString())
+	qVals, _ := url.ParseQuery(rawQS)
+	out, err := ad.Client().AgentPassthrough(c.Context(), node, vmid, method, suffix, qVals, body)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	if out == nil {
+		return mw.JSON(c, 200, fiber.Map{"node": node, "vmid": vmid, "agent": suffix, "data": nil}, nil)
+	}
+	return mw.JSON(c, 200, out, nil)
 }
 
 func parseAccessCSV(v any) []string {

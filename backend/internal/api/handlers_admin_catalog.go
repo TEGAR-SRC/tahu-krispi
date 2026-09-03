@@ -406,6 +406,7 @@ type admCustomRateRow struct {
 	MinQuantity   float64    `json:"min_quantity"`
 	MaxQuantity   *float64   `json:"max_quantity"`
 	StepQuantity  float64    `json:"step_quantity"`
+	ProviderID    *uuid.UUID `json:"provider_id"`
 	RegionID      *uuid.UUID `json:"region_id"`
 	ActiveFrom    string     `json:"active_from"`
 	ActiveUntil   string     `json:"active_until"`
@@ -415,7 +416,7 @@ const admCustomRateSelect = `
 SELECT r.id, r.product_id, p.code::text, r.dimension_code::text, r.currency::text,
        r.billing_period::text, r.unit_price::text, r.included_quantity::text,
        r.min_quantity::text, r.max_quantity::text, r.step_quantity::text,
-       r.region_id, COALESCE(r.active_from::text,''), COALESCE(r.active_until::text,'')
+       r.provider_id, r.region_id, COALESCE(r.active_from::text,''), COALESCE(r.active_until::text,'')
 FROM custom_resource_rates r JOIN products p ON p.id=r.product_id`
 
 func scanAdmCustomRate(row admRowScanner) (*admCustomRateRow, error) {
@@ -424,7 +425,7 @@ func scanAdmCustomRate(row admRowScanner) (*admCustomRateRow, error) {
 	var maxQ *string
 	if err := row.Scan(&r.ID, &r.ProductID, &r.ProductCode, &r.DimensionCode, &r.Currency,
 		&r.BillingPeriod, &unitPrice, &included, &minQ, &maxQ, &stepQ,
-		&r.RegionID, &r.ActiveFrom, &r.ActiveUntil); err != nil {
+		&r.ProviderID, &r.RegionID, &r.ActiveFrom, &r.ActiveUntil); err != nil {
 		return nil, err
 	}
 	r.UnitPrice = admParseFloat(unitPrice)
@@ -477,6 +478,7 @@ type admUpsertCustomRateInput struct {
 	MinQuantity   *float64 `json:"min_quantity"`
 	MaxQuantity   *float64 `json:"max_quantity"`
 	StepQuantity  *float64 `json:"step_quantity"`
+	ProviderID    string   `json:"provider_id"`
 	RegionID      string   `json:"region_id"`
 }
 
@@ -537,6 +539,10 @@ func (s *Server) adminUpsertCustomRate(c fiber.Ctx) error {
 	if maxQ != nil && *maxQ < minQ {
 		return mw.WriteError(c, vErrField("max_quantity", "must be >= min_quantity"))
 	}
+	providerID, err := admOptionalUUID(in.ProviderID, "provider_id")
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
 	regionID, err := admOptionalUUID(in.RegionID, "region_id")
 	if err != nil {
 		return mw.WriteError(c, err)
@@ -549,6 +555,14 @@ func (s *Server) adminUpsertCustomRate(c fiber.Ctx) error {
 	}
 	if !exists {
 		return mw.WriteError(c, apperrors.New(apperrors.CodeNotFound, "product not found"))
+	}
+	if providerID != nil {
+		if err := s.db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM providers WHERE id=$1)`, *providerID).Scan(&exists); err != nil {
+			return mw.WriteError(c, err)
+		}
+		if !exists {
+			return mw.WriteError(c, apperrors.New(apperrors.CodeNotFound, "provider not found"))
+		}
 	}
 	if err := s.db.QueryRow(ctx,
 		`SELECT EXISTS(SELECT 1 FROM resource_dimensions WHERE code=$1)`, dimension).Scan(&exists); err != nil {
@@ -563,23 +577,23 @@ func (s *Server) adminUpsertCustomRate(c fiber.Ctx) error {
 	err = s.db.QueryRow(ctx, `
 INSERT INTO custom_resource_rates(product_id, dimension_code, currency, billing_period,
                                   unit_price, included_quantity, min_quantity, max_quantity,
-                                  step_quantity, region_id)
-VALUES ($1,$2,$3,$4::billing_period,$5,$6,$7,$8,$9,$10)
+                                  step_quantity, provider_id, region_id)
+VALUES ($1,$2,$3,$4::billing_period,$5,$6,$7,$8,$9,$10,$11)
 RETURNING id, active_from::text`,
-		productID, dimension, currency, period, unitPrice, included, minQ, maxQ, stepQ, regionID).
+		productID, dimension, currency, period, unitPrice, included, minQ, maxQ, stepQ, providerID, regionID).
 		Scan(&id, &activeFrom)
 	if err != nil {
 		return mw.WriteError(c, err)
 	}
 	s.admAuditMeta(c, "admin.custom_rate.upsert", "product", productID, map[string]any{
 		"rate_id": id, "dimension_code": dimension, "currency": currency,
-		"billing_period": period, "unit_price": unitPrice,
+		"billing_period": period, "unit_price": unitPrice, "provider_id": providerID,
 	})
 	return mw.JSON(c, 201, fiber.Map{
 		"id": id, "product_id": productID, "dimension_code": dimension,
 		"currency": currency, "billing_period": period, "unit_price": unitPrice,
 		"included_quantity": included, "min_quantity": minQ, "max_quantity": maxQ,
-		"step_quantity": stepQ, "region_id": regionID, "active_from": activeFrom,
+		"step_quantity": stepQ, "provider_id": providerID, "region_id": regionID, "active_from": activeFrom,
 	}, nil)
 }
 

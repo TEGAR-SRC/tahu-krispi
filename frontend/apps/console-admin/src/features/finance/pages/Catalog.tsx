@@ -85,6 +85,7 @@ interface CustomRate {
   min_quantity: number | null
   max_quantity: number | null
   step_quantity: number
+  provider_id: string | null
   region_id: string | null
   active_from: string
   active_until: string
@@ -980,6 +981,7 @@ function RateCreateDialog({
   const [minQuantity, setMinQuantity] = useState("")
   const [maxQuantity, setMaxQuantity] = useState("")
   const [stepQuantity, setStepQuantity] = useState("1")
+  const [providerId, setProviderId] = useState("")
   const [regionId, setRegionId] = useState("none")
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -1011,6 +1013,7 @@ function RateCreateDialog({
         min_quantity: toNumberOrUndefined(minQuantity),
         max_quantity: toNumberOrUndefined(maxQuantity),
         step_quantity: Number(stepQuantity) || 1,
+        ...(providerId.trim() ? { provider_id: providerId.trim() } : {}),
         ...(regionId !== "none" ? { region_id: regionId } : {}),
       })
       toast.success(`Rate for ${dimensionCode.trim()} created`)
@@ -1091,6 +1094,11 @@ function RateCreateDialog({
           {numField("rate-min", "Min quantity (optional)", minQuantity, setMinQuantity)}
           {numField("rate-max", "Max quantity (optional)", maxQuantity, setMaxQuantity)}
           {numField("rate-step", "Step quantity", stepQuantity, setStepQuantity)}
+          <div className="col-span-2 space-y-1.5">
+            <Label htmlFor="rate-provider">Provider ID (optional)</Label>
+            <Input id="rate-provider" value={providerId} onChange={(event) => setProviderId(event.target.value)} placeholder="UUID or blank for any provider" className="font-mono text-xs" />
+            <p className="text-xs text-muted-foreground">When blank the rate applies to all providers (per-provider wiring via optional provider_id).</p>
+          </div>
           <div className="col-span-2 space-y-1.5">
             <Label>Region (optional)</Label>
             <Select value={regionId} onValueChange={setRegionId}>
