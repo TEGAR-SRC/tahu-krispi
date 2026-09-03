@@ -222,8 +222,8 @@ func (s *Server) newHandoffCode(c fiber.Ctx, sessionID uuid.UUID) (string, error
 	}
 	code := hex.EncodeToString(b) // 64 hex chars
 	key := "kc:handoff:" + code
-	// 60s TTL, single-use
-	if err := s.rdb.Set(c.Context(), key, sessionID.String(), 60*time.Second).Err(); err != nil {
+	// 5m TTL, single-use (was 60s — too tight for slow 3G / backgrounded tabs)
+	if err := s.rdb.Set(c.Context(), key, sessionID.String(), 5*time.Minute).Err(); err != nil {
 		return "", err
 	}
 	return code, nil
