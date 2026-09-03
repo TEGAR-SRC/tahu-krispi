@@ -1,6 +1,7 @@
 import { useParams } from "react-router-dom"
 import { ProviderShell } from "@/features/admin/pages/providers/shared"
 import { useInfraGet } from "@/features/admin/pages/providers/infra"
+import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
 import { ErrorBanner } from "@/components/shared/ErrorBanner"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -108,6 +109,29 @@ export default function OnidelHealthDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      <SimpleDataTable<{ field: string; value: string }>
+        columns={[
+          { key: "field", header: "Field" },
+          { key: "value", header: "Value", className: "font-mono text-xs break-all" },
+        ]}
+        rows={
+          data
+            ? [
+                { field: "health_status", value: healthStatus },
+                { field: "last_check", value: formatDateTime(lastCheck) },
+                { field: "live", value: live },
+                { field: "latency_ms", value: typeof data.latency_ms === "number" ? String(data.latency_ms) : "—" },
+                { field: "error", value: data.error || "—" },
+                { field: "api_base_url", value: data.api_base_url || "—" },
+              ]
+            : []
+        }
+        loading={detail.loading && !data}
+        error={detail.error ?? undefined}
+        emptyMessage="No health detail — check provider id."
+        getRowKey={(r) => r.field}
+      />
     </ProviderShell>
   )
 }

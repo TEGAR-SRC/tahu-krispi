@@ -123,10 +123,31 @@ const SECTIONS: SectionLink[] = [
     kinds: ["proxmox"],
   },
   {
+    to: "hosts",
+    title: "ESXi hosts",
+    description: "ESXi hosts with thread count, memory and power state — GET /admin/vmware/:id/hosts (polls every 5s).",
+    icon: CpuIcon,
+    kinds: ["vmware"],
+  },
+  {
+    to: "datastores",
+    title: "Datastores",
+    description: "Datastores with capacity/free and usage bar — GET /admin/vmware/:id/datastores (polls every 5s).",
+    icon: HardDriveIcon,
+    kinds: ["vmware"],
+  },
+  {
     to: "inventory",
     title: "vSphere inventory",
     description: "Hosts, datastores, clusters and resource pools (vmware only).",
     icon: DatabaseIcon,
+    kinds: ["vmware"],
+  },
+  {
+    to: "snapshots/revert",
+    title: "Snapshot revert",
+    description: "Revert a VM to its vSphere snapshot — POST /admin/vmware/:id/snapshots/:snap/revert (GET /snapshots polls every 5s).",
+    icon: DatabaseBackupIcon,
     kinds: ["vmware"],
   },
   {

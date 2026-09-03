@@ -134,6 +134,7 @@ const VmwareMigratePage = lazy(() => import("@/features/vmware/VmwareMigratePage
 const VmwareDatastoresPage = lazy(() => import("@/features/vmware/VmwareDatastoresPage"))
 const VmwareDatastoreDetailPage = lazy(() => import("@/features/vmware/VmwareDatastoreDetailPage"))
 const VmwareDatastoreBrowsePage = lazy(() => import("@/features/vmware/VmwareDatastoreBrowsePage"))
+const VmwareHostsPage = lazy(() => import("@/features/vmware/VmwareHostsPage"))
 const VmwareHostDetailPage = lazy(() => import("@/features/vmware/VmwareHostDetailPage"))
 const VmwarePerfPage = lazy(() => import("@/features/vmware/VmwarePerfPage"))
 const VmwarePerfDetailPage = lazy(() => import("@/features/vmware/VmwarePerfDetailPage"))
@@ -709,9 +710,11 @@ export default function AppRoutes() {
           <Route path="vmware/:providerId/datastores" element={<VmwareDatastoresPage />} />
           <Route path="vmware/:providerId/datastores/:ds/browse" element={<VmwareDatastoreBrowsePage />} />
           <Route path="vmware/:providerId/datastores/:ds" element={<VmwareDatastoreDetailPage />} />
+          <Route path="vmware/:providerId/hosts" element={<VmwareHostsPage />} />
           <Route path="vmware/:providerId/hosts/:host" element={<VmwareHostDetailPage />} />
           <Route path="vmware/:providerId/perf" element={<VmwarePerfPage />} />
           <Route path="vmware/:providerId/perf/:vmid" element={<VmwarePerfDetailPage />} />
+          <Route path="vmware/:providerId/snapshots/revert" element={<VmwareSnapshotRevertPage />} />
           <Route path="vmware/:providerId/snapshots/:snap/revert" element={<VmwareSnapshotRevertPage />} />
           <Route path="vmware/:providerId/migrate" element={<VmwareMigratePage />} />
           <Route path="vmware/:providerId/create" element={<CreateVmwarePage />} />

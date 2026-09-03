@@ -62,7 +62,7 @@ export default function ProxmoxSerialProxyPage() {
             <pre className="max-h-64 overflow-auto rounded-md bg-muted p-3 font-mono text-xs leading-relaxed">{JSON.stringify(state.data, null, 2)}</pre>
           ) : null}
           <p className="text-xs text-muted-foreground">
-            vncwebsocket: <span className="font-mono">/nodes/{node}/vncwebsocket?port=…&amp;vncticket=…</span> — upgrade with the ticket above (xterm.js). Endpoint mirrors VM{LXC,QEMU} termproxy.
+            vncwebsocket: <span className="font-mono">/nodes/{node}/vncwebsocket?port=…&amp;vncticket=…</span> — upgrade with the ticket above (xterm.js). Endpoint mirrors VM{"{LXC,QEMU}"} termproxy.
           </p>
         </CardContent>
       </Card>

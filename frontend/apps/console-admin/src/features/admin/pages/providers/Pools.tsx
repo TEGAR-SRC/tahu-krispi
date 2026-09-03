@@ -25,9 +25,9 @@ import type { PoolRow, PveClusterResource } from "./types"
 export default function ProviderPoolsPage() {
   const params = useParams()
   const providerId = params.providerId ?? ""
-  const base = `/admin/providers/${providerId}`
+  const base = `/admin/proxmox/${providerId}`
 
-  const pools = useInfraGet<PoolRow[]>(providerId ? `${base}/pools` : null)
+  const pools = useInfraGet<PoolRow[]>(providerId ? `${base}/pools` : null, undefined, { intervalMs: 5000 })
 
   const [createOpen, setCreateOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<PoolRow | null>(null)

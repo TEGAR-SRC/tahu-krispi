@@ -652,6 +652,7 @@ func (s *Server) registerRoutes() {
 	vmwareAdmin.Delete("/snapshots", s.requireStaff(""), s.adminVmwareSnapshotDelete)
 	vmwareAdmin.Get("/datastores/:ds", s.requireStaff("infra"), s.adminVMwareDatastoreDetail)
 	vmwareAdmin.Get("/datastores/:ds/browse", s.requireStaff("infra"), s.adminVMwareDatastoreBrowse)
+	vmwareAdmin.Get("/hosts", s.requireStaff("infra"), s.adminVMwareHosts)
 	vmwareAdmin.Get("/hosts/:host", s.requireStaff("infra"), s.adminVMwareHostDetail)
 	vmwareAdmin.Get("/migrate", s.requireStaff("infra"), s.adminVMwareMigrateStatus)
 	vmwareAdmin.Post("/migrate", s.requireStaff(""), s.adminVMwareMigrate)

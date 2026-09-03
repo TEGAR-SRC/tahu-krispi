@@ -397,6 +397,29 @@ func (s *Server) adminVMwareMigrateStatus(c fiber.Ctx) error {
 	}, nil)
 }
 
+// GET /v1/admin/vmware/:id/hosts — list ESXi hosts from vCenter
+// inventory. Guard kind==vmware via vmwareAdapterFor; RBAC infra (NOC
+// readable, finance 403). Polling via useInfraGet every 5s.
+func (s *Server) adminVMwareHosts(c fiber.Ctx) error {
+	providerID, code, ad, err := s.vmwareAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	report, err := ad.Inventory(c.Context())
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	hosts := report.Hosts
+	if hosts == nil {
+		hosts = []vmware.HostInventory{}
+	}
+	return mw.JSON(c, 200, fiber.Map{
+		"provider_id": providerID,
+		"code":        code,
+		"hosts":       hosts,
+	}, nil)
+}
+
 // GET /v1/admin/vmware/:id/hosts/:host — single ESXi host detail from
 // vCenter inventory. Guard kind==vmware via vmwareAdapterFor; RBAC infra
 // (NOC readable, finance 403). Polling via useInfraGet every 5s. :host is the

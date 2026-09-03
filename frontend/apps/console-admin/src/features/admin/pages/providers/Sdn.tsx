@@ -18,7 +18,7 @@ import type { SdnVnet, SdnZone } from "./types"
 export default function ProviderSdnPage() {
   const params = useParams()
   const providerId = params.providerId ?? ""
-  const base = providerId ? `/admin/providers/${providerId}` : null
+  const base = providerId ? `/admin/proxmox/${providerId}` : null
 
   const zones = useInfraGet<SdnZone[]>(base ? `${base}/sdn/zones` : null, undefined, { intervalMs: 5000 })
   const vnets = useInfraGet<SdnVnet[]>(base ? `${base}/sdn/vnets` : null, undefined, { intervalMs: 5000 })

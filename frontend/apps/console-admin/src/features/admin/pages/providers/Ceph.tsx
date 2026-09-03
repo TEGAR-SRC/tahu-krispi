@@ -27,7 +27,9 @@ export default function ProviderCephPage() {
   const params = useParams()
   const providerId = params.providerId ?? ""
   const status = useInfraGet<CephStatusPayload>(
-    providerId ? `/admin/providers/${providerId}/ceph-status` : null,
+    providerId ? `/admin/proxmox/${providerId}/ceph-status` : null,
+    undefined,
+    { intervalMs: 5000 },
   )
 
   if (status.loading) {
