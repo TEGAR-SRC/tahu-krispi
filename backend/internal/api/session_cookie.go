@@ -108,8 +108,12 @@ func clearSessionCookie(c fiber.Ctx) {
 			SameSite: "Lax",
 		})
 	}
-	// also clear CSRF (match Secure of current scheme so HTTPS cookie is actually deleted)
-	c.Cookie(&fiber.Cookie{Name: CookieCSRF, Value: "", Path: "/", MaxAge: -1, Secure: wantsSecure(c), SameSite: "Lax"})
+	// also clear CSRF (match Secure + Domain so HTTPS cookie is actually deleted)
+	domain := ""
+	if strings.HasSuffix(c.Hostname(), "kilat-cloud.com") {
+		domain = ".kilat-cloud.com"
+	}
+	c.Cookie(&fiber.Cookie{Name: CookieCSRF, Value: "", Path: "/", Domain: domain, MaxAge: -1, Secure: wantsSecure(c), SameSite: "Lax"})
 }
 
 // sessionIDFromCookie returns the session ID from the cookie, if present.
@@ -128,6 +132,10 @@ func sessionIDFromCookie(c fiber.Ctx) (uuid.UUID, bool) {
 }
 
 // setCSRFCookie sets a non-HttpOnly CSRF cookie so JS can read it.
+// It is set with Domain=.kilat-cloud.com so that the cookie issued by
+// api-{admin,auth,user}.kilat-cloud.com is readable via document.cookie
+// on admin/auth/console hosts (different subdomains). Without Domain the
+// cookie is host-only and JS on the console cannot send X-CSRF-Token.
 func setCSRFCookie(c fiber.Ctx, secure bool) {
 	// Reuse existing token if present to avoid churn.
 	if existing := c.Cookies(CookieCSRF); existing != "" && len(existing) >= 32 {
@@ -138,10 +146,21 @@ func setCSRFCookie(c fiber.Ctx, secure bool) {
 		return
 	}
 	token := hex.EncodeToString(b)
+	domain := ""
+	if s := c.Get("X-Forwarded-Host"); s != "" {
+		// prefer forwarded host to detect public suffix, but use AppDomain as source
+		_ = s
+	}
+	// Use AppDomain from config via request host suffix; fallback to .kilat-cloud.com
+	// This is safe because CORS already restricts Origin to known consoles.
+	if h := c.Hostname(); strings.HasSuffix(h, "kilat-cloud.com") {
+		domain = ".kilat-cloud.com"
+	}
 	c.Cookie(&fiber.Cookie{
 		Name:     CookieCSRF,
 		Value:    token,
 		Path:     "/",
+		Domain:   domain,
 		MaxAge:   int((30 * 24 * time.Hour).Seconds()),
 		HTTPOnly: false,
 		Secure:   secure,
