@@ -149,7 +149,6 @@ func staffAreaFor(method, path string) string {
 	case strings.HasPrefix(path, "/instances"), strings.HasPrefix(path, "/jobs"),
 		strings.HasPrefix(path, "/orphans"), strings.HasPrefix(path, "/security-incidents"),
 		strings.HasPrefix(path, "/blocked-networks"),
-		strings.HasPrefix(path, "/organizations/") && strings.HasSuffix(path, "/provider-account"),
 		strings.HasPrefix(path, "/storage-backends"):
 		return "infra"
 	case strings.HasPrefix(path, "/tickets"):

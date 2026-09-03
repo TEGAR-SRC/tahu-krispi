@@ -30,7 +30,7 @@ export default function VmwareInventoryPage() {
   const params = useParams()
   const providerId = params.providerId ?? ""
   const inventory = useInfraGet<InventoryPayload>(
-    providerId ? `/admin/providers/${providerId}/inventory` : null,
+    providerId ? `/admin/vmware/${providerId}/inventory` : null,
   )
 
   // 501 = the provider is not vmware; explain instead of showing a raw error.

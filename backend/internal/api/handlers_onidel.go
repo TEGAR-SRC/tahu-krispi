@@ -8,12 +8,14 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 
+	"kilat.cloud/backend/internal/platform/crypto"
 	"kilat.cloud/backend/internal/provider"
 	"kilat.cloud/backend/internal/provider/onidel"
 	apperrors "kilat.cloud/backend/pkg/errors"
@@ -21,8 +23,10 @@ import (
 )
 
 // onidelAdapterFor resolves a providers row to its live *onidel.Adapter.
-// It rejects unknown rows and non-onidel kinds with provider-prefixed errors
-// and never touches the proxmox/vmware helper surface.
+// It validates kind==onidel, decrypts the row's api_key when present, and
+// falls back to ONIDEL_BASE_URL / ONIDEL_API_KEY env when the row does not
+// carry credentials. When neither source provides an api_key it returns a
+// clear CodeProviderUnavailable so callers can surface "not configured".
 func (s *Server) onidelAdapterFor(c fiber.Ctx) (uuid.UUID, string, *onidel.Adapter, error) {
 	raw := strings.TrimSpace(c.Params("id"))
 	if raw == "" {
@@ -32,9 +36,10 @@ func (s *Server) onidelAdapterFor(c fiber.Ctx) (uuid.UUID, string, *onidel.Adapt
 	if err != nil {
 		return uuid.Nil, "", nil, vErrField("id", "must be a valid uuid")
 	}
-	var code, kind string
+	var code, kind, apiBaseURL string
+	var ct []byte
 	err = s.db.QueryRow(c.Context(),
-		`SELECT code::text, kind FROM providers WHERE id=$1`, providerID).Scan(&code, &kind)
+		`SELECT code::text, kind, COALESCE(api_base_url,''), credentials_ciphertext FROM providers WHERE id=$1`, providerID).Scan(&code, &kind, &apiBaseURL, &ct)
 	if err != nil {
 		return uuid.Nil, "", nil, apperrors.New(apperrors.CodeNotFound, "provider not found")
 	}
@@ -42,15 +47,43 @@ func (s *Server) onidelAdapterFor(c fiber.Ctx) (uuid.UUID, string, *onidel.Adapt
 		return uuid.Nil, "", nil, apperrors.Newf(apperrors.CodeUnsupported,
 			"onidel catalog is only available for onidel providers (kind=%q)", kind)
 	}
-	pv, err := provider.Lookup(code)
-	if err != nil {
-		return uuid.Nil, "", nil, err
+	apiKey := ""
+	if len(ct) > 0 {
+		plain, derr := crypto.Decrypt(s.encKey, ct)
+		if derr != nil {
+			return uuid.Nil, "", nil, apperrors.Newf(apperrors.CodeProviderUnavailable,
+				"decrypt onidel credentials for %q: %v", code, derr)
+		}
+		rawKey := strings.TrimSpace(string(plain))
+		if rawKey != "" && strings.HasPrefix(rawKey, "{") {
+			var m map[string]string
+			if jerr := json.Unmarshal([]byte(rawKey), &m); jerr == nil {
+				if v, ok := m["api_key"]; ok && strings.TrimSpace(v) != "" {
+					rawKey = strings.TrimSpace(v)
+				} else if v, ok := m["apiKey"]; ok && strings.TrimSpace(v) != "" {
+					rawKey = strings.TrimSpace(v)
+				} else if v, ok := m["token"]; ok && strings.TrimSpace(v) != "" {
+					rawKey = strings.TrimSpace(v)
+				}
+			}
+		}
+		apiKey = rawKey
 	}
-	ad, ok := pv.(*onidel.Adapter)
-	if !ok {
-		return uuid.Nil, "", nil, apperrors.Newf(apperrors.CodeUnsupported,
-			"registered provider %q does not expose onidel catalog", code)
+	baseURL := strings.TrimSpace(apiBaseURL)
+	if baseURL == "" {
+		baseURL = strings.TrimSpace(s.cfg.OnidelBaseURL)
 	}
+	if baseURL == "" {
+		baseURL = "https://api.cloud.onidel.com"
+	}
+	if strings.TrimSpace(apiKey) == "" {
+		apiKey = strings.TrimSpace(s.cfg.OnidelAPIKey)
+	}
+	if strings.TrimSpace(apiKey) == "" {
+		return uuid.Nil, "", nil, apperrors.Newf(apperrors.CodeProviderUnavailable,
+			"onidel provider %q is not configured: missing api_key (set via admin providers or ONIDEL_API_KEY env)", code)
+	}
+	ad := onidel.NewAdapter(baseURL, strings.TrimSpace(apiKey))
 	return providerID, code, ad, nil
 }
 

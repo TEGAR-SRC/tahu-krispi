@@ -108,33 +108,129 @@ func (s *Server) adminProviderNodeTasks(c fiber.Ctx) error {
 // GET /v1/admin/providers/:provider_id/containers lists the cluster's LXC
 // inventory (ContainersListAll) as a NOC view; optional ?node= narrows it to
 // one node using the cluster resource map (VMState carries no node field).
+// Single-node fallback: when cluster resources are empty or unavailable
+// (standalone pve host), enumerates via nodes/pve/lxc and per-node
+// /nodes/{node}/lxc so containers remain visible.
 func (s *Server) adminProviderContainers(c fiber.Ctx) error {
 	providerID, code, ad, err := s.proxmoxAdapterFor(c)
 	if err != nil {
 		return mw.WriteError(c, err)
 	}
-	containers, err := ad.ContainersListAll(c.Context())
-	if err != nil {
-		return mw.WriteError(c, err)
+	ctx := c.Context()
+	filterNode := strings.TrimSpace(c.Query("node"))
+
+	containers, err := ad.ContainersListAll(ctx)
+	fallbackUsed := false
+
+	loadFallback := func() ([]provider.VMState, error) {
+		var out []provider.VMState
+		toVMState := func(vmid uint64, name, status string, cpus int, maxMem, maxDisk uint64) provider.VMState {
+			mapped := status
+			switch status {
+			case "running":
+				mapped = "active"
+			case "stopped":
+				mapped = "stopped"
+			default:
+				mapped = "unknown"
+			}
+			return provider.VMState{
+				ExternalID:  "ct" + strconv.FormatUint(vmid, 10),
+				Name:        name,
+				Status:      mapped,
+				PowerStatus: status,
+				VCPU:        int64(cpus),
+				RAM:         int64(maxMem >> 20),
+				Disk:        int64(maxDisk >> 30),
+			}
+		}
+		if filterNode != "" {
+			if cts, ferr := ad.Client().ContainersList(ctx, filterNode); ferr == nil {
+				for _, ct := range cts {
+					out = append(out, toVMState(uint64(ct.VMID), ct.Name, ct.Status, ct.CPUs, ct.MaxMem, ct.MaxDisk))
+				}
+				return out, nil
+			}
+		}
+		if filterNode == "" || filterNode == "pve" {
+			if cts, ferr := ad.Client().ContainersList(ctx, "pve"); ferr == nil && len(cts) > 0 {
+				for _, ct := range cts {
+					out = append(out, toVMState(uint64(ct.VMID), ct.Name, ct.Status, ct.CPUs, ct.MaxMem, ct.MaxDisk))
+				}
+				if filterNode == "pve" {
+					return out, nil
+				}
+			}
+		}
+		nodes, nerr := ad.Nodes(ctx)
+		if nerr != nil {
+			return out, nerr
+		}
+		seen := map[string]bool{}
+		for _, n := range nodes {
+			nName := strings.TrimSpace(n.Node)
+			if nName == "" {
+				nName = strings.TrimSpace(n.Name)
+			}
+			if nName == "" || seen[nName] {
+				continue
+			}
+			seen[nName] = true
+			if filterNode != "" && nName != filterNode {
+				continue
+			}
+			if nName == "pve" && len(out) > 0 {
+				continue
+			}
+			cts, ferr := ad.Client().ContainersList(ctx, nName)
+			if ferr != nil {
+				continue
+			}
+			for _, ct := range cts {
+				out = append(out, toVMState(uint64(ct.VMID), ct.Name, ct.Status, ct.CPUs, ct.MaxMem, ct.MaxDisk))
+			}
+		}
+		return out, nil
 	}
-	if node := strings.TrimSpace(c.Query("node")); node != "" {
-		resources, err := ad.ClusterResources(c.Context())
-		if err != nil {
+
+	if err != nil {
+		if fb, ferr := loadFallback(); ferr == nil && len(fb) > 0 {
+			containers = fb
+			fallbackUsed = true
+			err = nil
+		} else {
 			return mw.WriteError(c, err)
 		}
-		nodeByVMID := make(map[int]string, len(resources))
-		for _, r := range resources {
-			if r.Type == "lxc" {
-				nodeByVMID[int(r.VMID)] = r.Node
+	} else if len(containers) == 0 {
+		if fb, _ := loadFallback(); len(fb) > 0 {
+			containers = fb
+			fallbackUsed = true
+		}
+	}
+
+	if filterNode != "" && !fallbackUsed {
+		resources, rerr := ad.ClusterResources(ctx)
+		if rerr == nil {
+			nodeByVMID := make(map[int]string, len(resources))
+			for _, r := range resources {
+				if r.Type == "lxc" {
+					nodeByVMID[int(r.VMID)] = r.Node
+				}
+			}
+			filtered := make([]provider.VMState, 0, len(containers))
+			for _, ct := range containers {
+				if vmid, perr := strconv.Atoi(strings.TrimPrefix(ct.ExternalID, "ct")); perr == nil && nodeByVMID[vmid] == filterNode {
+					filtered = append(filtered, ct)
+				}
+			}
+			containers = filtered
+		} else {
+			if fb, ferr := loadFallback(); ferr == nil {
+				containers = fb
+			} else {
+				return mw.WriteError(c, rerr)
 			}
 		}
-		filtered := make([]provider.VMState, 0, len(containers))
-		for _, ct := range containers {
-			if vmid, perr := strconv.Atoi(strings.TrimPrefix(ct.ExternalID, "ct")); perr == nil && nodeByVMID[vmid] == node {
-				filtered = append(filtered, ct)
-			}
-		}
-		containers = filtered
 	}
 	return mw.JSON(c, 200, fiber.Map{
 		"provider_id": providerID,

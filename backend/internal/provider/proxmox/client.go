@@ -1008,6 +1008,72 @@ func (c *Client) HAStatus(ctx context.Context) ([]*goproxmox.HAStatusEntry, erro
 	return status, wrapErr("ha status", err)
 }
 
+func (c *Client) HAGroupsList(ctx context.Context) ([]*goproxmox.HAGroup, error) {
+	cl, err := c.sdk.Cluster(ctx)
+	if err != nil {
+		return nil, wrapErr("cluster", err)
+	}
+	groups, err := cl.HAGroups(ctx)
+	return groups, wrapErr("ha groups", err)
+}
+
+func (c *Client) HAGroupCreate(ctx context.Context, opts *goproxmox.HAGroupCreateOption) error {
+	cl, err := c.sdk.Cluster(ctx)
+	if err != nil {
+		return err
+	}
+	return wrapErr("ha group create", cl.NewHAGroup(ctx, opts))
+}
+
+func (c *Client) HAGroupUpdate(ctx context.Context, group string, opts *goproxmox.HAGroupUpdateOption) error {
+	cl, err := c.sdk.Cluster(ctx)
+	if err != nil {
+		return err
+	}
+	return wrapErr("ha group update", cl.HAGroupUpdate(ctx, group, opts))
+}
+
+func (c *Client) HAGroupDelete(ctx context.Context, group string) error {
+	cl, err := c.sdk.Cluster(ctx)
+	if err != nil {
+		return err
+	}
+	return wrapErr("ha group delete", cl.HAGroupDelete(ctx, group))
+}
+
+func (c *Client) HARulesList(ctx context.Context) ([]*goproxmox.HARule, error) {
+	cl, err := c.sdk.Cluster(ctx)
+	if err != nil {
+		return nil, wrapErr("cluster", err)
+	}
+	rules, err := cl.HARules(ctx, "", "")
+	return rules, wrapErr("ha rules", err)
+}
+
+func (c *Client) HARuleCreate(ctx context.Context, opts *goproxmox.HARuleCreateOption) error {
+	cl, err := c.sdk.Cluster(ctx)
+	if err != nil {
+		return err
+	}
+	return wrapErr("ha rule create", cl.NewHARule(ctx, opts))
+}
+
+func (c *Client) HARuleUpdate(ctx context.Context, rule string, opts *goproxmox.HARuleUpdateOption) error {
+	cl, err := c.sdk.Cluster(ctx)
+	if err != nil {
+		return err
+	}
+	return wrapErr("ha rule update", cl.HARuleUpdate(ctx, rule, opts))
+}
+
+func (c *Client) HARuleDelete(ctx context.Context, rule string) error {
+	cl, err := c.sdk.Cluster(ctx)
+	if err != nil {
+		return err
+	}
+	return wrapErr("ha rule delete", cl.HARuleDelete(ctx, rule))
+}
+
 // ---- Scheduled backup jobs (vzdump) ----
 
 func (c *Client) BackupJobsList(ctx context.Context) (goproxmox.ClusterBackups, error) {

@@ -52,6 +52,16 @@ func (s *Server) adminListInstances(c fiber.Ctx) error {
 		return mw.WriteError(c, err)
 	}
 	where += orgFilter
+	provider := lower(strings.TrimSpace(c.Query("provider")))
+	if provider != "" {
+		if pid, perr := uuid.Parse(provider); perr == nil {
+			args = append(args, pid)
+			where += " AND i.provider_id=" + admPlaceholder(len(args))
+		} else {
+			args = append(args, provider, provider)
+			where += " AND EXISTS (SELECT 1 FROM providers p WHERE p.id=i.provider_id AND (lower(p.kind)=" + admPlaceholder(len(args)-1) + " OR lower(p.code::text)=" + admPlaceholder(len(args)) + "))"
+		}
+	}
 
 	var total int
 	if err := s.db.QueryRow(ctx,

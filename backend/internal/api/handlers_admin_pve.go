@@ -396,6 +396,143 @@ func (s *Server) adminDeleteHAResource(c fiber.Ctx) error {
 	return mw.JSON(c, 200, fiber.Map{"status": "deleted"}, nil)
 }
 
+// ---- HA groups & rules ----
+
+func (s *Server) adminListHAGroups(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	groups, err := ad.Client().HAGroupsList(c.Context())
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, groups, nil)
+}
+
+func (s *Server) adminCreateHAGroup(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	var opts goproxmox.HAGroupCreateOption
+	if err := c.Bind().Body(&opts); err != nil {
+		return mw.WriteError(c, errValidation("invalid ha group payload"))
+	}
+	if strings.TrimSpace(opts.Group) == "" {
+		return mw.WriteError(c, vErrField("group", "group is required"))
+	}
+	if strings.TrimSpace(opts.Nodes) == "" {
+		return mw.WriteError(c, vErrField("nodes", "nodes is required"))
+	}
+	if err := ad.Client().HAGroupCreate(c.Context(), &opts); err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 201, fiber.Map{"status": "created"}, nil)
+}
+
+func (s *Server) adminUpdateHAGroup(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	var opts goproxmox.HAGroupUpdateOption
+	if err := c.Bind().Body(&opts); err != nil {
+		return mw.WriteError(c, errValidation("invalid ha group payload"))
+	}
+	if strings.TrimSpace(c.Params("group")) == "" {
+		return mw.WriteError(c, vErrField("group", "group is required"))
+	}
+	if err := ad.Client().HAGroupUpdate(c.Context(), c.Params("group"), &opts); err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, fiber.Map{"status": "updated"}, nil)
+}
+
+func (s *Server) adminDeleteHAGroup(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	group := strings.TrimSpace(c.Params("group"))
+	if group == "" {
+		return mw.WriteError(c, vErrField("group", "group is required"))
+	}
+	if err := ad.Client().HAGroupDelete(c.Context(), group); err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, fiber.Map{"status": "deleted"}, nil)
+}
+
+func (s *Server) adminListHARules(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	rules, err := ad.Client().HARulesList(c.Context())
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, rules, nil)
+}
+
+func (s *Server) adminCreateHARule(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	var opts goproxmox.HARuleCreateOption
+	if err := c.Bind().Body(&opts); err != nil {
+		return mw.WriteError(c, errValidation("invalid ha rule payload"))
+	}
+	if strings.TrimSpace(opts.Rule) == "" {
+		return mw.WriteError(c, vErrField("rule", "rule is required"))
+	}
+	if strings.TrimSpace(opts.Type) == "" {
+		return mw.WriteError(c, vErrField("type", "type is required"))
+	}
+	if strings.TrimSpace(opts.Resources) == "" {
+		return mw.WriteError(c, vErrField("resources", "resources is required"))
+	}
+	if err := ad.Client().HARuleCreate(c.Context(), &opts); err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 201, fiber.Map{"status": "created"}, nil)
+}
+
+func (s *Server) adminUpdateHARule(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	var opts goproxmox.HARuleUpdateOption
+	if err := c.Bind().Body(&opts); err != nil {
+		return mw.WriteError(c, errValidation("invalid ha rule payload"))
+	}
+	if strings.TrimSpace(c.Params("rule")) == "" {
+		return mw.WriteError(c, vErrField("rule", "rule is required"))
+	}
+	if err := ad.Client().HARuleUpdate(c.Context(), c.Params("rule"), &opts); err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, fiber.Map{"status": "updated"}, nil)
+}
+
+func (s *Server) adminDeleteHARule(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	rule := strings.TrimSpace(c.Params("rule"))
+	if rule == "" {
+		return mw.WriteError(c, vErrField("rule", "rule is required"))
+	}
+	if err := ad.Client().HARuleDelete(c.Context(), rule); err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, fiber.Map{"status": "deleted"}, nil)
+}
+
 // ---- Cluster log & tasks ----
 
 func (s *Server) adminClusterLog(c fiber.Ctx) error {

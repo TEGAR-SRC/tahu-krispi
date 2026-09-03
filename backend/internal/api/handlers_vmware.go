@@ -37,7 +37,7 @@ func (s *Server) vmwareAdapterFor(c fiber.Ctx) (uuid.UUID, string, *vmware.Adapt
 	}
 	if kind != vmware.ProviderCode {
 		return uuid.Nil, "", nil, apperrors.Newf(apperrors.CodeUnsupported,
-			"vmware observability is only available for vmware providers (kind=%q)", kind)
+			"vmware observability is only available for vmware providers (kind=%q) expect vmware", kind)
 	}
 	pv, err := provider.Lookup(code)
 	if err != nil {

@@ -4,6 +4,8 @@
 import { Link, useParams } from "react-router-dom"
 import {
   BoxesIcon,
+  ClipboardListIcon,
+  CoinsIcon,
   ContainerIcon,
   CpuIcon,
   DatabaseBackupIcon,
@@ -125,6 +127,20 @@ const SECTIONS: SectionLink[] = [
     title: "Onidel catalog",
     description: "Regions, instance types & OS templates synced from api.cloud.onidel.com.",
     icon: LayersIcon,
+    kinds: ["onidel"],
+  },
+  {
+    to: "wallets",
+    title: "Onidel wallets",
+    description: "Wallets per org for Onidel regions — balance, reserved, adjust and transactions.",
+    icon: CoinsIcon,
+    kinds: ["onidel"],
+  },
+  {
+    to: "jobs",
+    title: "Onidel jobs",
+    description: "Jobs filtered to queue provider_sync — sync, provisioning and reconciliation.",
+    icon: ClipboardListIcon,
     kinds: ["onidel"],
   },
 ]

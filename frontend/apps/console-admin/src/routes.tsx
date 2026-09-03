@@ -103,6 +103,12 @@ const CreateOnidelVmPage = lazy(() =>
 const CreateVmwarePage = lazy(() =>
   import("@/features/admin/pages/providers/CreateVmwarePage"),
 )
+const OnidelJobs = lazy(() =>
+  import("@/features/onidel/OnidelJobsPage"),
+)
+const OnidelWallet = lazy(() =>
+  import("@/features/onidel/OnidelWalletPage"),
+)
 const RegionsPools = lazy(() => import("@/features/admin/pages/RegionsPools"))
 const StorageBackends = lazy(() =>
   import("@/features/admin/pages/StorageBackends"),
@@ -606,6 +612,8 @@ export default function AppRoutes() {
           <Route path="proxmox/:providerId/perf" element={<GuestPerf />} />
 
           <Route path="onidel/:providerId/onidel" element={<OnidelCatalog />} />
+          <Route path="onidel/:providerId/jobs" element={<OnidelJobs />} />
+          <Route path="onidel/:providerId/wallets" element={<OnidelWallet />} />
           <Route path="onidel/:providerId/create" element={<CreateOnidelVmPage />} />
 
           <Route path="vmware/:providerId/inventory" element={<VmwareInventory />} />
