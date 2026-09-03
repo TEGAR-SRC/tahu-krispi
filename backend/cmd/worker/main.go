@@ -106,10 +106,11 @@ func main() {
 	}
 	defer rdb.Close()
 
+	encKeyWorker := crypto.DeriveKey("kilat-secret-kek", cfg.SecretEncryptionKey)
+	onidel.RegisterFactoryFromDB(db, encKeyWorker, cfg.OnidelBaseURL, cfg.OnidelAPIKey)
+	proxmox.RegisterFactoryFromDB(db, encKeyWorker)
+	vmware.RegisterFactoryFromDB(db, encKeyWorker)
 	onidelAdapter := onidel.NewAdapter(cfg.OnidelBaseURL, cfg.OnidelAPIKey)
-	provider.Register(onidelAdapter)
-	proxmox.RegisterFactoryFromDB(db, crypto.DeriveKey("kilat-secret-kek", cfg.SecretEncryptionKey))
-	vmware.RegisterFactoryFromDB(db, crypto.DeriveKey("kilat-secret-kek", cfg.SecretEncryptionKey))
 
 	app := &workerApp{
 		cfg:        cfg,
@@ -1584,7 +1585,11 @@ func (a *workerApp) providerSync(ctx context.Context, _ queue.Job) error {
 	if err != nil {
 		return err
 	}
-	types, templates, locations, err := a.prov.SyncCatalog(ctx)
+	syncProv := a.prov
+	if p, perr := provider.Lookup("onidel"); perr == nil {
+		syncProv = p
+	}
+	types, templates, locations, err := syncProv.SyncCatalog(ctx)
 	if err != nil {
 		_, _ = a.db.Exec(ctx, `
 UPDATE providers SET health_status='error', last_health_check_at=now() WHERE id=$1`, provID)

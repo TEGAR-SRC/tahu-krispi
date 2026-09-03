@@ -86,10 +86,12 @@ func NewServer(cfg *config.Config, log *logger.Logger, db *pgxpool.Pool, rdb *go
 	if err != nil {
 		return nil, err
 	}
-	onidelAdapter := onidel.NewAdapter(cfg.OnidelBaseURL, cfg.OnidelAPIKey)
-	provider.Register(onidelAdapter)
+	onidel.RegisterFactoryFromDB(db, encKey, cfg.OnidelBaseURL, cfg.OnidelAPIKey)
 	proxmox.RegisterFactoryFromDB(db, encKey)
 	vmware.RegisterFactoryFromDB(db, encKey)
+	// Keep a direct adapter for server.computeSvc (catalog fallbacks, etc.)
+	// The factory will be preferred when a provider lookup occurs.
+	onidelAdapter := onidel.NewAdapter(cfg.OnidelBaseURL, cfg.OnidelAPIKey)
 
 	mailSender := mailpkg.NewSender(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPassword, cfg.SMTPFrom)
 	userSvc := user.NewService(db, rdb, authSvc, user.NewMFAManager(db, encKey), cfg)
