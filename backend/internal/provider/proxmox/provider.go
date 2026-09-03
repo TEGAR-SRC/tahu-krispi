@@ -1309,6 +1309,27 @@ func (a *Adapter) SerialConsole(ctx context.Context, vmExternalID string) (strin
 }
 
 func (a *Adapter) CloneVM(ctx context.Context, externalID, newName string) error {
+	trimmed := strings.TrimSpace(externalID)
+	if strings.HasPrefix(trimmed, "ct") {
+		res, err := a.locateContainer(ctx, trimmed)
+		if err != nil {
+			return err
+		}
+		newID, err := a.c.ClusterNextID(ctx)
+		if err != nil {
+			return err
+		}
+		opts := &goproxmox.ContainerCloneOptions{
+			NewID:    newID,
+			Hostname: strings.TrimSpace(newName),
+			Full:     goproxmox.IntOrBool(true),
+		}
+		task, err := a.c.ContainerClone(ctx, res.Node, int(res.VMID), opts)
+		if err != nil {
+			return err
+		}
+		return a.c.WaitForTask(ctx, task, "clone", cloneTimeout)
+	}
 	res, err := a.locateVM(ctx, externalID)
 	if err != nil {
 		return err

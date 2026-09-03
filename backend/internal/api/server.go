@@ -563,6 +563,8 @@ func (s *Server) registerRoutes() {
 	proxmoxAdmin.Get("/cpu-models", s.requireStaff("infra"), s.adminProviderCPUModels)
 	proxmoxAdmin.Post("/lxc", s.requireStaff(""), s.adminProxmoxProvisionLXC)
 	proxmoxAdmin.Post("/qemu", s.requireStaff(""), s.adminProxmoxProvisionQEMU)
+	proxmoxAdmin.Get("/clone", s.requireStaff("infra"), s.adminProxmoxCloneStatus)
+	proxmoxAdmin.Post("/clone", s.requireStaff(""), s.adminProxmoxClone)
 	// Onidel: /admin/onidel/:id/* — murni onidel (kind==onidel), catalog vs proxmox cluster.
 	onidelAdmin := admin.Group("/onidel/:id")
 	onidelAdmin.Get("/catalog", s.requireStaff("infra"), s.adminOnidelCatalog)

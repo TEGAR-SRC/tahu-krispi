@@ -109,6 +109,13 @@ const SECTIONS: SectionLink[] = [
     kinds: ["proxmox"],
   },
   {
+    to: "clone",
+    title: "Clone (VM+LXC)",
+    description: "Full-copy clone for qemu VMs and LXC containers — POST /admin/proxmox/:id/clone.",
+    icon: BoxesIcon,
+    kinds: ["proxmox"],
+  },
+  {
     to: "inventory",
     title: "vSphere inventory",
     description: "Hosts, datastores, clusters and resource pools (vmware only).",

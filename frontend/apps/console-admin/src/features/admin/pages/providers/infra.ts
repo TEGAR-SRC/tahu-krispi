@@ -17,6 +17,7 @@ export interface FetchState<T> {
 export function useInfraGet<T>(
   path: string | null,
   query?: Record<string, string | number | boolean | null | undefined>,
+  opts?: { intervalMs?: number },
 ): FetchState<T> & { reload: () => void } {
   const [state, setState] = useState<FetchState<T>>({
     data: null,
@@ -25,6 +26,7 @@ export function useInfraGet<T>(
   })
   const [tick, setTick] = useState(0)
   const queryKey = useMemo(() => JSON.stringify(query ?? null), [query])
+  const intervalMs = opts?.intervalMs
   useEffect(() => {
     if (!path) {
       const t = setTimeout(() => setState({ data: null, loading: false, error: null }), 0)
@@ -50,6 +52,11 @@ export function useInfraGet<T>(
       cancelled = true
     }
   }, [path, tick, queryKey])
+  useEffect(() => {
+    if (!path || !intervalMs || intervalMs <= 0) return
+    const id = setInterval(() => setTick((value) => value + 1), intervalMs)
+    return () => clearInterval(id)
+  }, [path, queryKey, intervalMs])
   return { ...state, reload: () => setTick((value) => value + 1) }
 }
 

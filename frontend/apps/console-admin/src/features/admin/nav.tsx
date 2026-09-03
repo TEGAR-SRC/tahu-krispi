@@ -72,6 +72,7 @@ export const adminNav: ConsoleNavSection[] = [
       { title: "SDN", url: "/admin/providers?kind=proxmox&section=sdn", icon: NetworkIcon },
       { title: "Ceph", url: "/admin/providers?kind=proxmox&section=ceph", icon: LayersIcon },
       { title: "Pools", url: "/admin/providers?kind=proxmox&section=pools", icon: BoxesIcon },
+      { title: "Clone (VM+LXC)", url: "/admin/providers?kind=proxmox&section=clone", icon: BoxesIcon },
       { title: "Performance", url: "/admin/providers?kind=proxmox&section=perf", icon: GaugeIcon },
     ],
   },

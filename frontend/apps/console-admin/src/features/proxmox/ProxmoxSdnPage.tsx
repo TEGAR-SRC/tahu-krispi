@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useState } from "react"
 import { useParams } from "react-router-dom"
 import { toast } from "sonner"
-import { apiDelete, apiGet, apiPost, apiPut, ApiError } from "@/lib/api"
+import { apiDelete, apiPost, apiPut, ApiError } from "@/lib/api"
+import { useInfraGet } from "@/features/admin/pages/providers/infra"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -33,13 +34,14 @@ export default function ProxmoxSdnPage() {
   const { providerId = "" } = useParams<{ providerId: string }>()
   const base = `/admin/proxmox/${providerId}`
 
-  const [zones, setZones] = useState<SdnZone[]>([])
-  const [vnets, setVnets] = useState<SdnVnet[]>([])
-  const [zonesLoading, setZonesLoading] = useState(true)
-  const [vnetsLoading, setVnetsLoading] = useState(true)
-  const [zonesError, setZonesError] = useState<unknown>(null)
-  const [vnetsError, setVnetsError] = useState<unknown>(null)
-  const [tick, setTick] = useState(0)
+  const zonesState = useInfraGet<SdnZone[]>(providerId ? `${base}/sdn/zones` : null, undefined, { intervalMs: 5000 })
+  const vnetsState = useInfraGet<SdnVnet[]>(providerId ? `${base}/sdn/vnets` : null, undefined, { intervalMs: 5000 })
+  const zones = (zonesState.data ?? []) as SdnZone[]
+  const vnets = (vnetsState.data ?? []) as SdnVnet[]
+  const zonesLoading = zonesState.loading
+  const vnetsLoading = vnetsState.loading
+  const zonesError = zonesState.error
+  const vnetsError = vnetsState.error
   const [busy, setBusy] = useState(false)
 
   const [createZoneOpen, setCreateZoneOpen] = useState(false)
@@ -50,49 +52,7 @@ export default function ProxmoxSdnPage() {
   const [editVnetTarget, setEditVnetTarget] = useState<SdnVnet | null>(null)
   const [deleteVnetTarget, setDeleteVnetTarget] = useState<SdnVnet | null>(null)
 
-  const reload = useCallback(() => setTick((v) => v + 1), [])
-
-  useEffect(() => {
-    if (!providerId) {
-      setZonesLoading(false)
-      setVnetsLoading(false)
-      return
-    }
-    let cancelled = false
-    setZonesLoading(true)
-    setVnetsLoading(true)
-    setZonesError(null)
-    setVnetsError(null)
-    apiGet<SdnZone[]>(`${base}/sdn/zones`)
-      .then((env) => {
-        if (cancelled) return
-        setZones(Array.isArray(env.data) ? env.data : [])
-        setZonesError(null)
-      })
-      .catch((cause) => {
-        if (cancelled) return
-        setZonesError(cause)
-      })
-      .finally(() => {
-        if (!cancelled) setZonesLoading(false)
-      })
-    apiGet<SdnVnet[]>(`${base}/sdn/vnets`)
-      .then((env) => {
-        if (cancelled) return
-        setVnets(Array.isArray(env.data) ? env.data : [])
-        setVnetsError(null)
-      })
-      .catch((cause) => {
-        if (cancelled) return
-        setVnetsError(cause)
-      })
-      .finally(() => {
-        if (!cancelled) setVnetsLoading(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [providerId, base, tick])
+  const reload = useCallback(() => { zonesState.reload(); vnetsState.reload() }, [zonesState, vnetsState])
 
   const runMutation = async (action: () => Promise<unknown>, success: string, done?: () => void) => {
     setBusy(true)

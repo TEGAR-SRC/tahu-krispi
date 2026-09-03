@@ -75,6 +75,8 @@ export default function VmwareInventoryPage() {
 
   const inventory = useInfraGet<InventoryPayload>(
     providerId && isVmware ? `/admin/vmware/${providerId}/inventory` : null,
+    undefined,
+    { intervalMs: 5000 },
   )
 
   const [selectedHost, setSelectedHost] = useState<HostRow | null>(null)

@@ -165,6 +165,7 @@ export default function VmwarePerfPage() {
   const perf = useInfraGet<PerfPayload>(
     applied && providerId ? `/admin/vmware/${providerId}/perf` : null,
     { v: applied?.ext, timeframe: applied?.tf },
+    { intervalMs: 5000 },
   )
 
   const normalized = useMemo(() => {

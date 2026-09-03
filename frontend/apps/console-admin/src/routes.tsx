@@ -88,6 +88,7 @@ const VmwareInventory = lazy(() =>
 const GuestPerf = lazy(() =>
   import("@/features/admin/pages/providers/GuestPerf"),
 )
+const ProxmoxClonePage = lazy(() => import("@/features/proxmox/ProxmoxClonePage"))
 const OnidelCatalog = lazy(() =>
   import("@/features/admin/pages/providers/OnidelCatalog"),
 )
@@ -610,6 +611,7 @@ export default function AppRoutes() {
           <Route path="proxmox/:providerId/vms/new" element={<CreateVmPage />} />
           <Route path="proxmox/:providerId/pools" element={<ProviderPools />} />
           <Route path="proxmox/:providerId/perf" element={<GuestPerf />} />
+          <Route path="proxmox/:providerId/clone" element={<ProxmoxClonePage />} />
 
           <Route path="onidel/:providerId/onidel" element={<OnidelCatalog />} />
           <Route path="onidel/:providerId/jobs" element={<OnidelJobs />} />

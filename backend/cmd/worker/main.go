@@ -1533,11 +1533,6 @@ FROM instances WHERE id=$1 AND deleted_at IS NULL`, instID).
 		}
 		return fmt.Errorf("load instance: %w", err)
 	}
-	if svcKind == "container" {
-		// The SDK supports CT clones but the platform does not open them yet.
-		return apperrors.New(apperrors.CodeValidation,
-			"cloning containers is not supported yet")
-	}
 	if vmExt == nil || *vmExt == "" {
 		return fmt.Errorf("instance %s not provisioned yet; no external_vm_id to clone", publicID)
 	}
