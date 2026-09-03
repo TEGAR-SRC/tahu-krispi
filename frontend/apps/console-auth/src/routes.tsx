@@ -35,7 +35,6 @@ function RootRedirect() {
   const { token, role, loading } = useAuth()
   if (loading) return <LoadingScreen />
   if (token && role) {
-    if (role === "customer") return <Navigate to="/login" replace />
     return <Navigate to="/handoff" replace />
   }
   return <Navigate to="/login" replace />

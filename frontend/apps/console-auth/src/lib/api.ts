@@ -157,8 +157,11 @@ async function request<T>(
         ? (payload as { error: ErrorBody }).error
         : undefined
     throw new ApiError(
-      err?.code ?? "unknown_error",
-      err?.message ?? `Request failed with status ${response.status}`,
+      err?.code ?? (response.status === 429 ? "rate_limited" : "unknown_error"),
+      err?.message ??
+        (response.status === 429
+          ? "Terlalu banyak percobaan, coba lagi dalam 1 menit"
+          : `Request failed with status ${response.status}`),
       response.status,
       err?.details,
     )

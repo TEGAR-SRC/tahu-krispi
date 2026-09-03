@@ -109,12 +109,15 @@ export default function LoginPage() {
   const [resending, setResending] = useState(false)
 
   // Already signed in: send the user to their role's home.
-  // Skip for customer (already on login) and for ?already=customer to avoid
-  // Handoff → login → handoff intra-auth loop introduced in 14a231f.
+  // For customer allow a single handoff traversal; guard ?already=customer to
+  // prevent infinite handoff → login → handoff loop.
   useEffect(() => {
     if (!loading && token && role) {
-      if (role === "customer") return
       if (searchParams.get("already") === "customer") return
+      if (role === "customer") {
+        navigate("/handoff", { replace: true })
+        return
+      }
       navigate(homePathFor(role), { replace: true })
     }
   }, [loading, token, role, navigate, searchParams])
@@ -128,6 +131,8 @@ export default function LoginPage() {
       if (result.mfaRequired) {
         // First factor passed — hold the preauth token and prompt for TOTP.
         setMfaToken(result.preauthToken)
+      } else if (result.role === "customer" && searchParams.get("already") !== "customer") {
+        navigate("/handoff", { replace: true })
       } else {
         navigate(homePathFor(result.role), { replace: true })
       }
@@ -165,7 +170,11 @@ export default function LoginPage() {
     setSubmitting(true)
     try {
       const nextRole = await loginMFA(mfaToken, mfaCode)
-      navigate(homePathFor(nextRole), { replace: true })
+      if (nextRole === "customer" && searchParams.get("already") !== "customer") {
+        navigate("/handoff", { replace: true })
+      } else {
+        navigate(homePathFor(nextRole), { replace: true })
+      }
     } catch (cause) {
       setError(cause)
     } finally {

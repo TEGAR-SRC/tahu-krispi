@@ -108,10 +108,8 @@ export function consoleUrlFor(role: AppRole | null): string {
  * customers are handed off directly to the user console.
  */
 export function homePathFor(role: AppRole | null): string {
-  // Customer handoff is handled directly via consoleUrlFor; returning
-  // /handoff for customer would bounce LoginPage → handoff → console → loop.
-  // Keep staff on /handoff, customers on /login (they will be re-handoffed).
-  if (role === "customer") return "/login"
+  // Customer is handed off to console via /handoff (HandoffPage).
+  if (role === "customer") return "/handoff"
   return "/handoff"
 }
 
@@ -291,12 +289,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(true)
       try {
         await apiPost<unknown>("/auth/register", payload)
-        return await login(payload.email, payload.password)
+        try {
+          const role = await adoptSession()
+          return { mfaRequired: false, role }
+        } catch {
+          return await login(payload.email, payload.password)
+        }
       } finally {
         setLoading(false)
       }
     },
-    [login],
+    [login, adoptSession],
   )
 
   const logout = useCallback(() => {

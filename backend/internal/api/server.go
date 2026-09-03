@@ -205,6 +205,8 @@ func (s *Server) registerRoutes() {
 	s.app.Get("/metrics", s.metrics)
 
 	authLimiter := mw.RateLimit(s.rdb, "login", s.cfg.RateLimitLoginPerMinute, time.Minute)
+	mfaLimiter := mw.RateLimit(s.rdb, "mfa", s.cfg.RateLimitLoginPerMinute, time.Minute)
+	passkeyLimiter := mw.RateLimit(s.rdb, "passkey", s.cfg.RateLimitLoginPerMinute, time.Minute)
 	regLimiter := mw.RateLimit(s.rdb, "register", s.cfg.RateLimitRegisterPerHour, time.Hour)
 	verifyLimiter := mw.RateLimit(s.rdb, "verify", s.cfg.RateLimitLoginPerMinute, time.Minute)
 	oauthLimiter := mw.RateLimit(s.rdb, "oauth", 20, time.Minute)
@@ -213,9 +215,9 @@ func (s *Server) registerRoutes() {
 	// ---- Auth & identity ----
 	v1.Post("/auth/register", regLimiter, s.handleRegister)
 	v1.Post("/auth/login", authLimiter, s.handleLogin)
-	v1.Post("/auth/login/mfa", authLimiter, s.handleLoginMFA)
-	v1.Post("/auth/passkey/begin-login", authLimiter, s.handleBeginPasskeyLogin)
-	v1.Post("/auth/passkey/login", authLimiter, s.handlePasskeyLogin)
+	v1.Post("/auth/login/mfa", mfaLimiter, s.handleLoginMFA)
+	v1.Post("/auth/passkey/begin-login", passkeyLimiter, s.handleBeginPasskeyLogin)
+	v1.Post("/auth/passkey/login", passkeyLimiter, s.handlePasskeyLogin)
 	v1.Get("/auth/oauth/:provider", oauthLimiter, s.handleOAuthLogin)
 	v1.Get("/auth/oauth/:provider/callback", oauthLimiter, s.handleOAuthCallback)
 	v1.Post("/auth/refresh", authLimiter, s.handleRefresh)
