@@ -33,11 +33,16 @@ export default function OAuthCallbackPage() {
     ;(async () => {
       try {
         await apiPost("/auth/handoff/exchange", { code })
-        // Clean URL
+        // Clean code from URL before redirect
         window.history.replaceState({}, "", window.location.pathname)
-        window.location.href = "/admin"
+        // Hard reload so AuthProvider re-validates the new cookie and
+        // resolves the correct role before RequireRole decides.
+        window.location.href = "/"
       } catch {
-        toast.error("Login failed — code expired or invalid")
+        toast.error("Login failed — code expired or invalid. Redirecting to login…")
+        setTimeout(() => {
+          window.location.assign("https://auth.kilat-cloud.com/login")
+        }, 1500)
       }
     })()
   }, [code, mfaRequired, error, done])

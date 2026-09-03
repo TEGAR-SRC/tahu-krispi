@@ -101,13 +101,9 @@ export function consoleUrlFor(role: AppRole | null): string {
   }
 }
 
-/**
- * After sign-in, the auth console always bounces to /handoff (same origin),
- * which then redirects cross-origin to the right console with the token in the
- * URL fragment. `/handoff` is the only in-app landing target.
- */
-export function homePathFor(_role: AppRole | null): string {
-  return "/handoff"
+export function homePathFor(role: AppRole | null): string {
+  if (role === "customer") return "/app"
+  return "/login"
 }
 
 async function probe(path: string): Promise<number> {
@@ -182,9 +178,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [claims, setClaims] = useState<AuthClaims | null>(initialSession.claims)
   const [role, setRole] = useState<AppRole | null>(initialSession.role)
   const [profile, setProfile] = useState<MeProfile | null>(initialSession.profile)
-  // True while a persisted token is being re-validated on first mount, or an
-  // in-flight login/register is resolving the role.
-  const [loading, setLoading] = useState(() => Boolean(initialSession.token))
+  // Always validate session on mount; this catches stale localStorage and
+  // completes the handoff code exchange cookie before any RequireRole redirect.
+  const [loading, setLoading] = useState(true)
 
   const adoptSession = useCallback(async (): Promise<AppRole> => {
     const resolved = await resolveRole()

@@ -468,7 +468,13 @@ func (s *Server) registerRoutes() {
 	v1.Post("/affiliate/track/:code", s.handleTrackReferral)
 
 	// Admin (platform admins only). Only reachable via the admin API domain.
-	admin := v1.Group("/admin", s.authJWT(), s.allowAudiences(audienceAdmin))
+	// Auth audience is also allowed at the group level because the
+	// standalone auth console (auth.kilat-cloud.com -> api-auth) needs to
+	// probe three admin endpoints to detect the caller's staff role
+	// (audit-logs -> admin, finance/summary -> finance, providers -> noc).
+	// The global enforceAudienceScope still restricts auth to those three
+	// probes — all other /v1/admin/* paths remain blocked for auth.
+	admin := v1.Group("/admin", s.authJWT(), s.allowAudiences(audienceAdmin, audienceAuth))
 	admin.Get("/users", s.requireStaff("users"), s.adminListUsers)
 	admin.Patch("/users/:user_id/limits", s.requireStaff(""), s.adminUpdateUserLimits)
 	admin.Get("/affiliate/settings", s.requireStaff("billing"), s.handleAdminGetAffiliateSettings)
