@@ -110,7 +110,11 @@ function Sidebar({
           </Link>
         ))}
         {filtered.length === 0 ? (
-          <p className="px-2 py-2 text-sm text-muted-foreground">No docs match "{query}".</p>
+          docs.length === 0 ? (
+            <p className="px-2 py-2 text-sm text-muted-foreground">No documents yet</p>
+          ) : (
+            <p className="px-2 py-2 text-sm text-muted-foreground">No docs match "{query}".</p>
+          )
         ) : null}
       </nav>
       <div className="border-t pt-3 text-xs text-muted-foreground">{docs.length} documents</div>
@@ -242,7 +246,21 @@ function DocsLayout({
         <div className="min-w-0 flex-1 overflow-y-auto">
           <Routes>
             <Route path="/docs/:slug" element={<DocPage />} />
-            <Route path="/docs" element={loaded && docs.length === 0 ? <EmptyDocs loaded={loaded} /> : <Navigate to={docs.length ? `/docs/${[...docs].sort((a, b) => a.sort_order - b.sort_order)[0].slug}` : "/docs"} replace />} />
+            <Route
+              path="/docs"
+              element={
+                !loaded ? (
+                  <div className="px-6 py-16 text-center text-muted-foreground">Loading…</div>
+                ) : docs.length === 0 ? (
+                  <EmptyDocs loaded={loaded} />
+                ) : (
+                  <Navigate
+                    to={`/docs/${[...docs].sort((a, b) => a.sort_order - b.sort_order)[0].slug}`}
+                    replace
+                  />
+                )
+              }
+            />
             <Route path="/" element={<Navigate to="/docs" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

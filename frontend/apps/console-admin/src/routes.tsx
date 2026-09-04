@@ -181,6 +181,7 @@ const DokployEntity = lazy(() =>
 const DokployLogsPage = lazy(() => import("@/features/dokploy/DokployLogsPage"))
 const DokployLogsRealtimePage = lazy(() => import("@/features/dokploy/DokployLogsRealtimePage"))
 const DokployProjectDetailPage = lazy(() => import("@/features/dokploy/DokployProjectDetailPage"))
+const DokployStatusPage = lazy(() => import("@/features/dokploy/DokployStatusPage"))
 
 const BillingFinanceSummary = lazy(() =>
   import("@/features/admin/billing/pages/FinanceSummary"),
@@ -757,9 +758,11 @@ export default function AppRoutes() {
             element={<StorageBackendDetail />}
           />
           <Route path="dokploy" element={<DokployHub />} />
+          <Route path="dokploy/status" element={<DokployStatusPage />} />
           <Route path="dokploy/logs" element={<DokployLogsPage />} />
           <Route path="dokploy/logs-realtime" element={<DokployLogsRealtimePage />} />
           <Route path="dokploy/projects/:id" element={<DokployProjectDetailPage />} />
+          <Route path="dokploy/:providerId/status" element={<DokployStatusPage />} />
           <Route path="dokploy/:entity" element={<DokployEntity />} />
 
           <Route path="dokploy/app" element={<DokployHome />} />
