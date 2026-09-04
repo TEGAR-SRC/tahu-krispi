@@ -52,11 +52,13 @@ interface OnidelCatalogPayload {
 }
 
 function locCode(r: CatalogLocation): string {
-  return String(r.Code ?? r.code ?? "")
+  if (typeof r === "string") return r
+  return String((r as unknown as Record<string, unknown>).Code ?? (r as unknown as Record<string, unknown>).code ?? "")
 }
 
 function locName(r: CatalogLocation): string {
-  return String(r.Name ?? r.name ?? "")
+  if (typeof r === "string") return r
+  return String((r as unknown as Record<string, unknown>).Name ?? (r as unknown as Record<string, unknown>).name ?? "")
 }
 
 function typeCode(r: CatalogInstanceType): string {

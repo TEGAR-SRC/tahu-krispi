@@ -30,7 +30,6 @@ import type {
   ClusterPayload,
   ClusterStorage,
   FileRestoreEntry,
-  PveNodeStatus,
   StorageContentItem,
 } from "@/features/admin/pages/providers/types"
 

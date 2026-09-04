@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { toast } from "sonner"
 import { RefreshCwIcon } from "lucide-react"
-import { apiGet, apiPost, ApiError } from "@/lib/api"
+import { apiPost, ApiError } from "@/lib/api"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
 import { BulkActionBar, useBulkSelection } from "@/components/shared/BulkActionBar"
 import { Button } from "@/components/ui/button"
@@ -50,7 +50,6 @@ interface OnidelJobRow {
 
 const JOB_STATUSES = ["queued", "running", "retry", "success", "failed", "cancelled"] as const
 const PER_PAGE = 20
-const AUTO_REFRESH_MS = 5000
 
 export default function OnidelJobsPage() {
   const { providerId = "" } = useParams<{ providerId: string }>()
@@ -67,7 +66,7 @@ export default function OnidelJobsPage() {
   const meta = infra.meta as PagedMeta & Record<string, unknown> | undefined
   const loading = infra.loading
   const error = infra.error
-  const [autoRefresh] = useState(true)
+  const [autoRefresh, setAutoRefresh] = useState(true)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [cancelTarget, setCancelTarget] = useState<OnidelJobRow | null>(null)
   const [bulkBusy, setBulkBusy] = useState(false)
@@ -80,8 +79,6 @@ export default function OnidelJobsPage() {
     infra.reload()
     return Promise.resolve()
   }, [infra])
-
-  void autoRefresh
 
   const runAction = async (job: OnidelJobRow, action: "retry" | "cancel", confirm = false) => {
     if (confirm) {
