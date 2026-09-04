@@ -441,6 +441,28 @@ func (s *Server) adminCreateHAResource(c fiber.Ctx) error {
 	return mw.JSON(c, 201, fiber.Map{"status": "created"}, nil)
 }
 
+func (s *Server) adminUpdateHAResource(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	sid := strings.TrimSpace(c.Params("sid"))
+	if sid == "" {
+		return mw.WriteError(c, vErrField("sid", "sid is required"))
+	}
+	if decoded, derr := url.PathUnescape(sid); derr == nil {
+		sid = decoded
+	}
+	var opts goproxmox.HAResourceUpdateOption
+	if err := c.Bind().Body(&opts); err != nil {
+		return mw.WriteError(c, errValidation("invalid ha resource payload"))
+	}
+	if err := ad.Client().HAResourceUpdate(c.Context(), sid, &opts); err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, fiber.Map{"status": "updated", "sid": sid}, nil)
+}
+
 func (s *Server) adminDeleteHAResource(c fiber.Ctx) error {
 	_, _, ad, err := s.proxmoxAdapterFor(c)
 	if err != nil {

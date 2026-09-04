@@ -1,10 +1,10 @@
-// High-availability console: HA-managed guests (with type filter), add/delete
-// resource and watchdog arm/disarm. All mutations are platform-admin-only and
+// High-availability console: HA-managed guests (with type filter), add/edit/delete
+// resource and watchdog arm/disarm. Polls every 5s via useInfraGet (infra-readable, proxmox murni). All mutations are platform-admin-only and
 // confirmed; disarm requires an explicit freeze|ignore mode.
 import { useState } from "react"
 import { useParams } from "react-router-dom"
 import { toast } from "sonner"
-import { apiDelete, apiPost, ApiError } from "@/lib/api"
+import { apiDelete, apiPost, apiPut, ApiError } from "@/lib/api"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -36,15 +36,17 @@ const RESOURCE_TYPES = ["vm", "ct"]
 export default function ProviderHaPage() {
   const params = useParams()
   const providerId = params.providerId ?? ""
-  const base = `/admin/providers/${providerId}`
+  const base = `/admin/proxmox/${providerId}`
 
   const [typeFilter, setTypeFilter] = useState("all")
   const resources = useInfraGet<HAResource[]>(
     providerId ? `${base}/ha-resources` : null,
     { type: typeFilter === "all" ? null : typeFilter },
+    { intervalMs: 5000 },
   )
 
   const [addOpen, setAddOpen] = useState(false)
+  const [editTarget, setEditTarget] = useState<HAResource | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<{ sid: string; purge: boolean } | null>(null)
   const [disarmOpen, setDisarmOpen] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -73,7 +75,7 @@ export default function ProviderHaPage() {
     <ProviderShell
       providerId={providerId}
       title="HA resources"
-      description="Guests managed by the cluster's high-availability stack and the CRM watchdog."
+      description="Guests managed by the cluster's high-availability stack and the CRM watchdog. Polls every 5s (infra, proxmox murni via proxmoxAdapterFor)."
       actions={
         <>
           <Button variant="outline" size="sm" disabled={busy} onClick={() => void runAction(() => apiPost(`${base}/ha/arm`), "Watchdog armed")}>
@@ -142,18 +144,16 @@ export default function ProviderHaPage() {
           {
             key: "actions",
             header: "",
-            className: "w-24 text-right",
+            className: "w-44 text-right",
             render: (row) => (
-              <Button
-                variant="destructive"
-                size="sm"
-                disabled={!row.sid}
-                onClick={() =>
-                  setDeleteTarget({ sid: String(row.sid), purge: false })
-                }
-              >
-                Delete
-              </Button>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" size="sm" disabled={!row.sid} onClick={() => setEditTarget(row)}>
+                  Edit
+                </Button>
+                <Button variant="destructive" size="sm" disabled={!row.sid} onClick={() => setDeleteTarget({ sid: String(row.sid), purge: false })}>
+                  Delete
+                </Button>
+              </div>
             ),
           },
         ]}
@@ -164,6 +164,7 @@ export default function ProviderHaPage() {
         emptyMessage="No HA resources registered."
         skeletonRows={4}
       />
+      <p className="text-xs text-muted-foreground">Endpoints: <span className="font-mono">GET /admin/proxmox/:id/ha-resources?type=</span> · <span className="font-mono">POST /admin/proxmox/:id/ha-resources</span> · <span className="font-mono">PUT /admin/proxmox/:id/ha-resources/:sid</span> · <span className="font-mono">DELETE /admin/proxmox/:id/ha-resources?sid=</span> · poll 5s · <span className="font-mono">proxmoxAdapterFor</span> 501 expect proxmox</p>
 
       <AddResourceDialog
         open={addOpen}
@@ -173,6 +174,17 @@ export default function ProviderHaPage() {
           void runAction(() => apiPost(`${base}/ha-resources`, body), `HA resource ${String(body.sid)} added`, done)
         }
       />
+      {editTarget?.sid ? (
+        <EditResourceDialog
+          open
+          target={editTarget}
+          busy={busy}
+          onOpenChange={(open) => !open && setEditTarget(null)}
+          onSubmit={(body, done) =>
+            void runAction(() => apiPut(`${base}/ha-resources/${encodeURIComponent(String(editTarget.sid))}`, body), `HA resource ${editTarget.sid} updated`, done)
+          }
+        />
+      ) : null}
 
       <ConfirmDialog
         open={deleteTarget !== null}
@@ -324,6 +336,42 @@ function AddResourceDialog({ open, busy, onOpenChange, onSubmit }: AddResourcePr
             Add resource
           </Button>
         </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function EditResourceDialog({ open, busy, target, onOpenChange, onSubmit }: { open: boolean; busy: boolean; target: HAResource; onOpenChange: (open: boolean) => void; onSubmit: (body: Record<string, unknown>, done: () => void) => void }) {
+  const [state, setState] = useState(String(target.state ?? "started"))
+  const [group, setGroup] = useState(String(target.group ?? ""))
+  const [maxRestart, setMaxRestart] = useState(String(target.max_restart ?? "1"))
+  const [maxRelocate, setMaxRelocate] = useState(String(target.max_relocate ?? "1"))
+  const [comment, setComment] = useState(String(target.comment ?? ""))
+  const submit = () => {
+    const body: Record<string, unknown> = { state }
+    body.group = group.trim()
+    if (maxRestart.trim()) body.max_restart = Number.parseInt(maxRestart, 10)
+    if (maxRelocate.trim()) body.max_relocate = Number.parseInt(maxRelocate, 10)
+    body.comment = comment.trim()
+    if (target.digest) body.digest = target.digest
+    onSubmit(body, () => onOpenChange(false))
+  }
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit HA resource {String(target.sid)}</DialogTitle>
+          <DialogDescription>PUT /admin/proxmox/:id/ha-resources/:sid — proxmox murni (proxmoxAdapterFor), platform_admin only. SDK HAResourceUpdateOption.</DialogDescription>
+        </DialogHeader>
+        <div className="grid w-full max-w-full min-w-0 grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-1.5 sm:col-span-2"><Label>SID</Label><Input value={String(target.sid ?? "")} disabled className="font-mono" /></div>
+          <div className="space-y-1.5"><Label htmlFor="ha-edit-state">State</Label><Select value={state} onValueChange={setState}><SelectTrigger id="ha-edit-state"><SelectValue /></SelectTrigger><SelectContent>{["started", "stopped", "enabled", "disabled", "ignored"].map((v) => (<SelectItem key={v} value={v}>{v}</SelectItem>))}</SelectContent></Select></div>
+          <div className="space-y-1.5"><Label htmlFor="ha-edit-group">Group</Label><Input id="ha-edit-group" value={group} onChange={(e) => setGroup(e.target.value)} placeholder="Optional" /></div>
+          <div className="space-y-1.5"><Label htmlFor="ha-edit-restart">Max restarts</Label><Input id="ha-edit-restart" inputMode="numeric" value={maxRestart} onChange={(e) => setMaxRestart(e.target.value.replace(/\D/g, ""))} /></div>
+          <div className="space-y-1.5"><Label htmlFor="ha-edit-relocate">Max relocations</Label><Input id="ha-edit-relocate" inputMode="numeric" value={maxRelocate} onChange={(e) => setMaxRelocate(e.target.value.replace(/\D/g, ""))} /></div>
+          <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="ha-edit-comment">Comment</Label><Input id="ha-edit-comment" value={comment} onChange={(e) => setComment(e.target.value)} /></div>
+        </div>
+        <DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button><Button disabled={busy} onClick={submit}>{busy ? "Saving…" : "Save changes"}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   )

@@ -527,6 +527,7 @@ func (s *Server) registerRoutes() {
 	proxmoxAdmin.Get("/replication", s.requireStaff("infra"), s.adminListReplicationJobs)
 	proxmoxAdmin.Get("/ha-resources", s.requireStaff("infra"), s.adminListHAResources)
 	proxmoxAdmin.Post("/ha-resources", s.requireStaff(""), s.adminCreateHAResource)
+	proxmoxAdmin.Put("/ha-resources/:sid", s.requireStaff(""), s.adminUpdateHAResource)
 	proxmoxAdmin.Delete("/ha-resources", s.requireStaff(""), s.adminDeleteHAResource)
 	proxmoxAdmin.Get("/ha/groups", s.requireStaff("infra"), s.adminListHAGroups)
 	proxmoxAdmin.Post("/ha/groups", s.requireStaff(""), s.adminCreateHAGroup)
