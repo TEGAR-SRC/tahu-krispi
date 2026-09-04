@@ -53,20 +53,25 @@ interface OnidelCatalogPayload {
 
 function locCode(r: CatalogLocation): string {
   if (typeof r === "string") return r
-  return String((r as unknown as Record<string, unknown>).Code ?? (r as unknown as Record<string, unknown>).code ?? "")
+  const o = r as unknown as Record<string, unknown>
+  return String(o.Code || o.code || o.ExternalID || o.external_id || "")
 }
 
 function locName(r: CatalogLocation): string {
   if (typeof r === "string") return r
-  return String((r as unknown as Record<string, unknown>).Name ?? (r as unknown as Record<string, unknown>).name ?? "")
+  const o = r as unknown as Record<string, unknown>
+  return String(o.Name || o.name || o.Code || o.code || "")
 }
 
 function typeCode(r: CatalogInstanceType): string {
-  return String(r.Code ?? r.code ?? r.ExternalID ?? r.external_id ?? "")
+  const o = r as unknown as Record<string, unknown>
+  return String(o.Code || o.code || o.ExternalID || o.external_id || "")
 }
 
 function typeName(r: CatalogInstanceType): string {
-  return String(r.Name ?? r.name ?? typeCode(r))
+  const o = r as unknown as Record<string, unknown>
+  const n = String(o.Name || o.name || "")
+  return n || typeCode(r)
 }
 
 function typeCategory(r: CatalogInstanceType): string {
@@ -100,15 +105,18 @@ function typeLocations(r: CatalogInstanceType): string {
 }
 
 function osName(r: CatalogOSTemplate): string {
-  return String(r.Name ?? r.name ?? "")
+  const o = r as unknown as Record<string, unknown>
+  return String(o.Name || o.name || o.ExternalID || o.external_id || "")
 }
 
 function osFamily(r: CatalogOSTemplate): string {
-  return String(r.Family ?? r.family ?? "—")
+  const o = r as unknown as Record<string, unknown>
+  return String(o.Family || o.family || "—")
 }
 
 function osExternal(r: CatalogOSTemplate): string {
-  return String(r.ExternalID ?? r.external_id ?? "—")
+  const o = r as unknown as Record<string, unknown>
+  return String(o.ExternalID || o.external_id || "")
 }
 
 export default function OnidelCatalogPage() {
