@@ -1027,6 +1027,18 @@ func (s *Server) adminHADisarm(c fiber.Ctx) error {
 	return mw.JSON(c, 200, fiber.Map{"status": "disarmed", "mode": mode}, nil)
 }
 
+func (s *Server) adminHAManagerStatus(c fiber.Ctx) error {
+	_, _, ad, err := s.proxmoxAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	status, err := ad.Client().HAManagerStatus(c.Context())
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	return mw.JSON(c, 200, status, nil)
+}
+
 func (s *Server) adminPoolUpdateMembers(c fiber.Ctx) error {
 	_, _, ad, err := s.proxmoxAdapterFor(c)
 	if err != nil {

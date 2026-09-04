@@ -506,6 +506,71 @@ func (s *Server) adminVMwareDatastoreDetail(c fiber.Ctx) error {
 	return mw.WriteError(c, apperrors.Newf(apperrors.CodeNotFound, "vmware: datastore %q not found", dsName))
 }
 
+// GET /v1/admin/vmware/:id/clusters/:cluster — single cluster detail from
+// vCenter inventory. Guard kind==vmware via vmwareAdapterFor; RBAC infra
+// (NOC readable, finance 403). Polling via useInfraGet every 5s. :cluster is
+// the cluster name (url-escaped), matched exactly against InventoryReport.Clusters.
+func (s *Server) adminVMwareClusterDetail(c fiber.Ctx) error {
+	providerID, code, ad, err := s.vmwareAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	rawCluster := c.Params("cluster")
+	clusterName, _ := url.PathUnescape(rawCluster)
+	clusterName = strings.TrimSpace(clusterName)
+	if clusterName == "" {
+		return mw.WriteError(c, vErrField("cluster", "cluster name is required"))
+	}
+	report, err := ad.Inventory(c.Context())
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	for _, cl := range report.Clusters {
+		if cl == clusterName {
+			return mw.JSON(c, 200, fiber.Map{
+				"provider_id": providerID,
+				"code":        code,
+				"cluster":     cl,
+				"name":        cl,
+			}, nil)
+		}
+	}
+	return mw.WriteError(c, apperrors.Newf(apperrors.CodeNotFound, "vmware: cluster %q not found", clusterName))
+}
+
+// GET /v1/admin/vmware/:id/pools/:pool — single resource pool detail from
+// vCenter inventory. Guard kind==vmware via vmwareAdapterFor; RBAC infra
+// (NOC readable, finance 403). Polling via useInfraGet every 5s. :pool is the
+// pool name (url-escaped), matched exactly against InventoryReport.ResourcePools.
+func (s *Server) adminVMwarePoolDetail(c fiber.Ctx) error {
+	providerID, code, ad, err := s.vmwareAdapterFor(c)
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	rawPool := c.Params("pool")
+	poolName, _ := url.PathUnescape(rawPool)
+	poolName = strings.TrimSpace(poolName)
+	if poolName == "" {
+		return mw.WriteError(c, vErrField("pool", "pool name is required"))
+	}
+	report, err := ad.Inventory(c.Context())
+	if err != nil {
+		return mw.WriteError(c, err)
+	}
+	for _, p := range report.ResourcePools {
+		if p == poolName {
+			return mw.JSON(c, 200, fiber.Map{
+				"provider_id":   providerID,
+				"code":          code,
+				"pool":          p,
+				"resource_pool": p,
+				"name":          p,
+			}, nil)
+		}
+	}
+	return mw.WriteError(c, apperrors.Newf(apperrors.CodeNotFound, "vmware: resource pool %q not found", poolName))
+}
+
 // GET /v1/admin/vmware/:id/datastores/:ds/browse — browse files inside one
 // vSphere datastore (VMFS/vSAN/NFS) via HostDatastoreBrowser. Guard
 // kind==vmware via vmwareAdapterFor; RBAC infra (NOC readable, finance 403).

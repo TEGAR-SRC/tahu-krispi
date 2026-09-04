@@ -7,6 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
 import { EmptyState } from "./EmptyState"
@@ -29,6 +30,12 @@ interface SimpleDataTableProps<T> {
   skeletonRows?: number
   emptyMessage?: string
   getRowKey?: (row: T, index: number) => string
+  /** Enable a leading checkbox column for bulk selection. */
+  selectable?: boolean
+  /** Set of selected row keys (keyed by `getRowKey`). */
+  selectedKeys?: Set<string>
+  /** Called whenever the selection changes (only when `selectable`). */
+  onSelectionChange?: (keys: Set<string>) => void
 }
 
 /** Minimal data table with loading skeletons, error banner and empty state. */
@@ -40,6 +47,9 @@ export function SimpleDataTable<T>({
   skeletonRows = 5,
   emptyMessage = "No data yet.",
   getRowKey,
+  selectable = false,
+  selectedKeys,
+  onSelectionChange,
 }: SimpleDataTableProps<T>) {
   const safeRows = Array.isArray(rows) ? rows : []
   const safeColumns = Array.isArray(columns) ? columns : []
@@ -75,11 +85,43 @@ export function SimpleDataTable<T>({
     return value === undefined || value === null ? "—" : String(value)
   }
 
+  const toggleRow = (key: string, checked: boolean) => {
+    if (!onSelectionChange) return
+    const next = new Set(selectedKeys ?? [])
+    if (checked) next.add(key)
+    else next.delete(key)
+    onSelectionChange(next)
+  }
+
+  const allSelected =
+    safeRows.length > 0 && safeRows.every((row, index) => (selectedKeys ?? new Set()).has(getRowKey ? getRowKey(row, index) : String(index)))
+
+  const toggleAll = (checked: boolean) => {
+    if (!onSelectionChange) return
+    const next = new Set(selectedKeys ?? [])
+    for (const [index, row] of safeRows.entries()) {
+      const key = getRowKey ? getRowKey(row, index) : String(index)
+      if (checked) next.add(key)
+      else next.delete(key)
+    }
+    onSelectionChange(next)
+  }
+
   return (
     <div className="overflow-x-auto rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
+            {selectable ? (
+              <TableHead className="w-10">
+                <Checkbox
+                  aria-label="Select all rows"
+                  checked={allSelected}
+                  onCheckedChange={(value) => toggleAll(value === true)}
+                  disabled={rows.length === 0}
+                />
+              </TableHead>
+            ) : null}
             {safeColumns.map((column) => (
               <TableHead key={column.key} className={column.className}>
                 {column.header}
@@ -88,15 +130,28 @@ export function SimpleDataTable<T>({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {safeRows.map((row, index) => (
-            <TableRow key={getRowKey ? getRowKey(row, index) : index}>
-              {safeColumns.map((column) => (
-                <TableCell key={column.key} className={column.className}>
-                  {cellFor(row, column)}
-                </TableCell>
-              ))}
-            </TableRow>
-          ))}
+          {safeRows.map((row, index) => {
+            const key = getRowKey ? getRowKey(row, index) : String(index)
+            const selected = (selectedKeys ?? new Set()).has(key)
+            return (
+              <TableRow key={key} data-selected={selected ? "true" : undefined}>
+                {selectable ? (
+                  <TableCell className="w-10">
+                    <Checkbox
+                      aria-label={`Select row ${index + 1}`}
+                      checked={selected}
+                      onCheckedChange={(value) => toggleRow(key, value === true)}
+                    />
+                  </TableCell>
+                ) : null}
+                {safeColumns.map((column) => (
+                  <TableCell key={column.key} className={column.className}>
+                    {cellFor(row, column)}
+                  </TableCell>
+                ))}
+              </TableRow>
+            )
+          })}
         </TableBody>
       </Table>
     </div>

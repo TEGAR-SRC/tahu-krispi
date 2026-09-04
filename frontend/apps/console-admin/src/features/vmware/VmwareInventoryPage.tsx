@@ -404,20 +404,40 @@ export default function VmwareInventoryPage() {
                   ) : (
                     <div className="grid gap-2">
                       {clusters.map((name) => (
-                        <button
+                        <div
                           key={name}
-                          type="button"
-                          onClick={() => setSelectedCluster(name)}
-                          className={`rounded-md border px-3 py-2 text-left text-sm hover:bg-muted ${selectedCluster === name ? "border-primary bg-muted" : ""}`}
+                          className={`flex flex-wrap items-center gap-2 rounded-md border px-3 py-2 text-sm ${selectedCluster === name ? "border-primary bg-muted" : ""}`}
                         >
-                          <span className="font-mono text-xs">{name}</span>
-                          <span className="ml-2 text-xs text-primary">→ inspect</span>
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedCluster(name)}
+                            className="text-left hover:underline"
+                          >
+                            <span className="font-mono text-xs">{name}</span>
+                            <span className="ml-2 text-xs text-primary">→ inspect</span>
+                          </button>
+                          <Link
+                            to={`/admin/vmware/${providerId}/clusters/${encodeURIComponent(name)}`}
+                            className="ml-auto font-mono text-xs text-primary hover:underline"
+                          >
+                            detail →
+                          </Link>
+                        </div>
                       ))}
                     </div>
                   )}
                   <SimpleDataTable<{ name: string }>
-                    columns={[{ key: "name", header: "Cluster", render: (row) => <span className="font-mono text-xs">{row.name}</span> }]}
+                    columns={[
+                      {
+                        key: "name",
+                        header: "Cluster",
+                        render: (row) => (
+                          <Link to={`/admin/vmware/${providerId}/clusters/${encodeURIComponent(row.name)}`} className="font-mono text-xs font-medium text-primary hover:underline">
+                            {row.name}
+                          </Link>
+                        ),
+                      },
+                    ]}
                     rows={clusters.map((name) => ({ name }))}
                     loading={inventory.loading}
                     error={null}
@@ -438,9 +458,14 @@ export default function VmwareInventoryPage() {
                       pools and datastores.
                     </p>
                     <JsonBlock value={{ cluster: selectedCluster, provider_id: providerId, code: inventory.data?.code }} />
-                    <Button variant="outline" size="sm" onClick={() => setSelectedCluster(null)}>
-                      Clear selection
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button variant="default" size="sm" asChild>
+                        <Link to={`/admin/vmware/${providerId}/clusters/${encodeURIComponent(selectedCluster)}`}>Open detail page</Link>
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => setSelectedCluster(null)}>
+                        Clear selection
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               ) : null}
@@ -458,20 +483,40 @@ export default function VmwareInventoryPage() {
                   ) : (
                     <div className="grid gap-2">
                       {pools.map((name) => (
-                        <button
+                        <div
                           key={name}
-                          type="button"
-                          onClick={() => setSelectedPool(name)}
-                          className={`rounded-md border px-3 py-2 text-left text-sm hover:bg-muted ${selectedPool === name ? "border-primary bg-muted" : ""}`}
+                          className={`flex flex-wrap items-center gap-2 rounded-md border px-3 py-2 text-sm ${selectedPool === name ? "border-primary bg-muted" : ""}`}
                         >
-                          <span className="font-mono text-xs">{name}</span>
-                          <span className="ml-2 text-xs text-primary">→ inspect</span>
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedPool(name)}
+                            className="text-left hover:underline"
+                          >
+                            <span className="font-mono text-xs">{name}</span>
+                            <span className="ml-2 text-xs text-primary">→ inspect</span>
+                          </button>
+                          <Link
+                            to={`/admin/vmware/${providerId}/pools/${encodeURIComponent(name)}`}
+                            className="ml-auto font-mono text-xs text-primary hover:underline"
+                          >
+                            detail →
+                          </Link>
+                        </div>
                       ))}
                     </div>
                   )}
                   <SimpleDataTable<{ name: string }>
-                    columns={[{ key: "name", header: "Pool", render: (row) => <span className="font-mono text-xs">{row.name}</span> }]}
+                    columns={[
+                      {
+                        key: "name",
+                        header: "Pool",
+                        render: (row) => (
+                          <Link to={`/admin/vmware/${providerId}/pools/${encodeURIComponent(row.name)}`} className="font-mono text-xs font-medium text-primary hover:underline">
+                            {row.name}
+                          </Link>
+                        ),
+                      },
+                    ]}
                     rows={pools.map((name) => ({ name }))}
                     loading={inventory.loading}
                     error={null}
@@ -491,9 +536,14 @@ export default function VmwareInventoryPage() {
                       Pool <span className="font-mono">{selectedPool}</span> groups VMs for resource allocation. The API returns pool names only — member VMs are listed under the provider&apos;s VM inventory.
                     </p>
                     <JsonBlock value={{ resource_pool: selectedPool, provider_id: providerId, code: inventory.data?.code }} />
-                    <Button variant="outline" size="sm" onClick={() => setSelectedPool(null)}>
-                      Clear selection
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button variant="default" size="sm" asChild>
+                        <Link to={`/admin/vmware/${providerId}/pools/${encodeURIComponent(selectedPool)}`}>Open detail page</Link>
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => setSelectedPool(null)}>
+                        Clear selection
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               ) : null}

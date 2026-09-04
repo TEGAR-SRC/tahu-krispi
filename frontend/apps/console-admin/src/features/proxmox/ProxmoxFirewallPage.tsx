@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useState } from "react"
 import { useParams } from "react-router-dom"
 import { toast } from "sonner"
-import { apiDelete, apiGet, apiPost, ApiError } from "@/lib/api"
+import { apiDelete, apiPost, ApiError } from "@/lib/api"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -25,6 +25,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { StatusBadge } from "@/features/admin/pages/shared"
 import { ConfirmDialog, ProviderShell } from "@/features/admin/pages/providers/shared"
+import { useInfraGet } from "@/features/admin/pages/providers/infra"
 import type { FirewallGroup, FirewallRule } from "@/features/admin/pages/providers/types"
 
 export default function ProxmoxFirewallPage() {
@@ -69,29 +70,14 @@ function GroupsSection({
   selectedGroup: string | null
   onSelectGroup: (group: string | null) => void
 }) {
-  const [groups, setGroups] = useState<FirewallGroup[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<unknown>(null)
+  const infra = useInfraGet<FirewallGroup[]>(`${base}/fw-groups`, undefined, { intervalMs: 5000 })
+  const groups = Array.isArray(infra.data) ? infra.data : []
+  const loading = infra.loading
+  const error = infra.error
+  const load = infra.reload
   const [addOpen, setAddOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<FirewallGroup | null>(null)
   const [busy, setBusy] = useState(false)
-
-  const load = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await apiGet<FirewallGroup[]>(`${base}/fw-groups`)
-      setGroups(Array.isArray(res.data) ? res.data : [])
-    } catch (cause) {
-      setError(cause)
-    } finally {
-      setLoading(false)
-    }
-  }, [base])
-
-  useEffect(() => {
-    void load()
-  }, [load])
 
   const runAction = async (action: () => Promise<unknown>, success: string, done?: () => void) => {
     setBusy(true)
@@ -223,29 +209,14 @@ interface RulesSectionProps {
 }
 
 function RulesSection({ listPath, createPath, deletePath, heading }: RulesSectionProps) {
-  const [rules, setRules] = useState<FirewallRule[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<unknown>(null)
+  const infra = useInfraGet<FirewallRule[]>(listPath, undefined, { intervalMs: 5000 })
+  const rules = Array.isArray(infra.data) ? infra.data : []
+  const loading = infra.loading
+  const error = infra.error
+  const load = infra.reload
   const [addOpen, setAddOpen] = useState(false)
   const [deletePos, setDeletePos] = useState<number | null>(null)
   const [busy, setBusy] = useState(false)
-
-  const load = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await apiGet<FirewallRule[]>(listPath)
-      setRules(Array.isArray(res.data) ? res.data : [])
-    } catch (cause) {
-      setError(cause)
-    } finally {
-      setLoading(false)
-    }
-  }, [listPath])
-
-  useEffect(() => {
-    void load()
-  }, [load])
 
   const runAction = async (action: () => Promise<unknown>, success: string, done?: () => void) => {
     setBusy(true)

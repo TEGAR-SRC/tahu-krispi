@@ -363,28 +363,38 @@ Semua rute `/v1/admin/*` butuh `authJWT()` + `allowAudiences(admin,auth)` + `req
 
 | Prefix di `server.go` | `providers.kind` | Contoh `:id` / `code` | Infra sections yang dilayani (GET = `infra` NOC read, mutasi = `""` admin only) | Sentinel non-kind → `501` |
 |---|---|---|---|---|
-| `/v1/admin/onidel/:id/*` | `onidel` | `onidel` (`onidel-jkt`) | `catalog` (live `SyncCatalog`), `health` (live probe + `latency_ms`) — 2 endpoint | Proxmox/vmware/dokploy surface → `501 expect onidel` via `onidelAdapterFor` |
-| `/v1/admin/proxmox/:id/*` | `proxmox` | `proxmox` / `pve-jkt` | `cluster`, `containers`, `nodes/:node/*` (storages/tasks/detail/disks/certs/command/backup/dns/time), `storages/:storage/*`, `backup-jobs`, `ha-resources`, `ha/arm|disarm`, `cluster/log|tasks`, `fw-groups`, `firewall-rules`, `pools`, `ceph-status`, `sdn/zones|vnets`, `cluster-storages`, `cpu-models`, `lxc`+`qemu` provision — 51 endpoint | Onidel/vmware/dokploy → `501 expect proxmox` via `proxmoxAdapterFor` |
-| `/v1/admin/vmware/:id/*` | `vmware` | `vmware` / `vc-jkt` | `inventory` (hosts/datastores/clusters/pools), `perf` (`?v=&timeframe=hour|day`) — 2 endpoint | Proxmox/onidel/dokploy → `501 expect vmware` via `vmwareAdapterFor` |
-| `/v1/admin/dokploy/*` | `dokploy` | `dokploy` (single instance, tanpa `:id`) | `sync`, `db/:entity`, `db/:entity/:remote_id` mirror + `All /v1/dokploy/*` proxy transparan — 4 endpoint; semua `""` admin only | Kind lain tidak punya dokploy surface |
+| `/v1/admin/onidel/:id/*` | `onidel` | `onidel` (`onidel-jkt`) | `catalog` (live `SyncCatalog`), `health`, `health/detail`, `instances`, `instances/:instance_id`, `orders`, `invoices` (7 GET `infra`) + `instances/:instance_id/suspend|unsuspend|terminate`, `regions/sync`, `catalog/sync` (5 POST `""`) — **12 endpoint** (7 infra GET, 5 admin POST) | Proxmox/vmware/dokploy surface → `501 expect onidel` via `onidelAdapterFor` |
+| `/v1/admin/proxmox/:id/*` | `proxmox` | `proxmox` / `pve-jkt` | `cluster`, `containers`, `nodes/:node/*` (storages/tasks/detail/disks/certs/command/backup/dns/time/prune/serial-proxy/report/rrd/qemu/lxc/cloud-init), `storages/:storage/*`, `backup-jobs`, `replication`, `ha-resources`+`ha/groups`+`ha/rules`+`ha/arm|disarm`, `cluster/log|tasks`, `fw-groups`+`fw-aliases`+`firewall-rules`, `pools`, `ceph-status`+`ceph/pools/:pool`, `sdn/zones|vnets`, `cluster-storages`, `cpu-models`, `templates`, `snapshots` (global+per-node qemu) + `lxc`+`qemu` provision/clone/migrate, `access/users|groups|roles|acl`, `version`/`next-id` — **124 endpoint** (57 GET `infra`, 67 POST/PUT/DELETE `""`) | Onidel/vmware/dokploy → `501 expect proxmox` via `proxmoxAdapterFor` |
+| `/v1/admin/vmware/:id/*` | `vmware` | `vmware` / `vc-jkt` | `inventory`, `datastores`+`datastores/:ds`+`datastores/:ds/browse`, `hosts`+`hosts/:host`, `networks`, `perf`+`perf/:vmid`, `snapshots`+`snapshots/revert`+`snapshots/:snap/revert`, `migrate` — **16 endpoint** (11 GET `infra`, 5 POST/DELETE `""`) | Proxmox/onidel/dokploy → `501 expect vmware` via `vmwareAdapterFor` |
+| `/v1/admin/dokploy/*` | `dokploy` | `dokploy` (single instance, tanpa `:id`) | `logs` (`infra`), `projects/:id` (`infra`), `sync` (`""`), `db/:entity` (`""`), `db/:entity/:remote_id` (`""`) + `All /v1/dokploy/*` proxy transparan (`auto`→`""`) — **6 endpoint** (2 GET infra + 3 admin + 1 proxy; group 5 + proxy 1) | Kind lain tidak punya dokploy surface |
 | `/v1/admin/providers` + `/v1/admin/providers/:provider_id/*` | semua kind | `onidel`/`proxmox`/`vmware`/`dokploy` | Registry generik: `GET /providers` (`infra`), `POST /providers` (`""`), `POST /providers/:provider_id/test` (`""`), `POST /providers/:provider_id/sync` (`""`), `DELETE /providers/:provider_id` (`""`) — prefix `code` wajib per-provider | — |
 | `/v1/admin/instances`, `/v1/admin/jobs`, `/v1/admin/orphans`, `/v1/admin/security-incidents`, `/v1/admin/blocked-networks` | agnostic (filter `?provider=`) | — | Ops generik infra (NOC GET, mutasi `infra` atau `auto` sesuai file) — instance `provider_id` tetap prefix provider | Non-proxmox instance ops (`clone/template/move-volume/migrate`) → `501 expect proxmox` |
 | `/healthz`, `/readyz`, `/metrics` | infra (bukan provider) | — | `GET /healthz` (ok), `GET /readyz` (pg+redis ping), `GET /metrics` (`uptime_seconds`) — tanpa auth, di `server.go` root | — |
 
 > Aturan RBAC per-provider: **GET infra endpoint (`catalog`/`health`/`cluster`/`inventory`/`perf`/nodes/storages/… ) → `requireStaff("infra")` = NOC + platform_admin boleh, finance 403. Mutasi infra (`POST /nodes/:node/command`, `POST /backup-jobs`, `DELETE /storages/:storage/content`, `POST /lxc`/`qemu`, `PUT /nodes/:node/dns`, `POST /ha/*`, dsb) → `requireStaff("")` = platform_admin only, NOC 403.** Finance/billing surface (`/products`/`/plans`/`/regions`/`/coupons`/`/orders`/`/invoices`/`/payments`/`/wallets`/`/custom-rates`) → `requireStaff("billing")` = platform_admin + finance, NOC 403.
 
-## Admin — Onidel (provider `onidel`, prefix `onidel-`) — per-provider prefix `onidel/:id` (2)
+## Admin — Onidel (provider `onidel`, prefix `onidel-`) — per-provider prefix `onidel/:id` (12: 7 infra GET + 5 admin POST)
 
-Onidel adalah provider `kind=onidel` (`code=onidel`). Permukaan infra Onidel **hanya** `catalog` + `health` di bawah `GET /v1/admin/onidel/:id/*` (`requireStaff("infra")` → NOC read boleh). Tidak ada cluster/nodes/storage/HA — sentinel `cluster` menjawab `501` jika diakses via prefix proxmox. Mutasi registry tetap via generik `POST /v1/admin/providers` / `POST /v1/admin/providers/:provider_id/test|sync` (`requireStaff("auto")` → `""` untuk mutasi, NOC 403). Semua `code`/`id`/`slug`/`region.code`/`plan.code`/`external_id` prefix `onidel-`.
+Onidel adalah provider `kind=onidel` (`code=onidel`). Permukaan infra Onidel **12 endpoint** di bawah `admin.Group("/onidel/:id")` (`:id` = UUID provider `kind=onidel`, contoh `code=onidel`) — guard `onidelAdapterFor` → `501 expect onidel` jika bukan `kind=onidel`. RBAC: **GET = `requireStaff("infra")` (NOC+platform_admin), POST = `requireStaff("")` (platform_admin only).** Semua `code`/`id`/`slug`/`region.code`/`plan.code`/`external_id` prefix `onidel-`. Mutasi registry tetap via generik `POST /v1/admin/providers` / `POST /v1/admin/providers/:provider_id/test|sync` (`requireStaff("auto")` → `""` untuk mutasi, NOC 403).
 
 - `GET /v1/admin/onidel/:id/catalog` [`infra` — platform_admin+NOC GET; finance 403] — live catalog Onidel via adapter `SyncCatalog` → `{regions, instance_types, os_templates}`; `:id` = UUID provider `kind=onidel` (contoh `code=onidel`)
 - `GET /v1/admin/onidel/:id/health` [`infra` — platform_admin+NOC GET; finance 403] — `enabled`/`health_status`/`api_base_url` + live probe `ListInstanceTypes` dengan `latency_ms`/`live=ok|error|disabled`
+- `GET /v1/admin/onidel/:id/health/detail` [`infra`] — detail health per-provider Onidel (guard `onidelAdapterFor`)
+- `GET /v1/admin/onidel/:id/instances` [`infra`] — list instance Onidel per-provider
+- `GET /v1/admin/onidel/:id/instances/:instance_id` [`infra`] — detail instance Onidel
+- `GET /v1/admin/onidel/:id/orders` [`infra`] — list order Onidel per-provider
+- `GET /v1/admin/onidel/:id/invoices` [`infra`] — list invoice Onidel per-provider
+- `POST /v1/admin/onidel/:id/instances/:instance_id/suspend` **[admin only]** (`""`) — suspend instance Onidel
+- `POST /v1/admin/onidel/:id/instances/:instance_id/unsuspend` **[admin only]** (`""`) — unsuspend instance Onidel
+- `POST /v1/admin/onidel/:id/instances/:instance_id/terminate` **[admin only]** (`""`) — terminate instance Onidel
+- `POST /v1/admin/onidel/:id/regions/sync` **[admin only]** (`""`) — sync regions Onidel (`POST /regions/sync`)
+- `POST /v1/admin/onidel/:id/catalog/sync` **[admin only]** (`""`) — sync catalog Onidel (`POST /catalog/sync`)
 - Registry generik (tetap ada, bukan per-provider): `GET /v1/admin/providers` [`infra`], `POST /v1/admin/providers` [`""` — platform_admin only], `POST /v1/admin/providers/:provider_id/test` [`""`], `POST /v1/admin/providers/:provider_id/sync` [`""`], `DELETE /v1/admin/providers/:provider_id` [`""`] — `code` wajib prefix `onidel` untuk kind onidel
 - `GET /v1/admin/providers/onidel/cluster` (lama, universal) → **tidak ada** — diganti `GET /v1/admin/proxmox/:id/cluster` (hanya proxmox); akses via prefix onidel menjawab `501 PROVIDER_UNSUPPORTED expect proxmox`
 
 > Instance Onidel diakses user via `POST /v1/instances {region_id: <id region onidel>}` tanpa `provider_id`; admin lihat via `GET /v1/admin/instances?provider=onidel` (infra, NOC read).
 
-## Admin — Proxmox (provider `proxmox`, prefix `proxmox`/`pve-`) — per-provider prefix `proxmox/:id` — infra read (NOC GET) + mutate (admin POST/PUT/DELETE) (51)
+## Admin — Proxmox (provider `proxmox`, prefix `proxmox`/`pve-`) — per-provider prefix `proxmox/:id` — infra read (NOC GET) + mutate (admin POST/PUT/DELETE) (124: 57 infra GET, 67 mutasi)
 
 Semua rute di bawah **per-provider prefix** `admin.Group("/proxmox/:id")` (`:id` = UUID `providers.id` `kind=proxmox`, contoh `code=proxmox`). Non-proxmox UUID → `501 PROVIDER_UNSUPPORTED expect proxmox` via `proxmoxAdapterFor`. RBAC: **GET = `requireStaff("infra")` (NOC + platform_admin GET), POST/PUT/DELETE = `requireStaff("")` (platform_admin only, NOC 403).** `node` contoh = `pve-jkt`/`pve-sby`; `storage` contoh = `local-lvm`/`ceph-01`; semua id/slug diawali `pve-` atau `proxmox-`. Legacy `GET /v1/admin/providers/proxmox/*` (universal) sudah diganti tabel prefix di atas — jangan pakai prefix universal tanpa `:id` untuk proxmox.
 
@@ -395,23 +405,47 @@ Instance ops (by `instances.provider_id = proxmox`, tetap `POST /v1/admin/instan
 - `POST /v1/admin/instances/:instance_id/move-volume` [`auto`] — body `{volume, target_storage}` sinkron
 - `POST /v1/admin/instances/:instance_id/migrate` [`auto`] — body `{target_node}`; enqueue migrasi (202); 501 non-proxmox
 
-Cluster & node observability (per-provider `GET /v1/admin/proxmox/:id/*` [`infra`]):
+Cluster & node observability (per-provider `GET/POST/PUT/DELETE /v1/admin/proxmox/:id/*`):
 
-- `GET /v1/admin/proxmox/:id/cluster` — daftar node + inventaris resource cluster PVE
-- `GET /v1/admin/proxmox/:id/containers` — inventaris LXC seluruh cluster, filter `?node=pve-jkt` opsional
-- `GET /v1/admin/proxmox/:id/nodes/:node/storages` — storage terlihat dari satu node
-- `GET /v1/admin/proxmox/:id/nodes/:node/tasks` — task berjalan + arsip pada satu node
-- `GET /v1/admin/proxmox/:id/nodes/:node/detail` — status detail satu node PVE
-- `GET /v1/admin/proxmox/:id/nodes/:node/disks` — inventaris disk node
-- `GET /v1/admin/proxmox/:id/nodes/:node/certs` — sertifikat node
+- `GET /v1/admin/proxmox/:id/cluster` [`infra`] — daftar node + inventaris resource cluster PVE
+- `GET /v1/admin/proxmox/:id/containers` [`infra`] — inventaris LXC seluruh cluster, filter `?node=pve-jkt` opsional
+- `GET /v1/admin/proxmox/:id/nodes/:node/storages` [`infra`] — storage terlihat dari satu node
+- `GET /v1/admin/proxmox/:id/nodes/:node/tasks` [`infra`] — task berjalan + arsip pada satu node
+- `GET /v1/admin/proxmox/:id/nodes/:node/detail` [`infra`] — status detail satu node PVE
+- `GET /v1/admin/proxmox/:id/nodes/:node/disks` [`infra`] — inventaris disk node
+- `GET /v1/admin/proxmox/:id/nodes/:node/certs` [`infra`] — sertifikat node
+- `POST /v1/admin/proxmox/:id/nodes/:node/certs` **[admin only]** (`""`) — upload sertifikat node
+- `DELETE /v1/admin/proxmox/:id/nodes/:node/certs` **[admin only]** (`""`) — hapus sertifikat node
 - `POST /v1/admin/proxmox/:id/nodes/:node/command` **[admin only]** (`""`) — body `{command}` ∈ `reboot|shutdown|wakeonlan` (202)
 - `POST /v1/admin/proxmox/:id/nodes/:node/backup` **[admin only]** (`""`) — vzdump ad-hoc, body `{vmid, storage, mode?}` (202)
 - `GET /v1/admin/proxmox/:id/nodes/:node/dns` [`infra`]
 - `PUT /v1/admin/proxmox/:id/nodes/:node/dns` **[admin only]** (`""`) — body `{search}` wajib + `{dns1?, dns2?, dns3?}`
 - `GET /v1/admin/proxmox/:id/nodes/:node/time` [`infra`]
+- `PUT /v1/admin/proxmox/:id/nodes/:node/time` **[admin only]** (`""`) — set waktu node
+- `GET /v1/admin/proxmox/:id/nodes/:node/prune` [`infra`] — preview prune backup
+- `POST /v1/admin/proxmox/:id/nodes/:node/prune` **[admin only]** (`""`) — eksekusi prune backup
+- `GET /v1/admin/proxmox/:id/nodes/:node/serial-proxy` [`infra`] — serial proxy node
+- `GET /v1/admin/proxmox/:id/nodes/:node/report` [`infra`] — report node
+- `GET /v1/admin/proxmox/:id/nodes/:node/rrd` [`infra`] — RRD metrics node
+- `GET /v1/admin/proxmox/:id/nodes/:node/qemu/:vmid/rrd` [`infra`] — RRD metrics QEMU per-node
+- `GET /v1/admin/proxmox/:id/nodes/:node/qemu` [`infra`] — list QEMU per-node
+- `GET /v1/admin/proxmox/:id/nodes/:node/qemu/:vmid/cloud-init` [`infra`] — get cloud-init QEMU
 - `GET /v1/admin/proxmox/:id/cpu-models` [`infra`] — model CPU QEMU (`?arch=x86_64` default, `?node=pve-jkt` opsional)
-- `POST /v1/admin/proxmox/:id/lxc` **[admin only]** (`""`) — provision LXC sinkron (behaviour bisa berubah; verifikasi handler `adminProxmoxProvisionLXC` via `Read`)
+- `GET /v1/admin/proxmox/:id/version` [`infra`] — versi PVE cluster
+- `GET /v1/admin/proxmox/:id/next-id` [`infra`] — VMID berikutnya
+- `GET /v1/admin/proxmox/:id/access/users` [`infra`] — list user akses PVE
+- `POST /v1/admin/proxmox/:id/access/users` **[admin only]** (`""`) — buat user akses
+- `PUT /v1/admin/proxmox/:id/access/users/:userid` **[admin only]** (`""`) — update user akses
+- `DELETE /v1/admin/proxmox/:id/access/users/:userid` **[admin only]** (`""`) — hapus user akses
+- `GET /v1/admin/proxmox/:id/access/groups` [`infra`] — list group akses
+- `GET /v1/admin/proxmox/:id/access/roles` [`infra`] — list role akses
+- `GET /v1/admin/proxmox/:id/access/acl` [`infra`] — list ACL
+- `GET /v1/admin/proxmox/:id/templates` [`infra`] — list template VM
+- `DELETE /v1/admin/proxmox/:id/templates/:vmid` **[admin only]** (`""`) — hapus template
+- `POST /v1/admin/proxmox/:id/lxc` **[admin only]** (`""`) — provision LXC sinkron (handler `adminProxmoxProvisionLXC`)
 - `POST /v1/admin/proxmox/:id/qemu` **[admin only]** (`""`) — provision QEMU/VM sinkron (handler `adminProxmoxProvisionQEMU`)
+- `GET /v1/admin/proxmox/:id/clone` [`infra`] — status clone
+- `POST /v1/admin/proxmox/:id/clone` **[admin only]** (`""`) — clone VM/LXC
 
 Storage & backup (per-provider `proxmox/:id`):
 
@@ -423,12 +457,22 @@ Storage & backup (per-provider `proxmox/:id`):
 - `PUT /v1/admin/proxmox/:id/backup-jobs/:job_id` **[admin only]** (`""`)
 - `DELETE /v1/admin/proxmox/:id/backup-jobs/:job_id` **[admin only]** (`""`)
 - `POST /v1/admin/proxmox/:id/backup-jobs/:job_id/run` **[admin only]** (`""`) (202)
+- `GET /v1/admin/proxmox/:id/replication` [`infra`] — list replication jobs
 
 HA & cluster (per-provider `proxmox/:id`):
 
 - `GET /v1/admin/proxmox/:id/ha-resources` [`infra`] — filter `?type=` opsional
 - `POST /v1/admin/proxmox/:id/ha-resources` **[admin only]** (`""`) (201)
-- `DELETE /v1/admin/proxmox/:id/ha-resources` **[admin only]** (`""`) — query `?sid=` wajib
+- `PUT /v1/admin/proxmox/:id/ha-resources/:sid` **[admin only]** (`""`) — update HA resource
+- `DELETE /v1/admin/proxmox/:id/ha-resources` **[admin only]** (`""`) — query `?sid=` wajib (hapus HA resource lama tanpa `:sid` di path)
+- `GET /v1/admin/proxmox/:id/ha/groups` [`infra`] — list HA groups
+- `POST /v1/admin/proxmox/:id/ha/groups` **[admin only]** (`""`) — buat HA group (201)
+- `PUT /v1/admin/proxmox/:id/ha/groups/:group` **[admin only]** (`""`) — update HA group
+- `DELETE /v1/admin/proxmox/:id/ha/groups/:group` **[admin only]** (`""`) — hapus HA group
+- `GET /v1/admin/proxmox/:id/ha/rules` [`infra`] — list HA rules
+- `POST /v1/admin/proxmox/:id/ha/rules` **[admin only]** (`""`) — buat HA rule (201)
+- `PUT /v1/admin/proxmox/:id/ha/rules/:rule` **[admin only]** (`""`) — update HA rule
+- `DELETE /v1/admin/proxmox/:id/ha/rules/:rule` **[admin only]** (`""`) — hapus HA rule
 - `POST /v1/admin/proxmox/:id/ha/arm` **[admin only]** (`""`)
 - `POST /v1/admin/proxmox/:id/ha/disarm` **[admin only]** (`""`) — body `{mode}` ∈ `freeze|ignore`
 - `GET /v1/admin/proxmox/:id/cluster/log` [`infra`] — `?max=N` (default 100)
@@ -446,6 +490,9 @@ Firewall / pools / SDN / Ceph (per-provider `proxmox/:id`):
 - `GET /v1/admin/proxmox/:id/fw-groups/:group/rules` [`infra`]
 - `POST /v1/admin/proxmox/:id/fw-groups/:group/rules` **[admin only]** (`""`) (201)
 - `DELETE /v1/admin/proxmox/:id/fw-groups/:group/rules/:pos` **[admin only]** (`""`)
+- `GET /v1/admin/proxmox/:id/fw-aliases` [`infra`] — list FW aliases
+- `POST /v1/admin/proxmox/:id/fw-aliases` **[admin only]** (`""`) — buat FW alias (201)
+- `DELETE /v1/admin/proxmox/:id/fw-aliases/:name` **[admin only]** (`""`) — hapus FW alias
 - `GET /v1/admin/proxmox/:id/firewall-rules` [`infra`]
 - `POST /v1/admin/proxmox/:id/firewall-rules` **[admin only]** (`""`) (201)
 - `DELETE /v1/admin/proxmox/:id/firewall-rules/:pos` **[admin only]** (`""`)
@@ -453,10 +500,49 @@ Firewall / pools / SDN / Ceph (per-provider `proxmox/:id`):
 - `POST /v1/admin/proxmox/:id/pools` **[admin only]** (`""`) (201)
 - `PUT /v1/admin/proxmox/:id/pools/:pool_id` **[admin only]** (`""`)
 - `DELETE /v1/admin/proxmox/:id/pools/:pool_id` **[admin only]** (`""`)
+- `PUT /v1/admin/proxmox/:id/pools/:pool/members` **[admin only]** (`""`) — body `{vms, storages, comment?, delete?}` (legacy tanpa `:pool_id`)
 - `PUT /v1/admin/proxmox/:id/pools/:pool_id/members` **[admin only]** (`""`) — body `{vms, storages, comment?, delete?}`
 - `GET /v1/admin/proxmox/:id/ceph-status` [`infra`]
+- `GET /v1/admin/proxmox/:id/ceph/pools/:pool` [`infra`] — detail Ceph pool
 - `GET /v1/admin/proxmox/:id/sdn/zones` [`infra`]
 - `GET /v1/admin/proxmox/:id/sdn/vnets` [`infra`]
+
+Snapshots / templates / QEMU & LXC ops (per-provider `proxmox/:id`):
+
+- `GET /v1/admin/proxmox/:id/snapshots` [`infra`] — list snapshot global cluster
+- `POST /v1/admin/proxmox/:id/snapshots` **[admin only]** (`""`) — buat snapshot
+- `POST /v1/admin/proxmox/:id/snapshots/rollback` **[admin only]** (`""`) — rollback snapshot
+- `DELETE /v1/admin/proxmox/:id/snapshots/:snapname` **[admin only]** (`""`) — hapus snapshot
+- `GET /v1/admin/proxmox/:id/nodes/:node/qemu/:vmid/snapshot` [`infra`] — list QEMU snapshot per-node
+- `POST /v1/admin/proxmox/:id/nodes/:node/qemu/:vmid/snapshot` **[admin only]** (`""`) — buat QEMU snapshot
+- `DELETE /v1/admin/proxmox/:id/nodes/:node/qemu/:vmid/snapshot/:snapname` **[admin only]** (`""`) — hapus QEMU snapshot
+- `POST /v1/admin/proxmox/:id/nodes/:node/qemu/:vmid/snapshot/rollback` **[admin only]** (`""`) — rollback QEMU snapshot (tanpa `:snapname`)
+- `POST /v1/admin/proxmox/:id/nodes/:node/qemu/:vmid/snapshot/:snapname/rollback` **[admin only]** (`""`) — rollback QEMU snapshot (dengan `:snapname`)
+- `GET /v1/admin/proxmox/:id/nodes/:node/lxc/:vmid/migrate` [`infra`] — status migrasi LXC
+- `POST /v1/admin/proxmox/:id/nodes/:node/lxc/:vmid/migrate` **[admin only]** (`""`) — migrasi LXC
+- `GET /v1/admin/proxmox/:id/nodes/:node/qemu/:vmid/config` [`infra`] — get config QEMU
+- `PUT /v1/admin/proxmox/:id/nodes/:node/qemu/:vmid/config` **[admin only]** (`""`) — set config QEMU
+- `GET /v1/admin/proxmox/:id/nodes/:node/qemu/:vmid/notes` [`infra`] — get notes QEMU
+- `PUT /v1/admin/proxmox/:id/nodes/:node/qemu/:vmid/notes` **[admin only]** (`""`) — set notes QEMU
+- `GET /v1/admin/proxmox/:id/nodes/:node/qemu/:vmid/tags` [`infra`] — get tags QEMU
+- `PUT /v1/admin/proxmox/:id/nodes/:node/qemu/:vmid/tags` **[admin only]** (`""`) — set tags QEMU
+- `POST /v1/admin/proxmox/:id/nodes/:node/qemu/:vmid/reset` **[admin only]** (`""`) — reset QEMU
+- `POST /v1/admin/proxmox/:id/nodes/:node/qemu/:vmid/resume` **[admin only]** (`""`) — resume QEMU
+- `GET /v1/admin/proxmox/:id/nodes/:node/qemu/:vmid/pause` [`infra`] — status pause QEMU
+- `POST /v1/admin/proxmox/:id/nodes/:node/qemu/:vmid/pause` **[admin only]** (`""`) — pause QEMU
+- `GET /v1/admin/proxmox/:id/nodes/:node/qemu/:vmid/hibernate` [`infra`] — status hibernate QEMU
+- `POST /v1/admin/proxmox/:id/nodes/:node/qemu/:vmid/hibernate` **[admin only]** (`""`) — hibernate QEMU
+- `GET /v1/admin/proxmox/:id/nodes/:node/qemu/:vmid/migrate` [`infra`] — status migrasi QEMU
+- `POST /v1/admin/proxmox/:id/nodes/:node/qemu/:vmid/migrate` **[admin only]** (`""`) — migrasi QEMU
+- `GET /v1/admin/proxmox/:id/nodes/:node/qemu/:vmid/firewall` [`infra`] — status firewall QEMU
+- `POST /v1/admin/proxmox/:id/nodes/:node/qemu/:vmid/firewall` **[admin only]** (`""`) — buat rule firewall QEMU
+- `DELETE /v1/admin/proxmox/:id/nodes/:node/qemu/:vmid/firewall/:pos` **[admin only]** (`""`) — hapus rule firewall QEMU
+- `GET /v1/admin/proxmox/:id/nodes/:node/qemu/:vmid/firewall/options` [`infra`] — get firewall options QEMU
+- `PUT /v1/admin/proxmox/:id/nodes/:node/qemu/:vmid/firewall/options` **[admin only]** (`""`) — set firewall options QEMU
+- `GET /v1/admin/proxmox/:id/nodes/:node/qemu/:vmid/agent` [`infra`] — agent QEMU passthrough (tanpa suffix)
+- `GET /v1/admin/proxmox/:id/nodes/:node/qemu/:vmid/agent/*` [`infra`] — agent QEMU passthrough (wildcard)
+- `POST /v1/admin/proxmox/:id/nodes/:node/qemu/:vmid/agent` **[admin only]** (`""`) — agent QEMU passthrough POST
+- `POST /v1/admin/proxmox/:id/nodes/:node/qemu/:vmid/agent/*` **[admin only]** (`""`) — agent QEMU passthrough POST wildcard
 
 Ops generik (infra, provider-agnostic tapi contoh proxmox):
 
@@ -483,25 +569,41 @@ Ops generik (infra, provider-agnostic tapi contoh proxmox):
 - `POST /v1/admin/tickets/:ticket_id/assign` [`tickets`]
 - `POST /v1/admin/tickets/:ticket_id/close` [`tickets`]
 
-## Admin — VMware (provider `vmware`, prefix `vmware`/`vc-`) — per-provider prefix `vmware/:id` — infra read (NOC GET) + mutate (admin) (2)
+## Admin — VMware (provider `vmware`, prefix `vmware`/`vc-`) — per-provider prefix `vmware/:id` — infra read (NOC GET) + mutate (admin POST/DELETE) (16: 11 GET infra, 5 mutasi)
 
-Khusus `kind=vmware` di bawah `admin.Group("/vmware/:id")` (`:id` = UUID `providers.id` `kind=vmware`); non-vmware → `501 expect vmware` via `vmwareAdapterFor`. RBAC: **GET = `requireStaff("infra")` (NOC+platform_admin GET, finance 403)** — saat ini vmware hanya punya GET infra, tidak ada mutasi. `perf` adalah `GET /v1/admin/vmware/:id/perf` murni vmware (bukan proxmox).
+Khusus `kind=vmware` di bawah `admin.Group("/vmware/:id")` (`:id` = UUID `providers.id` `kind=vmware`); non-vmware → `501 expect vmware` via `vmwareAdapterFor`. RBAC: **GET = `requireStaff("infra")` (NOC+platform_admin GET, finance 403), POST/DELETE = `requireStaff("")` (platform_admin only).** Semua `code`/`id`/`region.code` prefix `vmware`/`vc-`.
 
-- `GET /v1/admin/vmware/:id/inventory` [`infra` — platform_admin+NOC GET] — inventaris vCenter (hosts: nama/cpu threads/memory bytes/power state, datastores: kapasitas/bebas bytes, clusters, resource pools); `:id` = UUID provider `kind=vmware`
-- `GET /v1/admin/vmware/:id/perf` [`infra` — platform_admin+NOC GET] — query `?v=<ext_id>` wajib + `?timeframe=hour|day`; metrik tamu via `GuestMetrics` vmware
+- `GET /v1/admin/vmware/:id/inventory` [`infra`] — inventaris vCenter (hosts: nama/cpu threads/memory bytes/power state, datastores: kapasitas/bebas bytes, clusters, resource pools); `:id` = UUID provider `kind=vmware`
+- `GET /v1/admin/vmware/:id/datastores` [`infra`] — list datastore vCenter
+- `GET /v1/admin/vmware/:id/datastores/:ds` [`infra`] — detail datastore (`:ds` = datastore name/moid)
+- `GET /v1/admin/vmware/:id/datastores/:ds/browse` [`infra`] — browse file datastore
+- `GET /v1/admin/vmware/:id/hosts` [`infra`] — list host ESXi
+- `GET /v1/admin/vmware/:id/hosts/:host` [`infra`] — detail host (`:host` = host moid/name)
+- `GET /v1/admin/vmware/:id/networks` [`infra`] — list network vCenter
+- `GET /v1/admin/vmware/:id/perf` [`infra`] — metrik tamu via `GuestMetrics` (`?v=<ext_id>` opsional, `?timeframe=hour|day`)
+- `GET /v1/admin/vmware/:id/perf/:vmid` [`infra`] — detail perf per-VM (`:vmid` wajib)
+- `GET /v1/admin/vmware/:id/snapshots` [`infra`] — list snapshot vCenter
+- `POST /v1/admin/vmware/:id/snapshots` **[admin only]** (`""`) — buat snapshot
+- `POST /v1/admin/vmware/:id/snapshots/revert` **[admin only]** (`""`) — revert snapshot (tanpa `:snap`)
+- `POST /v1/admin/vmware/:id/snapshots/:snap/revert` **[admin only]** (`""`) — revert snapshot dengan `:snap`
+- `DELETE /v1/admin/vmware/:id/snapshots` **[admin only]** (`""`) — hapus snapshot (query `?snap=` wajib, tanpa `:snap` di path)
+- `GET /v1/admin/vmware/:id/migrate` [`infra`] — status migrasi (vMotion) `?vm=` opsional
+- `POST /v1/admin/vmware/:id/migrate` **[admin only]** (`""`) — eksekusi migrasi
 
-> Legacy `GET /v1/admin/providers/vmware/*` dan `GET /v1/admin/providers/proxmox/perf` (universal, tanpa `:id`) **diganti** prefix per-provider di atas. Universal `providers/vmware/perf` cross-provider sudah dihapus — vmware `perf` hanya di `vmware/:id/perf` (guard `kind==vmware`). Registry generik tetap tersedia di `GET/POST /v1/admin/providers`.
+> Legacy `GET /v1/admin/providers/vmware/*` dan `GET /v1/admin/providers/proxmox/perf` (universal, tanpa `:id`) **diganti** prefix per-provider di atas. Universal `providers/vmware/perf` cross-provider sudah dihapus — vmware `perf` hanya di `vmware/:id/perf|perf/:vmid` (guard `kind==vmware`). Registry generik tetap tersedia di `GET/POST /v1/admin/providers`.
 
-## Admin — Dokploy PaaS (provider `dokploy`, prefix `dokploy`) — per-provider prefix `dokploy` — admin only (4)
+## Admin — Dokploy PaaS (provider `dokploy`, prefix `dokploy`) — per-provider prefix `dokploy` — admin only (6: group 5 + proxy 1; 2 GET infra, 3 admin `""`, 1 proxy `auto`→`""`)
 
-Provider `kind=dokploy` dikonfigurasi via `POST /v1/admin/providers` — `api_base_url` berisi URL server Dokploy tanpa sufiks `/api`, `api_key` berisi Dokploy API key; keduanya disimpan terenkripsi AES-GCM. `code`/`remote_id`/`slug` semua prefix `dokploy`. **Per-provider prefix `admin.Group("/dokploy")` (tanpa `:id`, single instance) + universal proxy `All /v1/dokploy/*` (compat) — semua `requireStaff("auto")` untuk proxy → `""` (platform_admin only, NOC 403) dan `requireStaff("")` untuk mirror admin.**
+Provider `kind=dokploy` dikonfigurasi via `POST /v1/admin/providers` — `api_base_url` berisi URL server Dokploy tanpa sufiks `/api`, `api_key` berisi Dokploy API key; keduanya disimpan terenkripsi AES-GCM. `code`/`remote_id`/`slug` semua prefix `dokploy`. **Per-provider prefix `admin.Group("/dokploy")` (tanpa `:id`, single instance) + universal proxy `All /v1/dokploy/*` (compat) — semua `requireStaff("auto")` untuk proxy → `""` (platform_admin only, NOC 403) dan `requireStaff("infra")` untuk `logs`/`projects/:id`, `requireStaff("")` untuk `sync`/`db`.**
 
-- `{METHOD} /v1/dokploy/{tag.method}` [JWT/API-Key + `requireStaff("auto")` → `""` platform_admin only; NOC 403] — proxy transparan ke server Dokploy (`All /v1/dokploy/*` di `server.go:654`); `POST/PUT/PATCH` meneruskan JSON body, `GET/DELETE` meneruskan query string, error upstream direlay apa adanya. Contoh `tag.method`: `application.create`, `compose.deploy`. Semua 597 operasi Dokploy v0.30.2 via satu rute ini — jangan bikin rute universal per-entity. Prefix universal ini dipertahankan untuk compat — mirror admin yang canonical di `/admin/dokploy/*`.
+- `All /v1/dokploy/*` [JWT/API-Key + `requireStaff("auto")` → `""` platform_admin only; NOC 403; `s.authAny()` + `allowAudiences(admin,auth)`] — proxy transparan ke server Dokploy di `server.go:758` (`v1.All("/dokploy/*")`); `POST/PUT/PATCH` meneruskan JSON body, `GET/DELETE` meneruskan query string, error upstream direlay apa adanya. Contoh `tag.method`: `application.create`, `compose.deploy`. Semua 597 operasi Dokploy v0.30.2 via satu rute ini — jangan bikin rute universal per-entity. Prefix universal ini dipertahankan untuk compat — mirror admin yang canonical di `/admin/dokploy/*`.
+- `GET /v1/admin/dokploy/logs` [`infra` — platform_admin+NOC GET; finance 403] — log Dokploy per-provider (`?follow=&tail=` opsional)
+- `GET /v1/admin/dokploy/projects/:id` [`infra` — platform_admin+NOC GET] — detail project Dokploy mirror (`:id` = `remote_id` prefix `dokploy`)
 - `POST /v1/admin/dokploy/sync` [`""` — platform_admin only; NOC 403] — body `{"entity":"projects|servers|registries|sshkeys|certificates"}`; tarik upstream & upsert mirror DB (`by remote_id` prefix dokploy) + rekonsiliasi hapus; respons `{synced,failed,removed}`
 - `GET /v1/admin/dokploy/db/:entity` [`""` — platform_admin only] — baca mirror lokal (`?limit=&offset=`); entity: `projects, environments, applications, composes, databases, domains, deployments, backups, servers, registries, sshkeys, certificates`
 - `DELETE /v1/admin/dokploy/db/:entity/:remote_id` [`""` — platform_admin only] — hapus satu baris mirror lokal (`remote_id` prefix `dokploy`)
 
-Total: ~322 (21 auth + 9 MFA + 6 API keys + 5 addresses + 8 profile/catalog + 4 org + 8 ssh/scripts + 1 pricing + 9 billing + 3 wallet + 3 subs + 20 instances + 26 pve-ext + 9 ISO + 29 network + 7 storage + 7 support + 5 notifications + 4 webhooks + 1 dashboard + 1 audit + 4 affiliate user + 28 admin umum + 2 onidel per-provider + 51 proxmox per-provider + 2 vmware per-provider + 4 dokploy + infra healthz/metrics tidak dihitung). Universal `providers/proxmox/*` / `providers/vmware/*` tanpa `:id` sudah diganti per-provider prefix (`proxmox/:id/*`, `vmware/:id/*`, `onidel/:id/*`).
+Total: **~464** = 21 auth + 9 MFA + 6 API keys + 5 addresses + 8 profile/catalog (regions/plans/instance-types/os-templates/landing/docs/blog/media) + 4 org + 8 ssh/scripts + 1 pricing + 9 billing + 3 wallet + 3 subs + 20 instances + 26 pve-ext (per-VM proxmox) + 9 ISO/measured-boot + 29 network + 7 storage + 7 support + 5 notifications + 4 webhooks + 1 dashboard + 1 audit + 4 affiliate user + **~67 admin umum** (users 5, affiliate 4, orgs 3, providers 5, products 3, plans/prices 3, custom-rates 2, regions 2, coupons 4, feature-flags 2, app-settings 2, orders/void 3, invoices/void/payments 5, finance/summary 1, wallets 1, storage-backends 5, landing 4, docs 4, blog 4, media 3, instances ops agnostic 14, jobs/orphans/incidents/blocked-networks 9, tickets 6, audit-logs 1) + **12 onidel per-provider** (7 GET infra + 5 POST admin) + **124 proxmox per-provider** (57 GET infra + 67 POST/PUT/DELETE admin) + **16 vmware per-provider** (11 GET infra + 5 POST/DELETE admin) + **6 dokploy** (5 group + 1 proxy; 2 GET infra + 4 admin) + 3 infra `healthz/readyz/metrics` (tanpa auth, di luar hitungan `v1`). Universal `providers/proxmox/*` / `providers/vmware/*` tanpa `:id` sudah diganti per-provider prefix (`proxmox/:id/*`, `vmware/:id/*`, `onidel/:id/*`). Hitungan per-provider diverifikasi dari `server.go:507-758` (`proxmoxAdmin` 124 + `onidelAdmin` 12 + `vmwareAdmin` 16 + `dokployAdmin` 5 + `v1.All dokploy` 1).
 
 ## Infra — `GET /healthz`, `GET /readyz`, `GET /metrics` (3, terhitung tapi di luar per-provider)
 
@@ -513,5 +615,5 @@ Pemetaan infra observability global (bukan per-provider). Semua terdaftar langsu
 | `GET /readyz` | tanpa auth | `server.go:206` `readyz` — `db.Ping` + `rdb.Ping` 3s timeout | `200 ready` atau `503 postgres/redis not ready` | Readiness probe (deploy gate) |
 | `GET /metrics` | tanpa auth | `server.go:207` `metrics` — `uptime_seconds` | `200 {uptime_seconds: int}` | Dashboard / collector internal (bukan Prometheus text) |
 
-Menu frontend lama yang universal (`/admin/providers` generik tanpa tabs per-kind, `/admin/instances` universal tanpa filter provider) **dihapus** — diganti menu/tab per-provider prefix di `Providers.tsx` (`Tabs` `all/onidel/proxmox/vmware/dokploy`), `nav.tsx` (admin/noc/finance terpisah), dan `routes.tsx` per-konsol. Semua link infra sekarang prefix per-provider: Onidel → `onidel/:id/catalog|health`, Proxmox → `proxmox/:id/cluster|containers|nodes|…`, VMware → `vmware/:id/inventory|perf`, Dokploy → `dokploy/sync|db`.
+Menu frontend lama yang universal (`/admin/providers` generik tanpa tabs per-kind, `/admin/instances` universal tanpa filter provider) **dihapus** — diganti menu/tab per-provider prefix di `Providers.tsx` (`Tabs` `all/onidel/proxmox/vmware/dokploy`), `nav.tsx` (admin/noc/finance terpisah), dan `routes.tsx` per-konsol. Semua link infra sekarang prefix per-provider: Onidel → `onidel/:id/catalog|health|health/detail|instances|orders|invoices|regions/sync|catalog/sync`, Proxmox → `proxmox/:id/cluster|containers|nodes/:node/{storages,tasks,detail,disks,certs,command,backup,dns,time,prune,serial-proxy,report,rrd,qemu,cloud-init}|storages/:storage/content|backup-jobs|replication|ha-resources|ha/groups|ha/rules|cluster/{log,tasks}|cluster-storages|fw-groups|fw-aliases|firewall-rules|pools|ceph-status|sdn/zones|vnets|cpu-models|templates|snapshots|lxc|qemu|clone|access|version|next-id|qemu/:vmid/{config,notes,tags,reset,resume,pause,hibernate,migrate,firewall,agent}`, VMware → `vmware/:id/inventory|datastores|hosts|networks|perf|perf/:vmid|snapshots|migrate`, Dokploy → `dokploy/logs|projects/:id|sync|db/:entity` + proxy `All /v1/dokploy/*`. Source of truth: `backend/internal/api/server.go:507-758` (proxmox 124, onidel 12, vmware 16, dokploy 6).
 

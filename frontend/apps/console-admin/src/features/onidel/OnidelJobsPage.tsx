@@ -26,6 +26,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { ProviderShell } from "@/features/admin/pages/providers/shared"
+import { useInfraGet } from "@/features/admin/pages/providers/infra"
 import { PaginationBar, StatusBadge } from "@/features/admin/pages/shared"
 import { formatDateTime } from "@/features/admin/pages/format"
 import type { PagedMeta } from "@/lib/types"
@@ -55,13 +56,18 @@ export default function OnidelJobsPage() {
   const { providerId = "" } = useParams<{ providerId: string }>()
   const baseQueue = "provider_sync"
 
-  const [rows, setRows] = useState<OnidelJobRow[]>([])
-  const [meta, setMeta] = useState<PagedMeta & Record<string, unknown>>()
   const [page, setPage] = useState(1)
   const [status, setStatus] = useState("all")
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<unknown>(null)
-  const [autoRefresh, setAutoRefresh] = useState(false)
+  const infra = useInfraGet<OnidelJobRow[]>(
+    "/admin/jobs",
+    { page, per_page: PER_PAGE, status: status === "all" ? null : status, queue: baseQueue },
+    { intervalMs: 5000 },
+  )
+  const rows = Array.isArray(infra.data) ? infra.data : []
+  const meta = infra.meta as PagedMeta & Record<string, unknown> | undefined
+  const loading = infra.loading
+  const error = infra.error
+  const [autoRefresh] = useState(true)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [cancelTarget, setCancelTarget] = useState<OnidelJobRow | null>(null)
   const [bulkBusy, setBulkBusy] = useState(false)
@@ -69,43 +75,13 @@ export default function OnidelJobsPage() {
 
   const bulk = useBulkSelection<OnidelJobRow>((row) => row.id)
 
-  const load = useCallback(
-    (silent: boolean) => {
-      if (!silent) setLoading(true)
-      return apiGet<OnidelJobRow[]>("/admin/jobs", {
-        query: {
-          page,
-          per_page: PER_PAGE,
-          status: status === "all" ? null : status,
-          queue: baseQueue,
-        },
-      })
-        .then((envelope) => {
-          const data = Array.isArray(envelope.data) ? envelope.data : []
-          setRows(data)
-          setMeta(envelope.meta as PagedMeta & Record<string, unknown>)
-          setError(null)
-        })
-        .catch((cause) => {
-          setError(cause)
-        })
-        .finally(() => {
-          setLoading(false)
-        })
-    },
-    [page, status],
-  )
+  const load = useCallback((silent: boolean) => {
+    void silent
+    infra.reload()
+    return Promise.resolve()
+  }, [infra])
 
-  useEffect(() => {
-    const t = setTimeout(() => void load(false), 0)
-    return () => clearTimeout(t)
-  }, [load])
-
-  useEffect(() => {
-    if (!autoRefresh) return
-    const handle = window.setInterval(() => void load(true), AUTO_REFRESH_MS)
-    return () => window.clearInterval(handle)
-  }, [autoRefresh, load])
+  void autoRefresh
 
   const runAction = async (job: OnidelJobRow, action: "retry" | "cancel", confirm = false) => {
     if (confirm) {

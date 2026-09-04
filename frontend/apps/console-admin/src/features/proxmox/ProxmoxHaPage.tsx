@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useState } from "react"
 import { useParams } from "react-router-dom"
 import { toast } from "sonner"
-import { apiDelete, apiGet, apiPost, apiPut, ApiError } from "@/lib/api"
+import { apiDelete, apiPost, apiPut, ApiError } from "@/lib/api"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -26,6 +26,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ConfirmDialog, ProviderShell } from "@/features/admin/pages/providers/shared"
+import { useInfraGet } from "@/features/admin/pages/providers/infra"
 import { StatusBadge } from "@/features/admin/pages/shared"
 
 interface HAResource {
@@ -72,19 +73,29 @@ export default function ProxmoxHaPage() {
   const base = `/admin/proxmox/${providerId}`
 
   const [typeFilter, setTypeFilter] = useState("all")
-  const [resources, setResources] = useState<HAResource[]>([])
-  const [resourcesLoading, setResourcesLoading] = useState(true)
-  const [resourcesError, setResourcesError] = useState<unknown>(null)
+  const resourcesQuery = typeFilter === "all" ? undefined : { type: typeFilter }
+  const resourcesInfra = useInfraGet<HAResource[]>(providerId ? `${base}/ha-resources` : null, resourcesQuery, { intervalMs: 5000 })
+  const resources = Array.isArray(resourcesInfra.data) ? resourcesInfra.data : []
+  const resourcesLoading = resourcesInfra.loading
+  const resourcesError = resourcesInfra.error
+  const loadResources = resourcesInfra.reload
 
-  const [groups, setGroups] = useState<HAGroup[]>([])
-  const [groupsLoading, setGroupsLoading] = useState(true)
-  const [groupsError, setGroupsError] = useState<unknown>(null)
+  const groupsInfra = useInfraGet<HAGroup[]>(providerId ? `${base}/ha/groups` : null, undefined, { intervalMs: 5000 })
+  const groups = Array.isArray(groupsInfra.data) ? groupsInfra.data : []
+  const groupsLoading = groupsInfra.loading
+  const groupsError = groupsInfra.error
 
-  const [rules, setRules] = useState<HARule[]>([])
-  const [rulesLoading, setRulesLoading] = useState(true)
-  const [rulesError, setRulesError] = useState<unknown>(null)
+  const rulesInfra = useInfraGet<HARule[]>(providerId ? `${base}/ha/rules` : null, undefined, { intervalMs: 5000 })
+  const rules = Array.isArray(rulesInfra.data) ? rulesInfra.data : []
+  const rulesLoading = rulesInfra.loading
+  const rulesError = rulesInfra.error
 
-  const [tick, setTick] = useState(0)
+  const reload = useCallback(() => {
+    resourcesInfra.reload()
+    groupsInfra.reload()
+    rulesInfra.reload()
+  }, [resourcesInfra, groupsInfra, rulesInfra])
+
   const [busy, setBusy] = useState(false)
 
   const [addResourceOpen, setAddResourceOpen] = useState(false)
@@ -98,66 +109,6 @@ export default function ProxmoxHaPage() {
   const [ruleCreateOpen, setRuleCreateOpen] = useState(false)
   const [ruleEditTarget, setRuleEditTarget] = useState<HARule | null>(null)
   const [ruleDeleteTarget, setRuleDeleteTarget] = useState<HARule | null>(null)
-
-  const reload = useCallback(() => setTick((v) => v + 1), [])
-
-  const loadResources = useCallback(async () => {
-    if (!providerId) return
-    setResourcesLoading(true)
-    setResourcesError(null)
-    try {
-      const query = typeFilter === "all" ? undefined : { type: typeFilter }
-      const res = await apiGet<HAResource[]>(`${base}/ha-resources`, query ? { query } : undefined)
-      setResources(Array.isArray(res.data) ? res.data : [])
-    } catch (cause) {
-      setResourcesError(cause)
-    } finally {
-      setResourcesLoading(false)
-    }
-  }, [base, providerId, typeFilter])
-
-  const loadGroups = useCallback(async () => {
-    if (!providerId) return
-    setGroupsLoading(true)
-    setGroupsError(null)
-    try {
-      const res = await apiGet<HAGroup[]>(`${base}/ha/groups`)
-      setGroups(Array.isArray(res.data) ? res.data : [])
-    } catch (cause) {
-      setGroupsError(cause)
-    } finally {
-      setGroupsLoading(false)
-    }
-  }, [base, providerId])
-
-  const loadRules = useCallback(async () => {
-    if (!providerId) return
-    setRulesLoading(true)
-    setRulesError(null)
-    try {
-      const res = await apiGet<HARule[]>(`${base}/ha/rules`)
-      setRules(Array.isArray(res.data) ? res.data : [])
-    } catch (cause) {
-      setRulesError(cause)
-    } finally {
-      setRulesLoading(false)
-    }
-  }, [base, providerId])
-
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => {
-    void loadResources()
-  }, [loadResources, tick])
-
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => {
-    void loadGroups()
-  }, [loadGroups, tick])
-
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => {
-    void loadRules()
-  }, [loadRules, tick])
 
   const runAction = async (action: () => Promise<unknown>, success: string, done?: () => void) => {
     setBusy(true)

@@ -1112,6 +1112,15 @@ func (c *Client) HAStatus(ctx context.Context) ([]*goproxmox.HAStatusEntry, erro
 	return status, wrapErr("ha status", err)
 }
 
+func (c *Client) HAManagerStatus(ctx context.Context) (*goproxmox.HAManagerStatus, error) {
+	cl, err := c.sdk.Cluster(ctx)
+	if err != nil {
+		return nil, wrapErr("cluster", err)
+	}
+	status, err := cl.HAManagerStatus(ctx)
+	return status, wrapErr("ha manager_status", err)
+}
+
 func (c *Client) HAGroupsList(ctx context.Context) ([]*goproxmox.HAGroup, error) {
 	cl, err := c.sdk.Cluster(ctx)
 	if err != nil {

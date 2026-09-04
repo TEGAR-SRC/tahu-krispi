@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
@@ -15,6 +16,7 @@ import (
 	"kilat.cloud/backend/internal/audit"
 	"kilat.cloud/backend/internal/platform/crypto"
 	"kilat.cloud/backend/internal/provider"
+	"kilat.cloud/backend/internal/provider/dokploy"
 	apperrors "kilat.cloud/backend/pkg/errors"
 	httputil "kilat.cloud/backend/pkg/httputil"
 	mw "kilat.cloud/backend/pkg/middleware"
@@ -664,6 +666,29 @@ func (s *Server) adminTestProvider(c fiber.Ctx) error {
 	var code, kind string
 	if err := s.db.QueryRow(c.Context(), `SELECT code, kind FROM providers WHERE id=$1`, providerID).Scan(&code, &kind); err != nil {
 		return mw.WriteError(c, apperrors.New(apperrors.CodeNotFound, "provider not found"))
+	}
+	if code == "dokploy" || kind == "dokploy" {
+		ctx, cancel := context.WithTimeout(c.Context(), 10*time.Second)
+		defer cancel()
+		cl, err := dokploy.NewClientFromDB(ctx, s.db, s.encKey)
+		if err != nil {
+			return mw.WriteError(c, err)
+		}
+		start := time.Now()
+		status, payload, err := cl.Do(ctx, "GET", "project.all", nil, nil)
+		latency := time.Since(start).Milliseconds()
+		if err != nil {
+			return mw.WriteError(c, err)
+		}
+		if status < 200 || status >= 300 {
+			snip := string(payload)
+			if len(snip) > 512 {
+				snip = snip[:512]
+			}
+			return mw.WriteError(c, apperrors.Newf(apperrors.CodeProviderUnavailable,
+				"dokploy project.all answered %d: %s", status, snip))
+		}
+		return mw.JSON(c, 200, fiber.Map{"code": code, "kind": kind, "status": "ok", "latency_ms": latency}, nil)
 	}
 	p, err := provider.Lookup(code)
 	if err != nil {

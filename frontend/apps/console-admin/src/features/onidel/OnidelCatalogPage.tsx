@@ -1,11 +1,10 @@
-import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
-import { apiGet } from "@/lib/api"
 import { ProviderShell } from "@/features/admin/pages/providers/shared"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
 import { ErrorBanner } from "@/components/shared/ErrorBanner"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { useInfraGet } from "@/features/admin/pages/providers/infra"
 
 interface CatalogLocation {
   Code?: string
@@ -112,45 +111,22 @@ function osExternal(r: CatalogOSTemplate): string {
 
 export default function OnidelCatalogPage() {
   const { providerId = "" } = useParams<{ providerId: string }>()
-  const [data, setData] = useState<OnidelCatalogPayload | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<unknown>(null)
-
-  useEffect(() => {
-    if (!providerId) {
-      setLoading(false)
-      return
-    }
-    let cancelled = false
-    setLoading(true)
-    apiGet<OnidelCatalogPayload>(`/admin/onidel/${providerId}/catalog`)
-      .then((env) => {
-        if (cancelled) return
-        const payload = env.data as unknown as OnidelCatalogPayload
-        setData({
-          provider_id: String((payload as unknown as Record<string, unknown>).provider_id ?? providerId),
-          code: String((payload as unknown as Record<string, unknown>).code ?? ""),
-          regions: Array.isArray(payload.regions) ? payload.regions : [],
-          instance_types: Array.isArray((payload as unknown as Record<string, unknown>).instance_types as unknown[])
-            ? (payload.instance_types as CatalogInstanceType[])
-            : [],
-          os_templates: Array.isArray((payload as unknown as Record<string, unknown>).os_templates as unknown[])
-            ? (payload.os_templates as CatalogOSTemplate[])
-            : [],
-        })
-        setError(null)
-      })
-      .catch((cause) => {
-        if (!cancelled) setError(cause)
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [providerId])
-
+  const raw = useInfraGet<OnidelCatalogPayload>(providerId ? `/admin/onidel/${providerId}/catalog` : null, undefined, { intervalMs: 5000 })
+  const data: OnidelCatalogPayload | null = raw.data
+    ? {
+        provider_id: String((raw.data as unknown as Record<string, unknown>).provider_id ?? providerId),
+        code: String((raw.data as unknown as Record<string, unknown>).code ?? ""),
+        regions: Array.isArray(raw.data.regions) ? raw.data.regions : [],
+        instance_types: Array.isArray((raw.data as unknown as Record<string, unknown>).instance_types as unknown[])
+          ? (raw.data.instance_types as unknown as CatalogInstanceType[])
+          : [],
+        os_templates: Array.isArray((raw.data as unknown as Record<string, unknown>).os_templates as unknown[])
+          ? (raw.data.os_templates as unknown as CatalogOSTemplate[])
+          : [],
+      }
+    : null
+  const loading = raw.loading
+  const error = raw.error
   const regions = data?.regions ?? []
   const instanceTypes = data?.instance_types ?? []
   const osTemplates = data?.os_templates ?? []

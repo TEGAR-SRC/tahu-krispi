@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
 import { toast } from "sonner"
-import { apiDelete, apiGet, apiPost, apiPut, ApiError } from "@/lib/api"
+import { apiDelete, apiPost, apiPut, ApiError } from "@/lib/api"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -25,6 +25,7 @@ import {
 import { StatusBadge } from "@/features/admin/pages/shared"
 import { formatDateTime } from "@/features/admin/pages/format"
 import { ConfirmDialog, ProviderShell } from "@/features/admin/pages/providers/shared"
+import { useInfraGet } from "@/features/admin/pages/providers/infra"
 import type { BackupJobRow, ClusterStorage } from "@/features/admin/pages/providers/types"
 
 const MODES = ["snapshot", "suspend", "stop"]
@@ -33,11 +34,14 @@ export default function ProxmoxBackupJobsPage() {
   const { providerId = "" } = useParams<{ providerId: string }>()
   const base = `/admin/proxmox/${providerId}`
 
-  const [jobs, setJobs] = useState<BackupJobRow[]>([])
-  const [jobsLoading, setJobsLoading] = useState(true)
-  const [jobsError, setJobsError] = useState<unknown>(null)
-  const [storageNames, setStorageNames] = useState<string[]>([])
-  const [storagesLoading, setStoragesLoading] = useState(true)
+  const jobsState = useInfraGet<BackupJobRow[]>(providerId ? `${base}/backup-jobs` : null, undefined, { intervalMs: 5000 })
+  const storagesState = useInfraGet<ClusterStorage[]>(providerId ? `${base}/cluster-storages` : null, undefined, { intervalMs: 5000 })
+  const jobs = Array.isArray(jobsState.data) ? jobsState.data : []
+  const jobsLoading = jobsState.loading
+  const jobsError = jobsState.error
+  const storageNames = (Array.isArray(storagesState.data) ? storagesState.data : []).map((r) => r.storage).filter((n): n is string => Boolean(n))
+  const storagesLoading = storagesState.loading
+  const loadJobs = jobsState.reload
 
   const [editorOpen, setEditorOpen] = useState(false)
   const [editing, setEditing] = useState<BackupJobRow | null>(null)
@@ -45,38 +49,11 @@ export default function ProxmoxBackupJobsPage() {
   const [runTarget, setRunTarget] = useState<BackupJobRow | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
 
-  const loadJobs = useCallback(async () => {
-    if (!providerId) return
-    setJobsLoading(true)
-    setJobsError(null)
-    try {
-      const res = await apiGet<BackupJobRow[]>(`${base}/backup-jobs`)
-      setJobs(Array.isArray(res.data) ? res.data : [])
-    } catch (cause) {
-      setJobsError(cause)
-    } finally {
-      setJobsLoading(false)
-    }
-  }, [base, providerId])
-
-  const loadStorages = useCallback(async () => {
-    if (!providerId) return
-    setStoragesLoading(true)
-    try {
-      const res = await apiGet<ClusterStorage[]>(`${base}/cluster-storages`)
-      const names = (res.data ?? []).map((r) => r.storage).filter((n): n is string => Boolean(n))
-      setStorageNames(names)
-    } catch {
-      setStorageNames([])
-    } finally {
-      setStoragesLoading(false)
-    }
-  }, [base, providerId])
+  const loadStorages = useCallback(() => storagesState.reload(), [storagesState])
 
   useEffect(() => {
-    void loadJobs()
     void loadStorages()
-  }, [loadJobs, loadStorages])
+  }, [loadStorages])
 
   const runAction = async (job: BackupJobRow, action: () => Promise<unknown>, success: string) => {
     const key = String(job.id ?? "?")

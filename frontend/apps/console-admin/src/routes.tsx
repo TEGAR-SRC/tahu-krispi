@@ -117,6 +117,8 @@ const ProxmoxQemuMigratePage = lazy(() => import("@/features/proxmox/ProxmoxQemu
 const ProxmoxQemuFirewallPage = lazy(() => import("@/features/proxmox/ProxmoxQemuFirewallPage"))
 const ProxmoxQemuAgentPage = lazy(() => import("@/features/proxmox/ProxmoxQemuAgentPage"))
 const ProxmoxReplicationPage = lazy(() => import("@/features/proxmox/ProxmoxReplicationPage"))
+const ProxmoxHaManagerStatusPage = lazy(() => import("@/features/proxmox/ProxmoxHaManagerStatusPage"))
+const ProxmoxHaMigratePage = lazy(() => import("@/features/proxmox/ProxmoxHaMigratePage"))
 const ProxmoxDisksPage = lazy(() => import("@/features/proxmox/ProxmoxDisksPage"))
 const ProxmoxAclPage = lazy(() => import("@/features/proxmox/ProxmoxAclPage"))
 const ProxmoxCephPoolDetailPage = lazy(() => import("@/features/proxmox/ProxmoxCephPoolDetailPage"))
@@ -141,6 +143,8 @@ const VmwareDatastoreDetailPage = lazy(() => import("@/features/vmware/VmwareDat
 const VmwareDatastoreBrowsePage = lazy(() => import("@/features/vmware/VmwareDatastoreBrowsePage"))
 const VmwareHostsPage = lazy(() => import("@/features/vmware/VmwareHostsPage"))
 const VmwareHostDetailPage = lazy(() => import("@/features/vmware/VmwareHostDetailPage"))
+const VmwareClusterDetailPage = lazy(() => import("@/features/vmware/VmwareClusterDetailPage"))
+const VmwarePoolDetailPage = lazy(() => import("@/features/vmware/VmwarePoolDetailPage"))
 const VmwarePerfPage = lazy(() => import("@/features/vmware/VmwarePerfPage"))
 const VmwarePerfDetailPage = lazy(() => import("@/features/vmware/VmwarePerfDetailPage"))
 const VmwareSnapshotPage = lazy(() => import("@/features/vmware/VmwareSnapshotPage"))
@@ -709,6 +713,8 @@ export default function AppRoutes() {
           <Route path="proxmox/:providerId/nodes/:node/qemu/:vmid/agent" element={<ProxmoxQemuAgentPage />} />
           <Route path="proxmox/:providerId/nodes/:node/qemu/:vmid/agent/*" element={<ProxmoxQemuAgentPage />} />
           <Route path="proxmox/:providerId/replication" element={<ProxmoxReplicationPage />} />
+          <Route path="proxmox/:providerId/ha-resources/:sid/migrate" element={<ProxmoxHaMigratePage />} />
+          <Route path="proxmox/:providerId/ha/manager-status" element={<ProxmoxHaManagerStatusPage />} />
           <Route path="proxmox/:providerId/fw-aliases" element={<ProxmoxFwAliasesPage />} />
           <Route path="proxmox/:providerId/access/acl" element={<ProxmoxAclPage />} />
           <Route path="proxmox/:providerId/ceph/pools/:pool" element={<ProxmoxCephPoolDetailPage />} />
@@ -731,6 +737,8 @@ export default function AppRoutes() {
           <Route path="vmware/:providerId/datastores/:ds" element={<VmwareDatastoreDetailPage />} />
           <Route path="vmware/:providerId/hosts" element={<VmwareHostsPage />} />
           <Route path="vmware/:providerId/hosts/:host" element={<VmwareHostDetailPage />} />
+          <Route path="vmware/:providerId/clusters/:cluster" element={<VmwareClusterDetailPage />} />
+          <Route path="vmware/:providerId/pools/:pool" element={<VmwarePoolDetailPage />} />
           <Route path="vmware/:providerId/perf" element={<VmwarePerfPage />} />
           <Route path="vmware/:providerId/perf/:vmid" element={<VmwarePerfDetailPage />} />
           <Route path="vmware/:providerId/snapshots" element={<VmwareSnapshotPage />} />

@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { ConfirmDialog, ProviderShell } from "@/features/admin/pages/providers/shared"
+import { useInfraGet } from "@/features/admin/pages/providers/infra"
 import type {
   ClusterPayload,
   ClusterStorage,
@@ -95,62 +96,21 @@ export default function ProxmoxStoragesPage() {
   const { providerId = "" } = useParams<{ providerId: string }>()
   const base = `/admin/proxmox/${providerId}`
 
-  const [storages, setStorages] = useState<ClusterStorage[]>([])
-  const [storagesLoading, setStoragesLoading] = useState(true)
-  const [storagesError, setStoragesError] = useState<unknown>(null)
-  const [storagesTick, setStoragesTick] = useState(0)
+  const storagesInfra = useInfraGet<ClusterStorage[]>(providerId ? `${base}/cluster-storages` : null, undefined, { intervalMs: 5000 })
+  const storages = Array.isArray(storagesInfra.data) ? storagesInfra.data : []
+  const storagesLoading = storagesInfra.loading
+  const storagesError = storagesInfra.error
+  const reloadStorages = storagesInfra.reload
 
-  const [nodes, setNodes] = useState<PveNodeStatus[]>([])
-  const [nodesLoading, setNodesLoading] = useState(true)
+  const nodesInfra = useInfraGet<ClusterPayload>(providerId ? `${base}/cluster` : null, undefined, { intervalMs: 5000 })
+  const nodes = nodesInfra.data?.nodes ?? []
+  const nodesLoading = nodesInfra.loading
 
   const [createOpen, setCreateOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<ClusterStorage | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ClusterStorage | null>(null)
   const [busy, setBusy] = useState(false)
   const [browsing, setBrowsing] = useState<ClusterStorage | null>(null)
-
-  useEffect(() => {
-    if (!providerId) return
-    let cancelled = false
-    setStoragesLoading(true)
-    apiGet<ClusterStorage[]>(`${base}/cluster-storages`)
-      .then((env) => {
-        if (!cancelled) {
-          setStorages(Array.isArray(env.data) ? env.data : [])
-          setStoragesError(null)
-        }
-      })
-      .catch((cause) => {
-        if (!cancelled) setStoragesError(cause)
-      })
-      .finally(() => {
-        if (!cancelled) setStoragesLoading(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [providerId, base, storagesTick])
-
-  useEffect(() => {
-    if (!providerId) return
-    let cancelled = false
-    setNodesLoading(true)
-    apiGet<ClusterPayload>(`${base}/cluster`)
-      .then((env) => {
-        if (!cancelled) setNodes(env.data?.nodes ?? [])
-      })
-      .catch(() => {
-        if (!cancelled) setNodes([])
-      })
-      .finally(() => {
-        if (!cancelled) setNodesLoading(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [providerId, base])
-
-  const reloadStorages = () => setStoragesTick((v) => v + 1)
 
   const runMutation = async (action: () => Promise<unknown>, success: string, after?: () => void): Promise<void> => {
     setBusy(true)

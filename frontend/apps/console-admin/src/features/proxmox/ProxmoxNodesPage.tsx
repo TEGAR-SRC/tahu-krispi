@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useState } from "react"
 import { Link, useParams } from "react-router-dom"
-import { apiGet, ApiError } from "@/lib/api"
+import { ApiError } from "@/lib/api"
 import { ProviderShell } from "@/features/admin/pages/providers/shared"
 import { SimpleDataTable } from "@/components/shared/SimpleDataTable"
 import { EmptyState } from "@/components/shared/EmptyState"
@@ -8,57 +7,18 @@ import { ErrorBanner } from "@/components/shared/ErrorBanner"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { StatusBadge } from "@/features/admin/pages/shared"
-import { formatBytes, formatPercent, formatUptime } from "@/features/admin/pages/providers/infra"
+import { formatBytes, formatPercent, formatUptime, useInfraGet } from "@/features/admin/pages/providers/infra"
 import type { ClusterPayload, PveNodeStatus } from "@/features/admin/pages/providers/types"
 
 const nodeName = (node: PveNodeStatus) => String(node.node ?? node.name ?? "—")
 
 export default function ProxmoxNodesPage() {
   const { providerId = "" } = useParams<{ providerId: string }>()
-  const [data, setData] = useState<ClusterPayload | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<unknown>(null)
-
-  const load = useCallback(async () => {
-    if (!providerId) {
-      setLoading(false)
-      return
-    }
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await apiGet<ClusterPayload>(`/admin/proxmox/${providerId}/cluster`)
-      setData(res.data)
-      setError(null)
-    } catch (cause) {
-      const isNotFound = cause instanceof ApiError && cause.status === 404
-      if (isNotFound) {
-        try {
-          const fallback = await apiGet<ClusterPayload>(`/admin/providers/${providerId}/cluster`)
-          setData(fallback.data)
-          setError(null)
-          return
-        } catch (fallbackCause) {
-          if (fallbackCause instanceof ApiError && fallbackCause.status === 404) {
-            setData({ provider_id: providerId, code: "", nodes: [] } as ClusterPayload)
-            setError(null)
-            return
-          }
-          setData(null)
-          setError(fallbackCause)
-          return
-        }
-      }
-      setData(null)
-      setError(cause)
-    } finally {
-      setLoading(false)
-    }
-  }, [providerId])
-
-  useEffect(() => {
-    void load()
-  }, [load])
+  const infra = useInfraGet<ClusterPayload>(providerId ? `/admin/proxmox/${providerId}/cluster` : null, undefined, { intervalMs: 5000 })
+  const data = infra.data
+  const loading = infra.loading
+  const error = infra.error
+  const load = infra.reload
 
   const nodes = Array.isArray(data?.nodes) ? data.nodes : []
   const isNotFoundAfterFallback =
