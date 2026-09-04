@@ -163,10 +163,11 @@ export default function OnidelCatalogPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="mb-2 rounded bg-muted p-2 font-mono text-xs">debug keys: {regions[0] ? Object.keys(regions[0] as unknown as Record<string, unknown>).join(",") : "empty"} | sample: {regions[0] ? JSON.stringify(regions[0]).slice(0, 180) : "—"}</div>
             <SimpleDataTable<CatalogLocation>
               columns={[
-                { key: "code", header: "Code", render: (r) => <span className="font-mono text-sm">{locCode(r) || "—"}</span> },
-                { key: "name", header: "Name", render: (r) => locName(r) || "—" },
+                { key: "code", header: "Code", render: (r) => <span className="font-mono text-sm">{locCode(r) || JSON.stringify(r).slice(0, 40) || "—"}</span> },
+                { key: "name", header: "Name", render: (r) => locName(r) || JSON.stringify(r).slice(0, 40) || "—" },
               ]}
               rows={regions}
               loading={loading}
