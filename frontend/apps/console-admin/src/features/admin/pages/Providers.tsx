@@ -63,6 +63,7 @@ export default function AdminProvidersPage() {
   const [meta, setMeta] = useState<PagedMeta & Record<string, unknown>>()
   const [page, setPage] = useState(1)
   const [kindFilter, setKindFilter] = useState<string>("all")
+  const [sectionFilter, setSectionFilter] = useState<string>("")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
   const [reloadTick, setReloadTick] = useState(0)
@@ -108,9 +109,26 @@ export default function AdminProvidersPage() {
   }, [page])
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const k = params.get("kind")
+    const s = params.get("section")
+    if (k) setKindFilter(k)
+    if (s) setSectionFilter(s)
     const t = setTimeout(() => load(), 0)
     return () => clearTimeout(t)
   }, [load, reloadTick])
+
+  useEffect(() => {
+    const onPop = () => {
+      const params = new URLSearchParams(window.location.search)
+      const k = params.get("kind")
+      const s = params.get("section")
+      setKindFilter(k ?? "all")
+      setSectionFilter(s ?? "")
+    }
+    window.addEventListener("popstate", onPop)
+    return () => window.removeEventListener("popstate", onPop)
+  }, [])
 
   const runProviderAction = async (
     provider: ProviderRow,
@@ -130,12 +148,13 @@ export default function AdminProvidersPage() {
   }
 
   const visibleRows = kindFilter === "all" ? rows : rows.filter((row) => row.kind === kindFilter)
+  const sectionLabel = sectionFilter ? sectionFilter.replace("-", " ") : ""
 
   return (
     <div className="flex w-full max-w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Providers"
-        description="Upstream compute providers and their infrastructure."
+        description={`Upstream compute providers and their infrastructure.${sectionFilter ? ` — filtered ${kindFilter} / ${sectionLabel}` : ""}`}
         actions={
           <Button
             onClick={() => {
@@ -147,6 +166,16 @@ export default function AdminProvidersPage() {
           </Button>
         }
       />
+      {sectionFilter && visibleRows.length === 1 ? (
+        <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm">
+          Showing <b>{kindFilter}</b> → <b>{sectionLabel}</b> for <b>{visibleRows[0].name}</b> — klik <Link className="underline" to={`/admin/${kindFilter}/${visibleRows[0].id}/${sectionFilter}`}>buka halaman {sectionLabel}</Link> atau pilih provider di tabel.
+        </div>
+      ) : null}
+      {sectionFilter && visibleRows.length > 1 ? (
+        <div className="rounded-md border bg-muted p-3 text-sm text-muted-foreground">
+          Filter <b>{kindFilter} / {sectionLabel}</b> — pilih salah satu provider di bawah untuk buka halaman {sectionLabel} (contoh: <Link className="underline" to={`/admin/${kindFilter}/${visibleRows[0]?.id}/${sectionFilter}`}>buka {visibleRows[0]?.name ?? ""}</Link>).
+        </div>
+      ) : null}
 
       <BulkActionBar
         selectedCount={bulk.selectedKeys.size}
